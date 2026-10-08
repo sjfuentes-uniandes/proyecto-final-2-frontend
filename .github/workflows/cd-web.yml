@@ -1,0 +1,13 @@
+name: CD web
+on:
+  push:
+    branches: [main]
+    paths: ["web/**"]
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TODO: build, aws s3 sync al bucket y invalidación de CloudFront.
+      - run: echo "Pendiente"
