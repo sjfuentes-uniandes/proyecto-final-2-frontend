@@ -1,1 +1,413 @@
-/* You can add global styles to this file, and also import other style files */
+/* Tokens del mockup de Solventa (Figma "Proyecto Final Solventa") y componentes base. */
+:root {
+  --sv-azul: #103a6b;
+  --sv-azul-oscuro: #0a2a52;
+  --sv-azul-medio: #1e5aa8;
+  --sv-seleccion: #e3edf9;
+  --sv-blanco: #fff;
+  --sv-fondo: #f2f4f7;
+  --sv-borde: #d6dae0;
+  --sv-texto: #1a1c1f;
+  --sv-texto-secundario: #4a4f57;
+  --sv-texto-tenue: #7a8189;
+  --sv-verde: #00875a;
+  --sv-verde-fondo: #e1f5ee;
+  --sv-naranja: #b76e00;
+  --sv-naranja-fondo: #fff3dc;
+  --sv-error: #c62828;
+  --sv-error-fondo: #fde8e8;
+  --sv-error-campo: #fffbfb;
+  --sv-radio: 6px;
+  --sv-radio-tarjeta: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: var(--sv-texto);
+  background: var(--sv-fondo);
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  padding: 24px 18px 18px;
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-tarjeta);
+  background: var(--sv-blanco);
+
+  h3 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    color: var(--sv-azul-oscuro);
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--sv-radio);
+  font: 600 13.5px Roboto, sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: .6;
+    cursor: progress;
+  }
+}
+
+.btn--primario {
+  border: 0;
+  background: var(--sv-azul);
+  color: var(--sv-blanco);
+}
+
+.btn--secundario {
+  border: 1px solid var(--sv-azul);
+  background: var(--sv-blanco);
+  color: var(--sv-azul);
+}
+
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 170px;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--sv-texto-secundario);
+}
+
+.fld--ancho {
+  min-width: min(290px, 100%);
+}
+
+.fld__error {
+  font-weight: 400;
+  color: var(--sv-error);
+}
+
+.inp {
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio);
+  background: var(--sv-blanco);
+  font: 400 13px Roboto, sans-serif;
+  color: var(--sv-texto);
+
+  &:focus {
+    border: 2px solid var(--sv-azul-medio);
+    padding: 0 10px;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(30, 90, 168, .16);
+  }
+
+  &[aria-invalid='true'] {
+    border: 2px solid var(--sv-error);
+    padding: 0 10px;
+    background: var(--sv-error-campo);
+  }
+}
+
+.tag {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.tag--ok {
+  background: var(--sv-verde-fondo);
+  color: var(--sv-verde);
+}
+
+.tag--alerta {
+  background: var(--sv-naranja-fondo);
+  color: var(--sv-naranja);
+}
+
+.tag--error {
+  background: var(--sv-error-fondo);
+  color: var(--sv-error);
+}
+
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: var(--sv-radio-tarjeta);
+  overflow: hidden;
+  font-size: 13px;
+
+  th {
+    padding: 12px 14px 11.5px;
+    border-bottom: 1px solid var(--sv-borde);
+    background: var(--sv-fondo);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-align: left;
+    text-transform: uppercase;
+    color: var(--sv-texto-secundario);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 16px 14px;
+    border-bottom: 1px solid var(--sv-borde);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Navegación y datos compartidos ------------------------------------------------- */
+.crumb {
+  font-size: 12px;
+  color: var(--sv-texto-tenue);
+
+  .crumb__link {
+    color: var(--sv-azul);
+  }
+}
+
+.kv {
+  margin: 0;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--sv-borde);
+    font-size: 13px;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  dt {
+    color: var(--sv-texto-secundario);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-all;
+  }
+
+  .ok {
+    color: var(--sv-verde);
+  }
+
+  .pendiente {
+    color: var(--sv-azul);
+  }
+}
+
+.tag--info {
+  background: var(--sv-seleccion);
+  color: var(--sv-azul);
+}
+
+.btn--bloque {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.fld__ayuda {
+  font-weight: 400;
+  color: var(--sv-texto-tenue);
+}
+
+.alerta {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 11px 15px 12px;
+  border-left: 4px solid;
+  border-radius: var(--sv-radio);
+  font-size: 13px;
+  line-height: 20.15px;
+}
+
+.alerta--error {
+  border-color: var(--sv-error);
+  background: var(--sv-error-fondo);
+  color: var(--sv-error);
+}
+
+.alerta--ok {
+  border-color: var(--sv-verde);
+  background: var(--sv-verde-fondo);
+  color: var(--sv-verde);
+}
+
+.nota {
+  margin: 0;
+  padding: 11px 15px 12px;
+  border-left: 4px solid var(--sv-azul-medio);
+  border-radius: var(--sv-radio);
+  background: var(--sv-seleccion);
+  font-size: 13px;
+  line-height: 20.15px;
+  color: var(--sv-azul);
+}
+
+.nota--alerta {
+  border-left-color: var(--sv-naranja);
+  background: var(--sv-naranja-fondo);
+  color: var(--sv-naranja);
+}
+
+/* --- Ingreso (mockups "Ingreso" y "Error de acceso") ----------------------------------- */
+/* Las páginas de acceso ocupan el área bajo la barra y centran el contenido (A01/A02). */
+app-ingresar,
+app-recuperar {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 28px;
+}
+
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 497px) minmax(0, 435px);
+  align-items: start;
+  gap: 28px;
+  width: 100%;
+  max-width: 960px;
+}
+
+.auth__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 30px;
+
+  h2 {
+    margin: 0;
+    padding: 2px 0;
+    font-size: 20px;
+    color: var(--sv-azul-oscuro);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .fld {
+    min-width: 0;
+    margin: 0;
+    padding-top: 6px;
+  }
+
+  .fld:first-child {
+    padding-top: 12px;
+  }
+
+  .fld:last-of-type {
+    padding-bottom: 10px;
+  }
+
+  .btn--bloque {
+    margin-top: 0;
+  }
+}
+
+.auth__sub {
+  margin: 0;
+  padding-top: 4px;
+  font-size: 12.3px;
+  line-height: 20.63px;
+  color: var(--sv-texto-secundario);
+}
+
+.auth__enlace {
+  padding: 12.5px 18px 13.5px;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--sv-texto-secundario);
+  text-decoration: none;
+}
+
+.fld__error {
+  display: flex;
+  gap: 5px;
+  padding-top: 4px;
+  font-size: 11.3px;
+}
+
+.auth__lado {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .panel {
+    padding: 18px;
+
+    h3 {
+      margin: 0;
+      padding: 1px 0 14px;
+      font-size: 15px;
+    }
+  }
+}
+
+.totp {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+
+  small {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--sv-texto-secundario);
+  }
+
+  code {
+    font-size: 13px;
+    word-break: break-all;
+  }
+}
+
+@media (max-width: 760px) {
+  app-ingresar,
+  app-recuperar {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .auth {
+    grid-template-columns: 1fr;
+  }
+}

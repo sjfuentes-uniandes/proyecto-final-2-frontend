@@ -1,0 +1,136 @@
+<div class="auth">
+  <section class="card auth__card">
+    <h2>Ingresar al portal</h2>
+
+    @if (error(); as causa) {
+      <p class="alerta alerta--error" role="alert" data-testid="error"><span aria-hidden="true">⚠</span><span>{{ mensajes[causa] }}</span></p>
+    }
+
+    @switch (paso()) {
+      @case ('credenciales') {
+        @if (!error()) {
+          <p class="auth__sub">Accede con tus credenciales corporativas.</p>
+        }
+        <form [formGroup]="credenciales" (ngSubmit)="ingresar()" novalidate>
+          <label class="fld">
+            <span>Correo corporativo</span>
+            <input class="inp" formControlName="usuario" type="email" autocomplete="username" placeholder="nombre@solventa.co" />
+          </label>
+          <label class="fld">
+            <span>Contraseña</span>
+            <input class="inp" formControlName="clave" type="password" autocomplete="current-password"
+                   [attr.aria-invalid]="error() === 'credenciales'" />
+            @if (error() === 'credenciales') {
+              <small class="fld__error"><span aria-hidden="true">⚠</span>Verifica tus datos e inténtalo de nuevo</small>
+            }
+          </label>
+          @if (!errorDeAcceso()) {
+            <label class="fld">
+              <span>Código de verificación</span>
+              <input class="inp" formControlName="codigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+                     placeholder="6 dígitos de tu aplicación de autenticación" />
+            </label>
+          }
+          <button class="btn btn--primario btn--bloque" type="submit" [disabled]="enviando()">
+            {{ enviando() ? 'Verificando…' : errorDeAcceso() ? 'Reintentar' : 'Ingresar' }}
+          </button>
+        </form>
+        <a class="auth__enlace" routerLink="/recuperar">{{ errorDeAcceso() ? 'Recuperar el acceso por correo' : '¿Olvidaste tu contraseña?' }}</a>
+      }
+
+      @case ('nueva-clave') {
+        <p class="auth__sub">Es tu primer ingreso: reemplaza la contraseña temporal que recibiste por correo.</p>
+        <form [formGroup]="nuevaClave" (ngSubmit)="cambiarClave()" novalidate>
+          <label class="fld">
+            <span>Nueva contraseña</span>
+            <input class="inp" formControlName="clave" type="password" autocomplete="new-password" />
+            <small class="fld__ayuda">Mínimo 12 caracteres con mayúsculas, minúsculas, números y símbolos.</small>
+          </label>
+          <label class="fld">
+            <span>Confirmar contraseña</span>
+            <input class="inp" formControlName="confirmacion" type="password" autocomplete="new-password" />
+            @if (nuevaClave.touched && nuevaClave.hasError('noCoinciden')) {
+              <small class="fld__error">Las contraseñas no coinciden</small>
+            }
+          </label>
+          <button class="btn btn--primario btn--bloque" type="submit" [disabled]="enviando()">Guardar contraseña</button>
+        </form>
+      }
+
+      @case ('registrar-totp') {
+        <p class="auth__sub">Registra Solventa en tu aplicación de autenticación (Google Authenticator, Microsoft Authenticator…).</p>
+        @if (totp(); as t) {
+          <div class="totp">
+            <img [src]="t.qr" width="176" height="176" alt="Código QR para la aplicación de autenticación" />
+            <div>
+              <small>Si no puedes escanear, ingresa esta clave:</small>
+              <code data-testid="secreto">{{ secretoLegible(t.secreto) }}</code>
+            </div>
+          </div>
+        }
+        <form [formGroup]="verificacion" (ngSubmit)="verificarCodigo()" novalidate>
+          <label class="fld">
+            <span>Código de verificación</span>
+            <input class="inp" formControlName="codigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+                   placeholder="6 dígitos" />
+          </label>
+          <button class="btn btn--primario btn--bloque" type="submit" [disabled]="enviando()">Activar y continuar</button>
+        </form>
+      }
+
+      @case ('codigo-totp') {
+        <p class="auth__sub">Ingresa el código de 6 dígitos de tu aplicación de autenticación.</p>
+        <form [formGroup]="verificacion" (ngSubmit)="verificarCodigo()" novalidate>
+          <label class="fld">
+            <span>Código de verificación</span>
+            <input class="inp" formControlName="codigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+                   placeholder="6 dígitos de tu aplicación de autenticación" />
+          </label>
+          <button class="btn btn--primario btn--bloque" type="submit" [disabled]="enviando()">Verificar</button>
+        </form>
+      }
+    }
+  </section>
+
+  <aside class="auth__lado">
+    @if (errorDeAcceso()) {
+      <section class="card panel" data-testid="proteccion">
+        <h3>Protección de la cuenta</h3>
+        <dl class="kv">
+          <div><dt>Intentos fallidos</dt><dd>{{ intentosFallidos() }} en este navegador</dd></div>
+          <div><dt>Bloqueo</dt><dd>Temporal tras intentos repetidos</dd></div>
+          <div><dt>Recuperación del acceso</dt><dd>Por correo verificado</dd></div>
+        </dl>
+      </section>
+      <p class="nota nota--alerta">
+        El mensaje es deliberadamente genérico: no confirma si el usuario existe. Revelarlo permitiría enumerar cuentas válidas.
+      </p>
+    } @else {
+      <section class="card panel" data-testid="estado">
+        <h3>Estado de la verificación</h3>
+        <dl class="kv">
+          <div>
+            <dt>Credenciales</dt>
+            @if (credencialesValidadas()) {
+              <dd class="ok">✓ Validadas</dd>
+            } @else {
+              <dd class="pendiente">Pendiente</dd>
+            }
+          </div>
+          <div>
+            <dt>Segundo factor</dt>
+            <dd class="pendiente">{{ paso() === 'registrar-totp' ? 'Por registrar' : 'Pendiente' }}</dd>
+          </div>
+          <div>
+            <dt>Contraseña</dt>
+            <dd>{{ paso() === 'nueva-clave' ? 'Temporal: debe cambiarse' : 'Vigente' }}</dd>
+          </div>
+        </dl>
+      </section>
+      <p class="nota">
+        La autorización se resuelve por grupo en la entrada segura, no dentro de cada microservicio. Un usuario
+        solo ve las pantallas de sus grupos.
+      </p>
+    }
+  </aside>
+</div>
