@@ -1,8 +1,9 @@
 {
   "apiBaseUrl": "http://localhost:8080",
+  "dashboardUrl": "",
   "cognito": {
-    "domain": "",
-    "clientId": "",
-    "redirectUri": "http://localhost:4200/callback"
+    "region": "us-east-1",
+    "backoffice": { "userPoolId": "", "clientId": "" },
+    "clientes": { "userPoolId": "", "clientId": "" }
   }
 }

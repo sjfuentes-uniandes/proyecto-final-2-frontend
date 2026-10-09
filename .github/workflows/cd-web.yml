@@ -1,13 +1,101 @@
 name: CD web
+
 on:
   push:
     branches: [main]
-    paths: ["web/**"]
+    paths: ["web/**", "scripts/desplegar-web.sh", ".github/workflows/cd-web.yml"]
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: Ambiente (parámetro /solventa/<ambiente>/web/config)
+        type: string
+        default: int
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: web-${{ inputs.ambiente || 'int' }}
+  cancel-in-progress: false
+
+env:
+  ENV: ${{ inputs.ambiente || 'int' }}
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
 
 jobs:
-  desplegar:
+  probar:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
     steps:
       - uses: actions/checkout@v4
-      # TODO: build, aws s3 sync al bucket y invalidación de CloudFront.
-      - run: echo "Pendiente"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx ng test --watch=false --browsers=ChromeHeadless
+      - run: npx ng build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portal-web
+          path: web/dist/web/browser
+          retention-days: 7
+
+  desplegar:
+    needs: probar
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.ambiente || 'int' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar configuración
+        env:
+          ROLE: ${{ vars.AWS_WEB_ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE" ]; then
+            echo "::error::Falta la variable AWS_WEB_ROLE_ARN del repositorio (salida github_web_role_arn de make infra-bootstrap en el repo back)."
+            exit 1
+          fi
+
+      - name: Credenciales AWS (OIDC)
+        id: aws
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_WEB_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: gh-web-${{ github.run_id }}
+
+      - name: Diagnóstico OIDC
+        if: failure() && steps.aws.outcome == 'failure'
+        env:
+          ROLE: ${{ vars.AWS_WEB_ROLE_ARN }}
+        run: |
+          token=$(curl -sSf -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" | jq -r .value)
+          payload=$(cut -d. -f2 <<<"$token" | tr '_-' '/+')
+          while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="${payload}="; done
+          echo "Rol solicitado: ${ROLE}"
+          base64 -d <<<"$payload" | jq '{sub, aud, repository, environment, ref}'
+          echo "::error::AWS rechazó el token. El rol solo acepta repo:<owner>@<id>/proyecto-final-2-frontend@<id>:* (github_web_repository)."
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: portal-web
+          path: web/dist/web/browser
+
+      - name: Publicar
+        env:
+          SKIP_BUILD: "1"
+        run: make desplegar
+
+      - name: Resumen
+        run: |
+          url=$(aws ssm get-parameter --name "/solventa/${ENV}/web/config" --query Parameter.Value --output text | jq -r .url)
+          echo "### Portal web \`${ENV}\`: ${url}/ingresar" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,71 @@
+<nav class="crumb" aria-label="Ruta de navegación">Inicio › Administración › <strong>Usuarios</strong></nav>
+<header>
+  <h2>Usuarios del back-office</h2>
+  <p class="sub">Crea los accesos del portal de gestión. Cognito envía al correo una contraseña temporal; en el primer ingreso
+    la persona la cambia y registra su aplicación de autenticación.</p>
+</header>
+
+@if (error(); as mensaje) {
+  <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ mensaje }}</span></p>
+}
+@if (creado(); as correo) {
+  <p class="alerta alerta--ok" role="status" data-testid="creado">Se creó el usuario y se envió la invitación a {{ correo }}.</p>
+}
+
+<form class="card" [formGroup]="formulario" (ngSubmit)="crear()" novalidate>
+  <h3>Crear usuario</h3>
+  <div class="fila">
+    <label class="fld fld--ancho">
+      <span>Correo corporativo</span>
+      <input class="inp" formControlName="email" type="email" autocomplete="off" placeholder="nombre@solventa.co"
+             [attr.aria-invalid]="formulario.controls.email.touched && formulario.controls.email.invalid" />
+    </label>
+    <label class="fld fld--ancho">
+      <span>Nombre completo</span>
+      <input class="inp" formControlName="nombre" autocomplete="off"
+             [attr.aria-invalid]="formulario.controls.nombre.touched && formulario.controls.nombre.invalid" />
+    </label>
+  </div>
+  <fieldset class="grupos" formArrayName="grupos">
+    <legend>Grupos</legend>
+    @for (grupo of grupos(); track grupo.nombre; let i = $index) {
+      <label class="grupo">
+        <input type="checkbox" [formControlName]="i" />
+        <span><strong>{{ grupo.nombre }}</strong><small>{{ grupo.descripcion }}</small></span>
+      </label>
+    }
+  </fieldset>
+  <button class="btn btn--primario" type="submit" [disabled]="enviando()">{{ enviando() ? 'Creando…' : 'Crear usuario' }}</button>
+</form>
+
+<section class="card">
+  <h3>Usuarios registrados</h3>
+  @if (usuarios(); as lista) {
+    <div class="tabla-scroll">
+      <table class="data">
+        <thead>
+          <tr><th>Correo</th><th>Nombre</th><th>Grupos</th><th>Estado</th><th>Creado</th></tr>
+        </thead>
+        <tbody>
+          @for (usuario of lista; track usuario.email) {
+            <tr>
+              <td>{{ usuario.email }}</td>
+              <td>{{ usuario.nombre ?? '—' }}</td>
+              <td>
+                <span class="tags">
+                  @for (g of usuario.grupos; track g) { <span class="tag tag--info">{{ g }}</span> } @empty { — }
+                </span>
+              </td>
+              <td><span class="tag" [class]="estado(usuario).clase">{{ estado(usuario).etiqueta }}</span></td>
+              <td class="mono">{{ usuario.creado | date: 'dd/MM/yyyy' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5">Aún no hay usuarios.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="sub">Cargando…</p>
+  }
+</section>
