@@ -1,0 +1,70 @@
+/* Pantallas de Socios (mockups B01-B06). Usa los tokens y clases globales de styles.scss. */
+:host { display: flex; flex-direction: column; gap: 10px; }
+
+h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 22px; color: var(--sv-azul-oscuro); }
+h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
+.sub { margin: 0; font-size: 13px; color: var(--sv-texto-secundario); }
+.h-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 8px; }
+.acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0 14px; }
+.filtros .fld { margin-bottom: 0; }
+.filtros .fld:first-child .inp { min-width: 290px; }
+.filtros .fld .inp { min-width: 170px; }
+.card--tabla { padding: 5px 0; }
+.tabla-scroll { overflow-x: auto; }
+.enlace { font-weight: 600; color: var(--sv-azul); }
+/* axe-core (WCAG AA 4.5:1): el verde y el gris tenue del mockup no alcanzan en textos de 10.5-11.5 px. */
+.tag--ok { color: #00663f; }
+.nota--alerta { color: #7a4a00; }
+.tag--neutro { border: 1px solid var(--sv-borde); background: var(--sv-fondo); color: var(--sv-texto-secundario); }
+
+/* Pasos del alta */
+.pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 8px 0 0; list-style: none; }
+.pasos li { padding-top: 9px; border-top: 4px solid var(--sv-borde); font-size: 11.5px; color: var(--sv-texto-secundario); }
+.pasos .hecho { border-color: var(--sv-verde); color: #00663f; font-weight: 600; }
+.pasos [aria-current='step'] { border-color: var(--sv-azul-medio); color: var(--sv-azul); font-weight: 700; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; padding-top: 10px; align-items: start; }
+.cols--detalle { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.columna { display: flex; flex-direction: column; gap: 16px; }
+.lateral { display: flex; flex-direction: column; gap: 8px; }
+.fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 20px; }
+.solo-lectura { display: flex; align-items: center; min-height: 38px; padding: 0 11px; border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio); background: var(--sv-fondo); font-size: 13px; color: var(--sv-texto-secundario); }
+
+/* Alcances con interruptores (input checkbox role=switch: operable con teclado) */
+.alcances { margin: 0; padding: 0; border: 0; }
+.alcances legend { margin-bottom: 4px; font-size: 15px; font-weight: 700; color: var(--sv-azul-oscuro); }
+.alcances .ayuda { margin: 0 0 6px; font-size: 12px; color: var(--sv-texto-secundario); }
+.alcance { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 0;
+  border-bottom: 1px solid var(--sv-borde); font-size: 13px; color: var(--sv-texto-secundario); cursor: pointer; }
+.alcance:last-of-type { border-bottom: 0; }
+.switch { appearance: none; position: relative; flex-shrink: 0; width: 44px; height: 24px; margin: 0; border-radius: 999px;
+  background: var(--sv-borde); cursor: pointer; transition: background .15s; }
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--sv-blanco); transition: transform .15s; }
+.switch:checked { background: var(--sv-verde); }
+.switch:checked::after { transform: translateX(20px); }
+.switch:focus-visible { outline: 3px solid var(--sv-azul-medio); outline-offset: 2px; }
+.switch:disabled { cursor: default; }
+
+.btn--exito { border: 1px solid var(--sv-verde); background: var(--sv-verde); color: var(--sv-blanco); }
+.btn--peligro { border: 1px solid var(--sv-error); background: var(--sv-error); color: var(--sv-blanco); }
+.btn--enlace { border: 0; background: none; color: var(--sv-texto-secundario); font-weight: 500; }
+
+/* Diálogos (credenciales y confirmación): <dialog> nativo con showModal() atrapa el foco */
+dialog { width: min(560px, calc(100vw - 32px)); padding: 22px; border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-tarjeta); box-shadow: 0 6px 20px rgba(10, 42, 82, .18); color: var(--sv-texto); }
+dialog::backdrop { background: rgba(10, 42, 82, .45); }
+dialog h3 { font-size: 17px; }
+.credencial { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: end; margin-bottom: 12px; }
+.credencial label { grid-column: 1 / -1; font-size: 11.5px; font-weight: 600; color: var(--sv-texto-secundario); }
+.credencial .inp { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.confirmar { display: flex; gap: 10px; align-items: center; margin: 4px 0 14px; font-size: 13px; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .cols, .cols--detalle { grid-template-columns: minmax(0, 1fr); }
+}

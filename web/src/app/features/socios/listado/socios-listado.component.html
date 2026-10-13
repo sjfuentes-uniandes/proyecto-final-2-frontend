@@ -1,0 +1,71 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">{{ t.inicio }} › <strong>{{ t.listadoTitulo }}</strong></nav>
+<div class="h-row">
+  <header>
+    <h2>{{ t.listadoTitulo }}</h2>
+    @if (socios(); as lista) {
+      <p class="sub">{{ t.listadoResumen(lista.length, activos()) }}</p>
+    }
+  </header>
+  <a class="btn btn--primario" routerLink="../alta">{{ t.darDeAlta }}</a>
+</div>
+
+@if (error(); as mensaje) {
+  <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ mensaje }}</span></p>
+}
+
+<form class="card filtros" role="search" [attr.aria-label]="t.filtros" (ngSubmit)="filtrar()">
+  <label class="fld">
+    <span>{{ t.buscar }}</span>
+    <input class="inp" name="busqueda" [(ngModel)]="busqueda" [placeholder]="t.buscarAyuda" autocomplete="off" />
+  </label>
+  <label class="fld">
+    <span>{{ t.estado }}</span>
+    <select class="inp" name="estado" [(ngModel)]="estado">
+      <option value="">{{ t.todos }}</option>
+      <option value="activo">{{ textos.estado('activo') }}</option>
+      <option value="desactivado">{{ textos.estado('desactivado') }}</option>
+    </select>
+  </label>
+  <button class="btn btn--primario" type="submit">{{ t.buscar }}</button>
+</form>
+
+<section class="card card--tabla" [attr.aria-label]="t.listadoTitulo">
+  @if (socios()) {
+    <div class="tabla-scroll">
+      <table class="data">
+        <thead>
+          <tr>
+            <th scope="col">{{ t.colSocio }}</th>
+            <th scope="col">{{ t.colIdentificador }}</th>
+            <th scope="col">{{ t.colCanal }}</th>
+            <th scope="col">{{ t.colPlan }}</th>
+            <th scope="col">{{ t.colEstado }}</th>
+            <th scope="col"><span class="sr-only">{{ t.colAcciones }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (socio of visibles(); track socio.id) {
+            <tr>
+              <td>{{ socio.nombre }}</td>
+              <td class="mono">{{ socio.id }}</td>
+              <td>{{ textos.canal(socio.canal) }}</td>
+              <td>{{ textos.plan(socio.plan) }}</td>
+              <td>
+                <span class="tag" [class.tag--ok]="socio.estado === 'activo'" [class.tag--neutro]="socio.estado !== 'activo'">
+                  {{ textos.estado(socio.estado) }}</span>
+              </td>
+              <td><a class="enlace" [routerLink]="['..', socio.id]" [attr.aria-label]="t.verDetalleDe(socio.nombre)">{{ t.verDetalle }}</a></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6">{{ t.sinSocios }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!error()) {
+    <p class="sub" role="status">{{ t.cargando }}</p>
+  }
+</section>
+
+<p class="nota"><span aria-hidden="true">ℹ </span>{{ t.avisoAislamiento }}</p>

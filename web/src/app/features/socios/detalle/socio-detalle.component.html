@@ -1,0 +1,65 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.inicio }} › <a class="crumb__link" routerLink="../listado">{{ t.seccion }}</a> › <strong>{{ socio()?.nombre ?? id() }}</strong>
+</nav>
+
+@if (error(); as mensaje) {
+  <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ mensaje }}</span></p>
+}
+@if (suspendido()) {
+  <p class="alerta alerta--ok" role="status" data-testid="suspendido">{{ t.suspendido }}</p>
+}
+
+@if (socio(); as s) {
+  <div class="h-row">
+    <header>
+      <h2>{{ s.nombre }}
+        <span class="tag" [class.tag--ok]="s.estado === 'activo'" [class.tag--neutro]="s.estado !== 'activo'">{{ textos.estado(s.estado) }}</span>
+      </h2>
+      <p class="sub">{{ t.integradoDesde(s.id, textos.fecha(s.creado)) }}</p>
+    </header>
+    @if (s.estado === 'activo') {
+      <div class="acciones">
+        <button #botonSuspender class="btn btn--peligro" type="button" (click)="pedirConfirmacion()">{{ t.suspender }}</button>
+      </div>
+    }
+  </div>
+
+  <div class="cols">
+    <section class="card">
+      <h3>{{ t.integracion }}</h3>
+      <dl class="kv">
+        <div><dt>{{ t.metodoAutenticacion }}</dt><dd>{{ t.metodoValor }}</dd></div>
+        <div><dt>{{ t.clientId }}</dt><dd class="mono">{{ s.clientId }}</dd></div>
+        <div><dt>{{ t.canal }}</dt><dd>{{ textos.canal(s.canal) }}</dd></div>
+        <div><dt>{{ t.plan }}</dt><dd>{{ textos.plan(s.plan) }}</dd></div>
+        <div><dt>{{ t.fechaAlta }}</dt><dd class="mono">{{ textos.fecha(s.creado) }}</dd></div>
+        @if (s.desactivado) {
+          <div><dt>{{ t.fechaDesactivacion }}</dt><dd class="mono">{{ textos.fecha(s.desactivado) }}</dd></div>
+        }
+      </dl>
+    </section>
+    <section class="card alcances" [attr.aria-label]="t.alcances">
+      <h3>{{ t.alcances }}</h3>
+      @for (permiso of permisos; track permiso) {
+        <div class="alcance">
+          <span><strong>{{ textos.permiso(permiso)[0] }}</strong> · {{ textos.permiso(permiso)[1] }}</span>
+          <input class="switch" type="checkbox" role="switch" disabled [checked]="s.permisos.includes(permiso)"
+                 [attr.aria-label]="textos.permiso(permiso)[0] + ': ' + (s.permisos.includes(permiso) ? t.permisoActivo : t.permisoInactivo)" />
+        </div>
+      }
+    </section>
+  </div>
+
+  <dialog #confirmacion aria-labelledby="confirmar-titulo" aria-describedby="confirmar-aviso" (cancel)="cancelar()">
+    <h3 id="confirmar-titulo">{{ t.suspenderTitulo(s.nombre) }}</h3>
+    <p id="confirmar-aviso" class="nota nota--alerta">{{ t.suspenderAviso }}</p>
+    <div class="acciones">
+      <button class="btn btn--secundario" type="button" (click)="cancelar()">{{ t.cancelar }}</button>
+      <button class="btn btn--peligro" type="button" [disabled]="suspendiendo()" (click)="suspender()" data-testid="confirmar">
+        {{ suspendiendo() ? t.suspendiendo : t.suspenderConfirmar }}</button>
+    </div>
+  </dialog>
+} @else if (!error()) {
+  <p class="sub" role="status">{{ t.cargando }}</p>
+}

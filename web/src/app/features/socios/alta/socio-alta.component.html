@@ -1,0 +1,161 @@
+@let t = textos.t();
+@if (activado(); as socio) {
+  <!-- B06: socio activado. El secreto solo aparece en el diálogo. -->
+  <nav class="crumb" [attr.aria-label]="t.migas">{{ t.inicio }} › {{ t.seccion }} › <strong>{{ t.activar }}</strong></nav>
+  <div class="h-row">
+    <header>
+      <h2 tabindex="-1" #tituloPaso>{{ t.activoTitulo(socio.nombre) }}
+        <span class="tag tag--ok">{{ textos.estado(socio.estado) }}</span></h2>
+      <p class="sub">{{ t.activoSub(socio.id) }}</p>
+    </header>
+  </div>
+  <p class="alerta alerta--ok" role="status"><span aria-hidden="true">✓</span><span>{{ t.avisoActivado }}</span></p>
+  <div class="cols cols--detalle">
+    <section class="card">
+      <h3>{{ t.alcances }}</h3>
+      <ul class="sub">
+        @for (permiso of socio.permisos; track permiso) {
+          <li><strong>{{ textos.permiso(permiso)[0] }}</strong> · {{ textos.permiso(permiso)[1] }}</li>
+        }
+      </ul>
+    </section>
+    <div class="lateral">
+      <section class="card">
+        <h3>{{ t.datosConexion }}</h3>
+        <dl class="kv">
+          <div><dt>{{ t.colIdentificador }}</dt><dd class="mono">{{ socio.id }}</dd></div>
+          <div><dt>{{ t.clientId }}</dt><dd class="mono">{{ socio.clientId }}</dd></div>
+          <div><dt>{{ t.metodoAutenticacion }}</dt><dd>{{ t.metodoValor }}</dd></div>
+          <div><dt>{{ t.plan }}</dt><dd>{{ textos.plan(socio.plan) }}</dd></div>
+        </dl>
+      </section>
+      <a class="btn btn--primario" routerLink="../listado">{{ t.volverListado }}</a>
+      <a class="btn btn--secundario" [routerLink]="['..', socio.id]">{{ t.verDetalleSocio }}</a>
+    </div>
+  </div>
+  @if (credenciales(); as creado) {
+    <app-credenciales-dialogo [credenciales]="creado" (cerrado)="ocultarCredenciales()" />
+  }
+} @else {
+  <nav class="crumb" [attr.aria-label]="t.migas">{{ t.inicio }} › {{ t.seccion }} › <strong>{{ t.menuAlta }}</strong></nav>
+  <header>
+    <h2>{{ t.altaTitulo }}</h2>
+    <p class="sub">{{ subtitulo() }}</p>
+  </header>
+
+  <ol class="pasos" [attr.aria-label]="t.pasos">
+    @for (nombre of [t.paso1, t.paso2, t.paso3]; track $index; let i = $index) {
+      <li [class.hecho]="i + 1 < paso()" [attr.aria-current]="i + 1 === paso() ? 'step' : null">{{ i + 1 }} · {{ nombre }}</li>
+    }
+  </ol>
+
+  @if (error(); as mensaje) {
+    <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ mensaje }}</span></p>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="paso() === 3 ? activar() : siguiente()" novalidate>
+    <div class="cols">
+      <div class="columna">
+        @switch (paso()) {
+          @case (1) {
+            <section class="card">
+              <h3 tabindex="-1" #tituloPaso>{{ t.identificacion }}</h3>
+              <div class="fila">
+                <label class="fld">
+                  <span>{{ t.razonSocial }}</span>
+                  <input class="inp" formControlName="nombre" autocomplete="organization" maxlength="120"
+                         [attr.aria-invalid]="formulario.controls.nombre.touched && formulario.controls.nombre.invalid"
+                         [attr.aria-describedby]="formulario.controls.nombre.touched && formulario.controls.nombre.invalid ? 'error-nombre' : null" />
+                  @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+                    <small class="fld__error" id="error-nombre">{{ t.razonSocialError }}</small>
+                  }
+                </label>
+                <label class="fld">
+                  <span>{{ t.tipoCanal }}</span>
+                  <select class="inp" formControlName="canal" [attr.aria-describedby]="formulario.controls.canal.touched && formulario.controls.canal.invalid ? 'error-canal' : null"
+                          [attr.aria-invalid]="formulario.controls.canal.touched && formulario.controls.canal.invalid">
+                    <option value="" disabled>{{ t.seleccione }}</option>
+                    @for (canal of canales; track canal) { <option [value]="canal">{{ textos.canal(canal) }}</option> }
+                  </select>
+                  @if (formulario.controls.canal.touched && formulario.controls.canal.invalid) {
+                    <small class="fld__error" id="error-canal">{{ t.canalError }}</small>
+                  }
+                </label>
+              </div>
+            </section>
+          }
+          @case (2) {
+            <section class="card">
+              <h3 tabindex="-1" #tituloPaso>{{ t.credencialesCanal }}</h3>
+              <div class="fila">
+                <div class="fld">
+                  <span>{{ t.identificadorAsignado }}</span>
+                  <span class="solo-lectura">{{ t.seAsignaAlActivar }}</span>
+                </div>
+                <div class="fld">
+                  <span>{{ t.metodoAutenticacion }}</span>
+                  <span class="solo-lectura">{{ t.metodoValor }}</span>
+                </div>
+              </div>
+            </section>
+            <fieldset class="card alcances" formGroupName="permisos" [attr.aria-describedby]="intentoPermisos() && seleccionados().length === 0 ? 'ayuda-alcances error-alcances' : 'ayuda-alcances'">
+              <legend>{{ t.alcances }}</legend>
+              <p class="ayuda" id="ayuda-alcances">{{ t.alcancesAyuda }}</p>
+              @for (permiso of permisos; track permiso) {
+                <label class="alcance">
+                  <span><strong>{{ textos.permiso(permiso)[0] }}</strong> · {{ textos.permiso(permiso)[1] }}</span>
+                  <input class="switch" type="checkbox" role="switch" [formControlName]="permiso" />
+                </label>
+              }
+              @if (intentoPermisos() && seleccionados().length === 0) {
+                <small class="fld__error" id="error-alcances" role="alert">{{ t.alcancesError }}</small>
+              }
+            </fieldset>
+          }
+          @case (3) {
+            <section class="card">
+              <h3 tabindex="-1" #tituloPaso>{{ t.resumen }}</h3>
+              <dl class="kv">
+                <div><dt>{{ t.socio }}</dt><dd>{{ formulario.controls.nombre.value }}</dd></div>
+                <div><dt>{{ t.tipoCanal }}</dt><dd>{{ formulario.controls.canal.value ? textos.canal(formulario.controls.canal.value) : '—' }}</dd></div>
+                <div><dt>{{ t.plan }}</dt><dd>{{ formulario.controls.plan.value ? textos.plan(formulario.controls.plan.value) : '—' }}</dd></div>
+                <div><dt>{{ t.alcances }}</dt><dd>{{ t.alcancesDe(seleccionados().length, permisos.length) }}</dd></div>
+                <div><dt>{{ t.identificadorAsignado }}</dt><dd>{{ t.seAsignaAlActivar }}</dd></div>
+              </dl>
+            </section>
+          }
+        }
+      </div>
+
+      <div class="lateral">
+        @if (paso() === 2) {
+          <section class="card">
+            <h3>{{ t.limites }}</h3>
+            <label class="fld">
+              <span>{{ t.plan }}</span>
+              <select class="inp" formControlName="plan" [attr.aria-describedby]="formulario.controls.plan.touched && formulario.controls.plan.invalid ? 'error-plan' : null"
+                      [attr.aria-invalid]="formulario.controls.plan.touched && formulario.controls.plan.invalid">
+                <option value="" disabled>{{ t.seleccione }}</option>
+                @for (plan of planes; track plan) { <option [value]="plan">{{ textos.plan(plan) }}</option> }
+              </select>
+              @if (formulario.controls.plan.touched && formulario.controls.plan.invalid) {
+                <small class="fld__error" id="error-plan">{{ t.planError }}</small>
+              }
+            </label>
+            <p class="nota nota--alerta">{{ t.avisoLimite }}</p>
+          </section>
+        }
+        @if (paso() < 3) {
+          <button class="btn btn--primario" type="submit">{{ t.continuarA(paso() + 1) }}</button>
+        } @else {
+          <button class="btn btn--exito" type="submit" [disabled]="enviando()">{{ enviando() ? t.activando : t.activar }}</button>
+        }
+        @if (paso() > 1) {
+          <button class="btn btn--enlace" type="button" (click)="irA($any(paso() - 1))">{{ t.volverA(paso() - 1) }}</button>
+        } @else {
+          <a class="btn btn--enlace" routerLink="../listado">{{ t.cancelar }}</a>
+        }
+      </div>
+    </div>
+  </form>
+}
