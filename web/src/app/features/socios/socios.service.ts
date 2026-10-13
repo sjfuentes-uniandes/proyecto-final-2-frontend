@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 
 import { ConfigService } from '../../core/config/app-config';
 
-/** Contrato de /web/socios (bff-web, contracts/openapi/bff-web.yaml). */
 export type Permiso = 'cotizar' | 'emitir' | 'consultar' | 'siniestros';
 export type CanalVenta = 'plataforma_digital' | 'entidad_financiera' | 'comercio' | 'otro';
 export type Plan = 'basico' | 'estandar';
@@ -26,7 +25,6 @@ export interface Socio {
   desactivado?: string | null;
 }
 
-/** Única respuesta con secreto y API key: se muestra una vez y no se guarda en el navegador. */
 export interface SocioCreado extends Socio {
   clientSecret: string;
   apiKey: string;

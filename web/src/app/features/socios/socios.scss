@@ -1,4 +1,3 @@
-/* Pantallas de Socios (mockups B01-B06). Usa los tokens y clases globales de styles.scss. */
 :host { display: flex; flex-direction: column; gap: 10px; }
 
 h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 22px; color: var(--sv-azul-oscuro); }
@@ -14,12 +13,11 @@ h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
 .card--tabla { padding: 5px 0; }
 .tabla-scroll { overflow-x: auto; }
 .enlace { font-weight: 600; color: var(--sv-azul); }
-/* axe-core (WCAG AA 4.5:1): el verde y el gris tenue del mockup no alcanzan en textos de 10.5-11.5 px. */
+/* Contraste WCAG AA: el verde y el gris del mockup no alcanzan. */
 .tag--ok { color: #00663f; }
 .nota--alerta { color: #7a4a00; }
 .tag--neutro { border: 1px solid var(--sv-borde); background: var(--sv-fondo); color: var(--sv-texto-secundario); }
 
-/* Pasos del alta */
 .pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 8px 0 0; list-style: none; }
 .pasos li { padding-top: 9px; border-top: 4px solid var(--sv-borde); font-size: 11.5px; color: var(--sv-texto-secundario); }
 .pasos .hecho { border-color: var(--sv-verde); color: #00663f; font-weight: 600; }
@@ -33,7 +31,6 @@ h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
 .solo-lectura { display: flex; align-items: center; min-height: 38px; padding: 0 11px; border: 1px solid var(--sv-borde);
   border-radius: var(--sv-radio); background: var(--sv-fondo); font-size: 13px; color: var(--sv-texto-secundario); }
 
-/* Alcances con interruptores (input checkbox role=switch: operable con teclado) */
 .alcances { margin: 0; padding: 0; border: 0; }
 .alcances legend { margin-bottom: 4px; font-size: 15px; font-weight: 700; color: var(--sv-azul-oscuro); }
 .alcances .ayuda { margin: 0 0 6px; font-size: 12px; color: var(--sv-texto-secundario); }
@@ -53,7 +50,6 @@ h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
 .btn--peligro { border: 1px solid var(--sv-error); background: var(--sv-error); color: var(--sv-blanco); }
 .btn--enlace { border: 0; background: none; color: var(--sv-texto-secundario); font-weight: 500; }
 
-/* Diálogos (credenciales y confirmación): <dialog> nativo con showModal() atrapa el foco */
 dialog { width: min(560px, calc(100vw - 32px)); padding: 22px; border: 1px solid var(--sv-borde);
   border-radius: var(--sv-radio-tarjeta); box-shadow: 0 6px 20px rgba(10, 42, 82, .18); color: var(--sv-texto); }
 dialog::backdrop { background: rgba(10, 42, 82, .45); }

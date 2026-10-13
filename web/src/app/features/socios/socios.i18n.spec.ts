@@ -22,7 +22,6 @@ describe('Textos de Socios (es-CO, en-US y pseudo-localización)', () => {
       const k = clave as keyof (typeof TEXTOS)['es-CO'];
       return typeof TEXTOS['es-CO'][k] === 'string' && TEXTOS['es-CO'][k] === TEXTOS['en-US'][k];
     });
-    // Términos técnicos que no se traducen.
     expect(iguales.sort()).toEqual(['apiKey', 'clientId', 'colPlan', 'metodoValor']);
   });
 

@@ -5,10 +5,6 @@ import { SocioCreado } from '../socios.service';
 
 type Campo = 'clientId' | 'clientSecret' | 'apiKey';
 
-/**
- * Muestra clientId, secreto y API key una sola vez (HU-W01 AC1). Es modal (<dialog>.showModal):
- * atrapa el foco y no se cierra con Escape hasta confirmar que se guardaron.
- */
 @Component({
   selector: 'app-credenciales-dialogo',
   template: `
@@ -76,7 +72,7 @@ export class CredencialesDialogoComponent {
   }
 
   cancelar(evento: Event): void {
-    // Escape no cierra mientras no se confirme que se guardaron (no hay segunda oportunidad).
+    // Escape no cierra hasta confirmar que se guardaron.
     if (!this.guardadas()) {
       evento.preventDefault();
     }

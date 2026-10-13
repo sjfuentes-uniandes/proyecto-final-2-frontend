@@ -10,7 +10,6 @@ import { CredencialesDialogoComponent } from './credenciales-dialogo.component';
 
 type Paso = 1 | 2 | 3;
 
-/** Socios › Alta de socio en tres pasos (mockups B03-B05) y socio activado (B06). */
 @Component({
   selector: 'app-socio-alta',
   imports: [ReactiveFormsModule, RouterLink, CredencialesDialogoComponent],
@@ -30,7 +29,6 @@ export class SocioAltaComponent {
     nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
     canal: this.fb.control<CanalVenta | ''>('', Validators.required),
     plan: this.fb.control<Plan | ''>('', Validators.required),
-    // HU-W01: ningún permiso viene preseleccionado.
     permisos: this.fb.group(Object.fromEntries(PERMISOS.map((p) => [p, false])) as Record<Permiso, boolean>),
   });
 
@@ -38,7 +36,6 @@ export class SocioAltaComponent {
   readonly enviando = signal(false);
   readonly error = signal<string | null>(null);
   readonly intentoPermisos = signal(false);
-  /** Respuesta del alta con secreto: vive solo en memoria hasta cerrar el diálogo. */
   readonly credenciales = signal<SocioCreado | null>(null);
   readonly activado = signal<Socio | null>(null);
 
@@ -67,7 +64,6 @@ export class SocioAltaComponent {
   irA(paso: Paso): void {
     this.paso.set(paso);
     this.error.set(null);
-    // Mueve el foco al encabezado del paso para lectores de pantalla y teclado.
     setTimeout(() => this.titulo()?.nativeElement.focus());
   }
 
@@ -96,7 +92,7 @@ export class SocioAltaComponent {
   }
 
   ocultarCredenciales(): void {
-    // Se descarta el secreto: no queda en memoria, estado de navegación ni almacenamiento.
+    // Descarta el secreto.
     this.credenciales.set(null);
     this.formulario.reset();
   }

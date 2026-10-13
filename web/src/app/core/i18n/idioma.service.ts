@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 
-/** es-CO y en-US; "pseudo" (?idioma=pseudo) alarga y acentúa los textos para detectar cortes y textos sin traducir. */
+/** "pseudo" (?idioma=pseudo) alarga y acentúa los textos para detectar cortes. */
 export type Idioma = 'es-CO' | 'en-US' | 'pseudo';
 
 export const IDIOMAS: Idioma[] = ['es-CO', 'en-US'];
@@ -11,7 +11,6 @@ function esIdioma(valor: string | null | undefined): valor is Idioma {
   return valor === 'es-CO' || valor === 'en-US' || valor === 'pseudo';
 }
 
-/** Idioma del portal. Por ahora lo usan las pantallas de Socios (HU-W01); el resto sigue en es-CO. */
 @Injectable({ providedIn: 'root' })
 export class IdiomaService {
   private readonly documento = inject(DOCUMENT);

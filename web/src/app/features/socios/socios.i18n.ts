@@ -19,7 +19,6 @@ const ES = {
   error403: 'Tu usuario no pertenece al grupo de administradores de socios.',
   error404: 'El socio no existe.',
 
-  // Listado (B01)
   listadoTitulo: 'Socios de distribución',
   listadoResumen: (total: number, activos: number) => `${total} socios · ${activos} habilitados para vender`,
   darDeAlta: 'Dar de alta un socio',
@@ -39,7 +38,6 @@ const ES = {
   sinSocios: 'No hay socios que coincidan con la búsqueda.',
   avisoAislamiento: 'Cada socio tiene credenciales, permisos y cuota propios: suspender uno no afecta a los demás canales.',
 
-  // Alta (B03-B05)
   altaTitulo: 'Dar de alta un socio de distribución',
   pasos: 'Pasos del alta',
   pasoDe: (paso: number) => `Paso ${paso} de 3`,
@@ -76,7 +74,6 @@ const ES = {
   activar: 'Activar el socio',
   activando: 'Activando…',
 
-  // Credenciales (modal) y activado (B06)
   credencialesTitulo: 'Credenciales del socio',
   credencialesAviso: 'Copia y entrega estas credenciales por un canal seguro. El secreto y la API key se muestran una sola vez: Solventa no los guarda y no se pueden volver a consultar.',
   clientId: 'clientId',
@@ -95,7 +92,6 @@ const ES = {
   volverListado: 'Volver al listado',
   verDetalleSocio: 'Ver el detalle del socio',
 
-  // Detalle (B02)
   integradoDesde: (id: string, fecha: string) => `${id} · integrado desde el ${fecha}`,
   integracion: 'Integración técnica',
   canal: 'Canal de venta',
@@ -217,7 +213,6 @@ const EN: TextosSocios = {
 
 const ACENTOS: Record<string, string> = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', A: 'Å', E: 'Ë', I: 'Ï', O: 'Ö', U: 'Ü' };
 
-/** Pseudo-localización: acentúa, alarga ~30 % y enmarca para ver cortes y textos fijos en el HTML. */
 export function pseudo(texto: string): string {
   const acentuado = texto.replace(/[aeiouAEIOU]/g, (c) => ACENTOS[c]);
   return `⟦${acentuado}${'·'.repeat(Math.ceil(texto.length * 0.3))}⟧`;
@@ -262,7 +257,6 @@ const CATALOGO = {
   },
 } satisfies Record<Exclude<Idioma, 'pseudo'>, unknown>;
 
-/** Textos y formatos de las pantallas de Socios en el idioma actual. */
 @Injectable({ providedIn: 'root' })
 export class TextosSociosService {
   private readonly idioma = inject(IdiomaService);
@@ -270,7 +264,7 @@ export class TextosSociosService {
   private readonly catalogo = computed(() => CATALOGO[this.idioma.actual() === 'en-US' ? 'en-US' : 'es-CO']);
   private readonly esPseudo = computed(() => this.idioma.actual() === 'pseudo');
 
-  /** Código de formato para los pipes de fecha (pseudo usa es-CO). */
+  /** pseudo usa es-CO. */
   readonly locale = computed(() => (this.idioma.actual() === 'en-US' ? 'en-US' : 'es-CO'));
 
   permiso(permiso: Permiso): [string, string] {

@@ -7,7 +7,6 @@ import { mensajeError } from '../socios.errores';
 import { TextosSociosService } from '../socios.i18n';
 import { EstadoSocio, Socio, SociosService } from '../socios.service';
 
-/** Socios › Socios activos (mockup B01). Consumo y cuota por minuto llegan con HU-W02. */
 @Component({
   selector: 'app-socios-listado',
   imports: [FormsModule, RouterLink],

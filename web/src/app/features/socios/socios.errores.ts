@@ -2,12 +2,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { TextosSocios } from './socios.i18n';
 
-/** Cuerpo estable de error del backend (contracts/codigos-error.md). */
 interface ErrorEstable {
   codigo?: string;
 }
 
-/** Mensaje legible traducido por `codigo` (nunca por el `mensaje` del servidor); si no llega, por estado HTTP. */
 export function mensajeError(t: TextosSocios, error: HttpErrorResponse): string {
   switch ((error.error as ErrorEstable | null)?.codigo) {
     case 'SOLICITUD_INVALIDA':

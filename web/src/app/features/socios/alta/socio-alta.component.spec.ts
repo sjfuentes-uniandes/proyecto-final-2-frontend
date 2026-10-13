@@ -60,7 +60,6 @@ describe('SocioAltaComponent', () => {
     c().formulario.patchValue({ nombre: 'Fintech Caribe S.A.S.', canal: 'comercio' });
     enviar();
     expect(c().paso()).toBe(2);
-    // Ningún permiso viene marcado y sin elegir uno no se avanza.
     const interruptores = Array.from(html().querySelectorAll<HTMLInputElement>('input[role=switch]'));
     expect(interruptores.length).toBe(4);
     expect(interruptores.every((i) => !i.checked)).toBeTrue();
@@ -95,13 +94,11 @@ describe('SocioAltaComponent', () => {
     expect(dialogo.open).toBeTrue();
     const valores = Array.from(dialogo.querySelectorAll<HTMLInputElement>('input.inp')).map((i) => i.value);
     expect(valores).toEqual([CREADO.clientId, CREADO.clientSecret, CREADO.apiKey]);
-    // Fuera del diálogo (pantalla "activado") no aparece el secreto.
     const fuera = html().cloneNode(true) as HTMLElement;
     fuera.querySelector('dialog')?.remove();
     expect(fuera.textContent).toContain('Fintech Caribe S.A.S. está activo');
     expect(fuera.innerHTML).not.toContain(CREADO.clientSecret);
 
-    // Escape no lo cierra mientras no se confirme que se guardaron.
     const escape = new Event('cancel', { cancelable: true });
     dialogo.dispatchEvent(escape);
     expect(escape.defaultPrevented).toBeTrue();
@@ -160,7 +157,7 @@ describe('SocioAltaComponent', () => {
       expect(await violacionesA11y(html())).toEqual([]);
       c().formulario.patchValue({ nombre: 'Fintech Caribe S.A.S.', canal: 'plataforma_digital' });
       enviar();
-      enviar(); // paso 2 con errores visibles (plan y permisos)
+      enviar();
       expect(c().paso()).toBe(2);
       expect(await violacionesA11y(html())).toEqual([]);
       c().formulario.patchValue({ plan: 'estandar', permisos: { cotizar: true } });

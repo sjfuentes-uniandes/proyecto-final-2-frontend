@@ -42,7 +42,6 @@ describe('SocioDetalleComponent', () => {
     expect(alcances.map((a) => a.checked)).toEqual([true, false, true, false]);
     expect(alcances.every((a) => a.disabled)).toBeTrue();
     expect(html().textContent).toContain(SOCIO.clientId);
-    // El detalle nunca recibe ni muestra el secreto ni el valor de la API key.
     expect(html().querySelectorAll('input:not([role=switch])').length).toBe(0);
     expect(html().innerHTML).not.toMatch(/clientSecret|apiKey/);
   });

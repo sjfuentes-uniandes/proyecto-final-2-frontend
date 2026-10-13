@@ -6,7 +6,6 @@ import { mensajeError } from '../socios.errores';
 import { TextosSociosService } from '../socios.i18n';
 import { PERMISOS, Socio, SociosService } from '../socios.service';
 
-/** Socios › detalle (mockup B02). Suspender = desactivar credenciales, con confirmación (AC3). */
 @Component({
   selector: 'app-socio-detalle',
   imports: [RouterLink],
@@ -17,7 +16,6 @@ export class SocioDetalleComponent implements OnInit {
   private readonly servicio = inject(SociosService);
   readonly textos = inject(TextosSociosService);
 
-  /** Parámetro :id de la ruta (withComponentInputBinding). */
   readonly id = input.required<string>();
   readonly permisos = PERMISOS;
   readonly socio = signal<Socio | null>(null);

@@ -16,11 +16,10 @@ export const SUSPENDIDO: Socio = {
 
 export const CREADO: SocioCreado = { ...SOCIO, clientSecret: 'secreto-mostrado-una-vez', apiKey: 'api-key-mostrada-una-vez' };
 
-/** axe-core sobre el componente (WCAG 2.1 A/AA); devuelve las reglas incumplidas con sus nodos. */
 export async function violacionesA11y(elemento: Element): Promise<string[]> {
   const resultado = await axe.run(elemento, {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] },
-    // La página completa (landmarks, h1) la arma el shell; aquí se revisa el componente.
+    // La página completa la arma el shell.
     rules: { region: { enabled: false }, 'page-has-heading-one': { enabled: false }, 'landmark-one-main': { enabled: false } },
   });
   return resultado.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
