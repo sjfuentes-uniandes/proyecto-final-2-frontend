@@ -12,6 +12,9 @@ function inicio(): string {
   if (sesion.tieneGrupo('operacion')) {
     return '/operacion';
   }
+  if (sesion.tieneGrupo('administradores-socios')) {
+    return '/socios';
+  }
   return sesion.tieneGrupo('administradores') ? '/administracion' : '/sin-acceso';
 }
 
