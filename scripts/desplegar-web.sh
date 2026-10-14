@@ -35,8 +35,9 @@ jq '.config' <<<"${web}" >"${DIST_DIR}/config.json"
 
 log "Publicación en s3://${bucket}"
 # Primero los archivos con hash (inmutables) y después los de entrada, para que
-# index.html nunca apunte a archivos que todavía no existen.
-aws s3 sync "${DIST_DIR}" "s3://${bucket}" --delete --only-show-errors \
+# index.html nunca apunte a archivos que todavía no existen. Sin --delete: las
+# pestañas abiertas con la versión anterior siguen cargando sus chunks.
+aws s3 sync "${DIST_DIR}" "s3://${bucket}" --only-show-errors \
   --exclude index.html --exclude config.json \
   --cache-control "public, max-age=31536000, immutable"
 for archivo in index.html config.json; do

@@ -84,7 +84,6 @@ describe('SocioDetalleComponent', () => {
     expect(html().querySelector('[data-testid=cuota-excedida]')?.textContent).toBe('Cuota excedida');
     expect(html().querySelector('[data-testid=aviso-excedida]')?.textContent).toContain('El socio superó su cuota asignada.');
     expect(html().querySelector('[role=progressbar] i')?.className).toContain('barra__uso--agotada');
-    expect(html().textContent).toContain('ARQ-003');
     expect(html().textContent).toContain('Encabezado Retry-After');
   });
 

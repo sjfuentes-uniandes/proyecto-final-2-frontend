@@ -161,7 +161,6 @@ const ES = {
   esperaValor: 'Encabezado Retry-After',
   reposicion: 'Reposición de la cuota',
   verTablero: 'Ver en el tablero',
-  avisoArq: 'Este es el comportamiento que valida ARQ-003: el pico de un socio se contiene en su propio carril y no consume la capacidad del resto.',
 };
 
 export type TextosSocios = typeof ES;
@@ -322,7 +321,6 @@ const EN: TextosSocios = {
   esperaValor: 'Retry-After header',
   reposicion: 'Quota restored',
   verTablero: 'View on the dashboard',
-  avisoArq: 'This is the behavior ARQ-003 validates: one partner\'s spike stays in its own lane and does not consume the others\' capacity.',
 };
 
 const ACENTOS: Record<string, string> = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', A: 'Å', E: 'Ë', I: 'Ï', O: 'Ö', U: 'Ü' };
