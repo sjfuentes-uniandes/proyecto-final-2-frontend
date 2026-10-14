@@ -1,0 +1,9 @@
+# Copie este archivo a local.properties (gitignored) y ajuste los valores.
+sdk.dir=/ruta/al/Android/Sdk
+
+# Pool clientes de Cognito, app client mobile (ver infra/platform/identity.tf del repo back
+# o "terraform output cognito"). Sin estos valores la app arranca pero el ingreso con
+# credenciales/biometria falla con un error claro en vez de bloquear el arranque.
+cognitoPoolId=
+cognitoClientId=
+cognitoRegion=us-east-1
