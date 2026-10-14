@@ -12,7 +12,11 @@
     </nav>
   }
   <div class="topright">
-    <span class="lang" title="Idioma">es-CO ▾</span>
+    <select class="lang" aria-label="Idioma / Language" (change)="cambiarIdioma($event)">
+      @for (opcion of idiomas; track opcion) {
+        <option [value]="opcion" [selected]="opcion === idioma.actual()">{{ opcion }}</option>
+      }
+    </select>
     @if (sesion.autenticado()) {
       <span class="usuario">{{ sesion.nombre() }}{{ rol() }}</span>
       <span class="avatar" aria-hidden="true">{{ sesion.iniciales() }}</span>
