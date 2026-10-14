@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 
 import { ConfigService } from '../../../core/config/app-config';
 import { Idioma, IdiomaService } from '../../../core/i18n/idioma.service';
-import { BASE, CREADO, violacionesA11y } from '../socios.testing';
+import { BASE, CREADO, PLANES, violacionesA11y } from '../socios.testing';
 import { SocioAltaComponent } from './socio-alta.component';
 
 describe('SocioAltaComponent', () => {
@@ -18,7 +18,7 @@ describe('SocioAltaComponent', () => {
     fixture.detectChanges();
   };
 
-  function montar(idioma: Idioma = 'es-CO'): void {
+  function montar(idioma: Idioma = 'es-CO', planes: typeof PLANES | null = PLANES): void {
     TestBed.configureTestingModule({
       imports: [SocioAltaComponent],
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
@@ -27,6 +27,12 @@ describe('SocioAltaComponent', () => {
     TestBed.inject(IdiomaService).cambiar(idioma);
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(SocioAltaComponent);
+    fixture.detectChanges();
+    if (planes) {
+      http.expectOne(`${BASE}/planes`).flush(planes);
+    } else {
+      http.expectOne(`${BASE}/planes`).flush({ codigo: 'SERVICIO_NO_DISPONIBLE' }, { status: 503, statusText: 'Unavailable' });
+    }
     fixture.detectChanges();
   }
 
@@ -74,6 +80,27 @@ describe('SocioAltaComponent', () => {
     expect(c().paso()).toBe(3);
     expect(html().querySelector('.kv')?.textContent).toContain('1 de 4');
     http.expectNone(BASE);
+  });
+
+  it('ofrece los planes del ambiente y muestra sus límites antes de activar', () => {
+    montar();
+    c().formulario.patchValue({ nombre: 'Retail Andino', canal: 'comercio' });
+    enviar();
+    const opciones = Array.from(html().querySelectorAll<HTMLOptionElement>('select[formcontrolname=plan] option')).map((o) => o.textContent?.trim());
+    expect(opciones).toEqual(['Selecciona una opción', 'Básico · 5 por segundo, 1.000 al día',
+      'Estándar · 50 por segundo, 50.000 al día', 'Prueba · 1 por segundo, 5 al día']);
+    expect(html().querySelector('[data-testid=limites-plan]')).toBeNull();
+    c().formulario.patchValue({ plan: 'prueba' });
+    fixture.detectChanges();
+    const limites = Array.from(html().querySelectorAll('[data-testid=limites-plan] dd')).map((d) => d.textContent?.trim());
+    expect(limites).toEqual(['1 por segundo', '2 solicitudes', '5 al día', 'Responder 429 con Retry-After']);
+  });
+
+  it('avisa si no se pudieron cargar los planes', () => {
+    montar('es-CO', null);
+    c().formulario.patchValue({ nombre: 'Retail Andino', canal: 'comercio' });
+    enviar();
+    expect(html().querySelector('[role=alert]')?.textContent).toContain('No se pudieron cargar los planes');
   });
 
   it('envía solo los permisos seleccionados', () => {

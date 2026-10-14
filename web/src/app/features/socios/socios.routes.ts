@@ -18,7 +18,7 @@ export class SociosLayoutComponent {
     return [
       { etiqueta: t.menuActivos, icono: '🤝', ruta: 'listado' },
       { etiqueta: t.menuAlta, icono: '＋', ruta: 'alta' },
-      { etiqueta: t.menuConsumo, icono: '📈', pendiente: t.menuConsumoPendiente },
+      { etiqueta: t.menuConsumo, icono: '📈', ruta: 'consumo' },
     ];
   });
 }
@@ -39,6 +39,11 @@ export const routes: Routes = [
         path: 'alta',
         title: 'Alta de socio · Solventa',
         loadComponent: () => import('./alta/socio-alta.component').then((m) => m.SocioAltaComponent),
+      },
+      {
+        path: 'consumo',
+        title: 'Consumo por socio · Solventa',
+        loadComponent: () => import('./consumo/socios-consumo.component').then((m) => m.SociosConsumoComponent),
       },
       {
         path: ':id',

@@ -38,22 +38,40 @@
           <tr>
             <th scope="col">{{ t.colSocio }}</th>
             <th scope="col">{{ t.colIdentificador }}</th>
-            <th scope="col">{{ t.colCanal }}</th>
-            <th scope="col">{{ t.colPlan }}</th>
+            <th scope="col" class="col-consumo">{{ t.colConsumo }}</th>
+            <th scope="col">{{ t.colCuota }}</th>
             <th scope="col">{{ t.colEstado }}</th>
             <th scope="col"><span class="sr-only">{{ t.colAcciones }}</span></th>
           </tr>
         </thead>
         <tbody>
           @for (socio of visibles(); track socio.id) {
+            @let consumo = consumoDe(socio);
             <tr>
               <td>{{ socio.nombre }}</td>
               <td class="mono">{{ socio.id }}</td>
-              <td>{{ textos.canal(socio.canal) }}</td>
-              <td>{{ textos.plan(socio.plan) }}</td>
+              <td class="col-consumo">
+                @if (socio.estado !== 'activo') {
+                  <span class="nota-celda">{{ t.credencialesRevocadas }}</span>
+                } @else if (consumo === undefined) {
+                  <span class="nota-celda">{{ t.cargandoConsumo }}</span>
+                } @else if (consumo) {
+                  <app-barra-consumo [porcentaje]="consumo.porcentaje" [estado]="consumo.estado" [etiqueta]="t.barraConsumo(socio.nombre)"
+                                     [texto]="t.valorConsumo(textos.numero(consumo.usado), textos.numero(consumo.limites.cuota), consumo.porcentaje)" />
+                  <span class="nota-celda">{{ consumo.usado === 0 ? t.sinTrafico : t.consumoDe(textos.numero(consumo.usado), textos.numero(consumo.limites.cuota)) }}</span>
+                } @else {
+                  <span class="nota-celda">{{ t.consumoNoDisponible }}</span>
+                }
+              </td>
+              <td class="mono">{{ consumo ? textos.cuota(consumo.limites) : '—' }}</td>
               <td>
-                <span class="tag" [class.tag--ok]="socio.estado === 'activo'" [class.tag--neutro]="socio.estado !== 'activo'">
-                  {{ textos.estado(socio.estado) }}</span>
+                @if (socio.estado !== 'activo') {
+                  <span class="tag tag--neutro">{{ textos.estado(socio.estado) }}</span>
+                } @else {
+                  @let estadoCuota = consumo?.estado ?? 'normal';
+                  <span class="tag" [class.tag--ok]="estadoCuota === 'normal'" [class.tag--alerta]="estadoCuota === 'cerca_del_limite'"
+                        [class.tag--error]="estadoCuota === 'agotada'">{{ textos.estadoCuota(estadoCuota) }}</span>
+                }
               </td>
               <td><a class="enlace" [routerLink]="['..', socio.id]" [attr.aria-label]="t.verDetalleDe(socio.nombre)">{{ t.verDetalle }}</a></td>
             </tr>
@@ -68,4 +86,11 @@
   }
 </section>
 
-<p class="nota"><span aria-hidden="true">ℹ </span>{{ t.avisoAislamiento }}</p>
+@if (destacado(); as d) {
+  <p class="nota" [class.nota--alerta]="d.consumo.estado === 'agotada'" data-testid="aviso-cuota">
+    <span aria-hidden="true">{{ d.consumo.estado === 'agotada' ? '⚠' : 'ℹ' }} </span>
+    {{ d.consumo.estado === 'agotada' ? t.avisoAgotada(d.socio.nombre) : t.avisoCercaDelLimite(d.socio.nombre, d.consumo.porcentaje) }}
+  </p>
+} @else {
+  <p class="nota"><span aria-hidden="true">ℹ </span>{{ t.avisoAislamiento }}</p>
+}

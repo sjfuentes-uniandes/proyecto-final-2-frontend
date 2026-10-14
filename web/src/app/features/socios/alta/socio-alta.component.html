@@ -135,12 +135,23 @@
               <select class="inp" formControlName="plan" [attr.aria-describedby]="formulario.controls.plan.touched && formulario.controls.plan.invalid ? 'error-plan' : null"
                       [attr.aria-invalid]="formulario.controls.plan.touched && formulario.controls.plan.invalid">
                 <option value="" disabled>{{ t.seleccione }}</option>
-                @for (plan of planes; track plan) { <option [value]="plan">{{ textos.plan(plan) }}</option> }
+                @for (limites of planes(); track limites.plan) { <option [value]="limites.plan">{{ textos.planConLimites(limites) }}</option> }
               </select>
               @if (formulario.controls.plan.touched && formulario.controls.plan.invalid) {
                 <small class="fld__error" id="error-plan">{{ t.planError }}</small>
               }
             </label>
+            @if (errorPlanes(); as mensaje) {
+              <p class="fld__error" role="alert">{{ mensaje }}</p>
+            }
+            @if (limitesElegidos(); as l) {
+              <dl class="kv" data-testid="limites-plan">
+                <div><dt>{{ t.limitePorSegundo }}</dt><dd>{{ t.porSegundo(textos.numero(l.limitePorSegundo)) }}</dd></div>
+                <div><dt>{{ t.rafaga }}</dt><dd>{{ t.rafagaValor(textos.numero(l.rafaga)) }}</dd></div>
+                <div><dt>{{ t.cuota }}</dt><dd>{{ textos.cuota(l) }}</dd></div>
+                <div><dt>{{ t.alSuperar }}</dt><dd>{{ t.alSuperarValor }}</dd></div>
+              </dl>
+            }
             <p class="nota nota--alerta">{{ t.avisoLimite }}</p>
           </section>
         }

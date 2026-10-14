@@ -17,11 +17,11 @@ h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
 .tag--ok { color: #00663f; }
 .nota--alerta { color: #7a4a00; }
 .tag--neutro { border: 1px solid var(--sv-borde); background: var(--sv-fondo); color: var(--sv-texto-secundario); }
+.tag--alerta { color: #7a4a00; }
+.alerta--ok { color: #00663f; }
 
-.pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 8px 0 0; list-style: none; }
-.pasos li { padding-top: 9px; border-top: 4px solid var(--sv-borde); font-size: 11.5px; color: var(--sv-texto-secundario); }
-.pasos .hecho { border-color: var(--sv-verde); color: #00663f; font-weight: 600; }
-.pasos [aria-current='step'] { border-color: var(--sv-azul-medio); color: var(--sv-azul); font-weight: 700; }
+.col-consumo { min-width: 200px; }
+.nota-celda { display: block; margin-top: 4px; font-size: 11.5px; line-height: 18.4px; color: var(--sv-texto-secundario); }
 
 .cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; padding-top: 10px; align-items: start; }
 .cols--detalle { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }

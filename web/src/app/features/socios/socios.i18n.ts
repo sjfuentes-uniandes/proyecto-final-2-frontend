@@ -1,7 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 
 import { Idioma, IdiomaService } from '../../core/i18n/idioma.service';
-import { CanalVenta, EstadoSocio, Permiso, Plan } from './socios.service';
+import { CanalVenta, EstadoCuota, EstadoSocio, LimitesPlan, Periodo, Permiso, Plan } from './socios.service';
 
 type Texto = string | ((...valores: never[]) => string);
 
@@ -10,7 +10,6 @@ const ES = {
   menuActivos: 'Socios activos',
   menuAlta: 'Alta de socio',
   menuConsumo: 'Consumo por socio',
-  menuConsumoPendiente: 'Disponible con HU-W02',
   inicio: 'Inicio',
   migas: 'Ruta de navegación',
   cargando: 'Cargando…',
@@ -18,6 +17,8 @@ const ES = {
   error400: 'Revisa los datos: razón social, canal, plan y al menos un permiso.',
   error403: 'Tu usuario no pertenece al grupo de administradores de socios.',
   error404: 'El socio no existe.',
+  errorPlanNoDisponible: 'Ese plan no está disponible en este ambiente.',
+  errorSocioDesactivado: 'El socio está suspendido: no se puede cambiar su plan.',
 
   listadoTitulo: 'Socios de distribución',
   listadoResumen: (total: number, activos: number) => `${total} socios · ${activos} habilitados para vender`,
@@ -29,14 +30,32 @@ const ES = {
   todos: 'Todos',
   colSocio: 'Socio',
   colIdentificador: 'Identificador',
-  colCanal: 'Canal',
+  colConsumo: 'Consumo de la cuota',
+  colCuota: 'Cuota',
   colPlan: 'Plan',
+  colRestante: 'Restante',
+  col429: 'Respuestas 429',
   colEstado: 'Estado',
   colAcciones: 'Acciones',
   verDetalle: 'Ver detalle',
   verDetalleDe: (nombre: string) => `Ver detalle de ${nombre}`,
   sinSocios: 'No hay socios que coincidan con la búsqueda.',
   avisoAislamiento: 'Cada socio tiene credenciales, permisos y cuota propios: suspender uno no afecta a los demás canales.',
+  avisoCercaDelLimite: (nombre: string, porcentaje: number) =>
+    `${nombre} está al ${porcentaje} % de su cuota. Al alcanzar el límite se aplica contrapresión sobre ese socio únicamente; el resto de los canales conserva su capacidad.`,
+  avisoAgotada: (nombre: string) =>
+    `${nombre} agotó su cuota y recibe 429 hasta que se reponga. El resto de los canales conserva su capacidad.`,
+  consumoDe: (usado: string, cuota: string) => `${usado} de ${cuota}`,
+  sinTrafico: 'Sin tráfico aún',
+  consumoNoDisponible: 'Consumo no disponible',
+  credencialesRevocadas: 'Credenciales revocadas',
+  barraConsumo: (nombre: string) => `Consumo de la cuota de ${nombre}`,
+  valorConsumo: (usado: string, cuota: string, porcentaje: number) => `${usado} de ${cuota} solicitudes (${porcentaje} %)`,
+
+  consumoTitulo: 'Consumo por socio',
+  consumoSub: (activos: number) => `${activos} socios habilitados · la cuota se aplica a cada API key por separado`,
+  sinSociosActivos: 'No hay socios habilitados.',
+  sinMetricas: 'Sin datos',
 
   altaTitulo: 'Dar de alta un socio de distribución',
   pasos: 'Pasos del alta',
@@ -64,6 +83,7 @@ const ES = {
   limites: 'Límites de consumo',
   plan: 'Plan de uso',
   planError: 'Selecciona el plan de uso.',
+  planesNoDisponibles: 'No se pudieron cargar los planes de uso. Inténtalo de nuevo.',
   avisoLimite: 'El límite protege a los demás socios. Superarlo no degrada el servicio del resto del canal ni afecta la venta directa.',
   continuarA: (paso: number) => `Continuar al paso ${paso}`,
   volverA: (paso: number) => `Volver al paso ${paso}`,
@@ -105,6 +125,43 @@ const ES = {
   suspendido: 'El socio quedó suspendido. Sus credenciales ya no son válidas.',
   permisoActivo: 'Asignado',
   permisoInactivo: 'No asignado',
+
+  cuotaTitulo: 'Consumo de la cuota',
+  cuotaExcedida: 'Cuota excedida',
+  avisoExcedidaTitulo: 'El socio superó su cuota asignada.',
+  avisoExcedidaTexto: 'Se está respondiendo 429 a las solicitudes que exceden el límite. El resto de los canales conserva su capacidad intacta.',
+  metricas: 'Indicadores de la cuota',
+  usadas: 'Solicitudes usadas',
+  cuotaDe: (cuota: string, periodo: string) => `Cuota de ${cuota} ${periodo}`,
+  restantes: 'Solicitudes restantes',
+  seRepone: (fecha: string) => `Se repone el ${fecha}`,
+  limitadas: 'Respuestas 429',
+  limitadasNota: 'En el periodo actual',
+  limitadasSinDatos: 'Métricas no disponibles',
+  ventana: (inicio: string, fin: string) => (inicio === fin ? `Periodo: ${inicio}` : `Periodo: ${inicio} a ${fin}`),
+  cargandoConsumo: 'Consultando el consumo…',
+  planActual: 'Plan actual',
+  planNuevo: 'Nuevo plan',
+  cambiarPlan: 'Cambiar plan',
+  cambiandoPlan: 'Cambiando…',
+  planCambiado: (plan: string) => `El plan cambió a ${plan}. La cuota nueva se aplica a las próximas solicitudes del socio.`,
+  planSinCambios: 'Selecciona un plan distinto al actual.',
+  planSuspendido: 'El plan no se puede cambiar porque el socio está suspendido.',
+  limitePorSegundo: 'Límite por segundo',
+  porSegundo: (n: string) => `${n} por segundo`,
+  rafaga: 'Ráfaga permitida',
+  rafagaValor: (n: string) => `${n} solicitudes`,
+  cuota: 'Cuota',
+  alSuperar: 'Al superar el límite',
+  alSuperarValor: 'Responder 429 con Retry-After',
+  queRecibe: 'Qué recibe el socio',
+  queRecibeTexto: 'Las solicitudes que exceden el límite reciben una respuesta explícita con el tiempo que debe esperar antes de reintentar. No se descartan en silencio, de modo que el socio puede adaptar su ritmo sin perder ventas.',
+  codigoRespuesta: 'Código de respuesta',
+  esperaSugerida: 'Espera sugerida',
+  esperaValor: 'Encabezado Retry-After',
+  reposicion: 'Reposición de la cuota',
+  verTablero: 'Ver en el tablero',
+  avisoArq: 'Este es el comportamiento que valida ARQ-003: el pico de un socio se contiene en su propio carril y no consume la capacidad del resto.',
 };
 
 export type TextosSocios = typeof ES;
@@ -114,7 +171,6 @@ const EN: TextosSocios = {
   menuActivos: 'Active partners',
   menuAlta: 'Onboard partner',
   menuConsumo: 'Usage by partner',
-  menuConsumoPendiente: 'Available with HU-W02',
   inicio: 'Home',
   migas: 'Breadcrumb',
   cargando: 'Loading…',
@@ -122,6 +178,8 @@ const EN: TextosSocios = {
   error400: 'Check the data: legal name, channel, plan and at least one permission.',
   error403: 'Your user is not in the partner administrators group.',
   error404: 'The partner does not exist.',
+  errorPlanNoDisponible: 'That plan is not available in this environment.',
+  errorSocioDesactivado: 'The partner is suspended: its plan cannot be changed.',
 
   listadoTitulo: 'Distribution partners',
   listadoResumen: (total: number, activos: number) => `${total} partners · ${activos} enabled to sell`,
@@ -133,14 +191,32 @@ const EN: TextosSocios = {
   todos: 'All',
   colSocio: 'Partner',
   colIdentificador: 'Identifier',
-  colCanal: 'Channel',
+  colConsumo: 'Quota usage',
+  colCuota: 'Quota',
   colPlan: 'Plan',
+  colRestante: 'Remaining',
+  col429: '429 responses',
   colEstado: 'Status',
   colAcciones: 'Actions',
   verDetalle: 'View details',
   verDetalleDe: (nombre: string) => `View details of ${nombre}`,
   sinSocios: 'No partners match the search.',
   avisoAislamiento: 'Each partner has its own credentials, permissions and quota: suspending one does not affect other channels.',
+  avisoCercaDelLimite: (nombre: string, porcentaje: number) =>
+    `${nombre} is at ${porcentaje}% of its quota. When it reaches the limit, backpressure applies to that partner only; the other channels keep their capacity.`,
+  avisoAgotada: (nombre: string) =>
+    `${nombre} used up its quota and receives 429 until it is restored. The other channels keep their capacity.`,
+  consumoDe: (usado: string, cuota: string) => `${usado} of ${cuota}`,
+  sinTrafico: 'No traffic yet',
+  consumoNoDisponible: 'Usage unavailable',
+  credencialesRevocadas: 'Credentials revoked',
+  barraConsumo: (nombre: string) => `Quota usage of ${nombre}`,
+  valorConsumo: (usado: string, cuota: string, porcentaje: number) => `${usado} of ${cuota} requests (${porcentaje}%)`,
+
+  consumoTitulo: 'Usage by partner',
+  consumoSub: (activos: number) => `${activos} enabled partners · the quota applies to each API key separately`,
+  sinSociosActivos: 'There are no enabled partners.',
+  sinMetricas: 'No data',
 
   altaTitulo: 'Onboard a distribution partner',
   pasos: 'Onboarding steps',
@@ -168,6 +244,7 @@ const EN: TextosSocios = {
   limites: 'Usage limits',
   plan: 'Usage plan',
   planError: 'Select the usage plan.',
+  planesNoDisponibles: 'The usage plans could not be loaded. Please try again.',
   avisoLimite: 'The limit protects the other partners. Exceeding it does not degrade the rest of the channel or direct sales.',
   continuarA: (paso: number) => `Continue to step ${paso}`,
   volverA: (paso: number) => `Back to step ${paso}`,
@@ -209,6 +286,43 @@ const EN: TextosSocios = {
   suspendido: 'The partner was suspended. Its credentials are no longer valid.',
   permisoActivo: 'Granted',
   permisoInactivo: 'Not granted',
+
+  cuotaTitulo: 'Quota usage',
+  cuotaExcedida: 'Quota exceeded',
+  avisoExcedidaTitulo: 'The partner exceeded its assigned quota.',
+  avisoExcedidaTexto: 'Requests above the limit receive 429. The other channels keep their full capacity.',
+  metricas: 'Quota indicators',
+  usadas: 'Requests used',
+  cuotaDe: (cuota: string, periodo: string) => `Quota of ${cuota} ${periodo}`,
+  restantes: 'Requests remaining',
+  seRepone: (fecha: string) => `Restored on ${fecha}`,
+  limitadas: '429 responses',
+  limitadasNota: 'In the current period',
+  limitadasSinDatos: 'Metrics unavailable',
+  ventana: (inicio: string, fin: string) => (inicio === fin ? `Period: ${inicio}` : `Period: ${inicio} to ${fin}`),
+  cargandoConsumo: 'Checking usage…',
+  planActual: 'Current plan',
+  planNuevo: 'New plan',
+  cambiarPlan: 'Change plan',
+  cambiandoPlan: 'Changing…',
+  planCambiado: (plan: string) => `The plan changed to ${plan}. The new quota applies to the partner's next requests.`,
+  planSinCambios: 'Select a plan other than the current one.',
+  planSuspendido: 'The plan cannot be changed because the partner is suspended.',
+  limitePorSegundo: 'Rate limit',
+  porSegundo: (n: string) => `${n} per second`,
+  rafaga: 'Allowed burst',
+  rafagaValor: (n: string) => `${n} requests`,
+  cuota: 'Quota',
+  alSuperar: 'When the limit is exceeded',
+  alSuperarValor: 'Respond 429 with Retry-After',
+  queRecibe: 'What the partner receives',
+  queRecibeTexto: 'Requests above the limit receive an explicit response with the time to wait before retrying. They are not silently dropped, so the partner can adjust its pace without losing sales.',
+  codigoRespuesta: 'Response code',
+  esperaSugerida: 'Suggested wait',
+  esperaValor: 'Retry-After header',
+  reposicion: 'Quota restored',
+  verTablero: 'View on the dashboard',
+  avisoArq: 'This is the behavior ARQ-003 validates: one partner\'s spike stays in its own lane and does not consume the others\' capacity.',
 };
 
 const ACENTOS: Record<string, string> = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', A: 'Å', E: 'Ë', I: 'Ï', O: 'Ö', U: 'Ü' };
@@ -246,14 +360,18 @@ const CATALOGO = {
   'es-CO': {
     permisos: PERMISOS_ES,
     canales: { plataforma_digital: 'Plataforma digital', entidad_financiera: 'Entidad financiera', comercio: 'Comercio', otro: 'Otro' },
-    planes: { basico: 'Básico · 5 solicitudes/s, 1.000 al día', estandar: 'Estándar · 50 solicitudes/s, 50.000 al día' },
+    planes: { basico: 'Básico', estandar: 'Estándar', prueba: 'Prueba' },
+    periodos: { DAY: 'al día', WEEK: 'a la semana', MONTH: 'al mes' },
     estados: { activo: 'Habilitado', desactivado: 'Suspendido' },
+    cuotas: { normal: 'Habilitado', cerca_del_limite: 'Cerca del límite', agotada: 'Cuota excedida' },
   },
   'en-US': {
     permisos: PERMISOS_EN,
     canales: { plataforma_digital: 'Digital platform', entidad_financiera: 'Financial institution', comercio: 'Retail', otro: 'Other' },
-    planes: { basico: 'Basic · 5 requests/s, 1,000 per day', estandar: 'Standard · 50 requests/s, 50,000 per day' },
+    planes: { basico: 'Basic', estandar: 'Standard', prueba: 'Test' },
+    periodos: { DAY: 'per day', WEEK: 'per week', MONTH: 'per month' },
     estados: { activo: 'Enabled', desactivado: 'Suspended' },
+    cuotas: { normal: 'Enabled', cerca_del_limite: 'Near the limit', agotada: 'Quota exceeded' },
   },
 } satisfies Record<Exclude<Idioma, 'pseudo'>, unknown>;
 
@@ -282,6 +400,41 @@ export class TextosSociosService {
 
   estado(estado: EstadoSocio): string {
     return this.marcar(this.catalogo().estados[estado]);
+  }
+
+  estadoCuota(estado: EstadoCuota): string {
+    return this.marcar(this.catalogo().cuotas[estado]);
+  }
+
+  periodo(periodo: Periodo): string {
+    return this.marcar(this.catalogo().periodos[periodo]);
+  }
+
+  numero(valor: number): string {
+    return new Intl.NumberFormat(this.locale()).format(valor);
+  }
+
+  cuota(limites: LimitesPlan): string {
+    return `${this.numero(limites.cuota)} ${this.periodo(limites.periodo)}`;
+  }
+
+  planConLimites(limites: LimitesPlan): string {
+    const t = this.t();
+    return `${this.plan(limites.plan)} · ${t.porSegundo(this.numero(limites.limitePorSegundo))}, ${this.cuota(limites)}`;
+  }
+
+  /** Días de la ventana de cuota (AAAA-MM-DD, en UTC). */
+  dia(iso: string): string {
+    return new Intl.DateTimeFormat(this.locale(), { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })
+      .format(new Date(`${iso}T00:00:00Z`));
+  }
+
+  /** En UTC: es el reloj con el que API Gateway repone la cuota. */
+  fechaHora(iso: string): string {
+    const formato = new Intl.DateTimeFormat(this.locale(), {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC',
+    });
+    return `${formato.format(new Date(iso))} UTC`;
   }
 
   fecha(iso: string | null | undefined): string {

@@ -1,0 +1,4 @@
+.pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 8px 0 0; list-style: none; }
+.pasos li { padding-top: 9px; border-top: 4px solid var(--sv-borde); font-size: 11.5px; color: var(--sv-texto-secundario); }
+.pasos .hecho { border-color: var(--sv-verde); color: #00663f; font-weight: 600; }
+.pasos [aria-current='step'] { border-color: var(--sv-azul-medio); color: var(--sv-azul); font-weight: 700; }

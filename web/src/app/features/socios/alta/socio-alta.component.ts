@@ -1,11 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { mensajeError } from '../socios.errores';
 import { TextosSociosService } from '../socios.i18n';
-import { CANALES, CanalVenta, PERMISOS, PLANES, Permiso, Plan, Socio, SocioCreado, SociosService } from '../socios.service';
+import { CANALES, CanalVenta, LimitesPlan, PERMISOS, Permiso, Plan, Socio, SocioCreado, SociosService } from '../socios.service';
 import { CredencialesDialogoComponent } from './credenciales-dialogo.component';
 
 type Paso = 1 | 2 | 3;
@@ -14,15 +14,16 @@ type Paso = 1 | 2 | 3;
   selector: 'app-socio-alta',
   imports: [ReactiveFormsModule, RouterLink, CredencialesDialogoComponent],
   templateUrl: './socio-alta.component.html',
-  styleUrl: '../socios.scss',
+  styleUrls: ['../socios.scss', './socio-alta.component.scss'],
 })
-export class SocioAltaComponent {
+export class SocioAltaComponent implements OnInit {
   private readonly servicio = inject(SociosService);
   private readonly fb = inject(FormBuilder).nonNullable;
   readonly textos = inject(TextosSociosService);
 
   readonly canales = CANALES;
-  readonly planes = PLANES;
+  readonly planes = signal<LimitesPlan[]>([]);
+  readonly errorPlanes = signal<string | null>(null);
   readonly permisos = PERMISOS;
 
   readonly formulario = this.fb.group({
@@ -38,8 +39,18 @@ export class SocioAltaComponent {
   readonly intentoPermisos = signal(false);
   readonly credenciales = signal<SocioCreado | null>(null);
   readonly activado = signal<Socio | null>(null);
+  private readonly planSeleccionado = signal<Plan | ''>('');
+  readonly limitesElegidos = computed(() => this.planes().find((p) => p.plan === this.planSeleccionado()) ?? null);
 
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('tituloPaso');
+
+  ngOnInit(): void {
+    this.formulario.controls.plan.valueChanges.subscribe((plan) => this.planSeleccionado.set(plan));
+    this.servicio.planes().subscribe({
+      next: (planes) => this.planes.set(planes),
+      error: () => this.errorPlanes.set(this.textos.t().planesNoDisponibles),
+    });
+  }
 
   seleccionados(): Permiso[] {
     const valores = this.formulario.controls.permisos.getRawValue();
