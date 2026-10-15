@@ -1,6 +1,14 @@
 /** Reglas de presentación de D02, puras (W11-P18): colores, valoraciones y barras. */
 import { TextosPerfilamiento } from './perfilamiento.i18n';
-import { Direccion, EstadoPerfil, Factor, NivelRiesgo, PerfilRespuesta } from './perfilamiento.modelo';
+import {
+  CausaConsentimiento,
+  Direccion,
+  EstadoFuente,
+  EstadoPerfil,
+  Factor,
+  NivelRiesgo,
+  PerfilRespuesta,
+} from './perfilamiento.modelo';
 
 /** Tono visual de los tokens --sv-*: verde, naranja, rojo o gris. */
 export type Tono = 'ok' | 'alerta' | 'error' | 'neutro';
@@ -42,4 +50,30 @@ export function claseTiempo(duracionMs: number, presupuestoMs: number): Tono {
 
 export function textoFuentes(t: TextosPerfilamiento, perfil: Pick<PerfilRespuesta, 'fuentesConsultadas' | 'fuentesDeclaradas'>): string {
   return t.fuentesDisponibles(perfil.fuentesConsultadas, perfil.fuentesDeclaradas);
+}
+
+const TONO_FUENTE: Record<EstadoFuente, Tono> = {
+  CONSULTADA: 'ok',
+  NO_AUTORIZADA: 'neutro',
+  NO_CONSULTADA: 'neutro',
+  TIEMPO_AGOTADO: 'alerta',
+  NO_DISPONIBLE: 'error',
+  RESPUESTA_INVALIDA: 'error',
+};
+
+/** Insignia del estado de una fuente en la tabla de linaje (W10-P13). */
+export function claseEstadoFuente(estado: EstadoFuente): Tono {
+  return TONO_FUENTE[estado];
+}
+
+/** D03/DT-05: el cliente no autorizó sus datos financieros y hay que pedirle el consentimiento. */
+export function sinConsentimiento(perfil: Pick<PerfilRespuesta, 'accionSugerida'>): boolean {
+  return perfil.accionSugerida === 'COMPLETAR_CONSENTIMIENTO';
+}
+
+const CAUSAS: readonly CausaConsentimiento[] = ['REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO'];
+
+/** La causa del rechazo si tiene texto para el asesor (W10-P14); otra causa no se muestra. */
+export function motivoConsentimiento(causa: string | null | undefined): CausaConsentimiento | null {
+  return CAUSAS.find((c) => c === causa) ?? null;
 }

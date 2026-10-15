@@ -1,0 +1,34 @@
+@let t = textos.t();
+<section class="card">
+  <div class="tabla-scroll">
+    <table class="data">
+      <caption>{{ t.linajeTitulo }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ t.colFuente }}</th>
+          <th scope="col">{{ t.colTipo }}</th>
+          <th scope="col">{{ t.colVersion }}</th>
+          <th scope="col">{{ t.colConfianza }}</th>
+          <th scope="col">{{ t.colConsultada }}</th>
+          <th scope="col">{{ t.colEstado }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (fuente of fuentes(); track fuente.fuente) {
+          <tr>
+            <td>{{ textos.fuente(fuente.fuente) }}</td>
+            <td>{{ textos.tipoFuente(fuente.tipo) }}</td>
+            <td class="mono">{{ fuente.versionFuente ?? '—' }}</td>
+            <td class="mono">{{ fuente.confianza === null ? '—' : textos.numero(fuente.confianza, 2) }}</td>
+            <td class="mono">{{ textos.hora(fuente.consultadaEn) }}</td>
+            <td><span class="tag tag--{{ tono(fuente.estado) }}">{{ textos.estadoFuente(fuente.estado) }}</span></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="nota">{{ t.notaLinaje }}</p>
+  @if (sinConsentimiento()) {
+    <p class="nota">{{ t.notaSinInvocar }}</p>
+  }
+</section>

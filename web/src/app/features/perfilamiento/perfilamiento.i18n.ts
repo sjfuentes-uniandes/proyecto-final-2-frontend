@@ -1,7 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 
 import { Idioma, IdiomaService } from '../../core/i18n/idioma.service';
-import { Direccion, Fuente, MotivoDato, NivelRiesgo } from './perfilamiento.modelo';
+import { CausaConsentimiento, Direccion, EstadoFuente, Fuente, MotivoDato, NivelRiesgo, TipoFuente } from './perfilamiento.modelo';
 
 type Texto = string | ((...valores: never[]) => string);
 
@@ -83,6 +83,21 @@ const ES = {
   ofertaProxima: 'La oferta se habilita en una próxima versión',
   cargandoPerfil: 'Cargando el perfil…',
   perfilNoEncontrado: 'El perfil no existe o ya no está disponible.',
+
+  linajeTitulo: 'Fuentes utilizadas y su linaje',
+  colFuente: 'Fuente',
+  colTipo: 'Tipo',
+  colVersion: 'Versión',
+  colConfianza: 'Confianza',
+  colConsultada: 'Consultada',
+  colEstado: 'Estado',
+  notaLinaje:
+    'Cada fuente se consulta solo si su permiso está vigente. La fuente no autorizada no se invoca y su ausencia se refleja en el puntaje de confianza, no en un error.',
+  notaSinInvocar: 'Ninguna fuente sin permiso fue invocada. El intento queda registrado en el historial de decisiones del cliente.',
+  sinConsentimientoTitulo: 'El cliente no autorizó el uso de sus datos financieros.',
+  sinConsentimientoTexto: 'Sin esa autorización no es posible clasificar su riesgo.',
+  motivoConsentimiento: (motivo: string) => `Motivo: ${motivo}.`,
+  solicitarConsentimiento: 'Solicitar consentimiento',
 };
 
 export type TextosPerfilamiento = typeof ES;
@@ -165,6 +180,21 @@ const EN: TextosPerfilamiento = {
   ofertaProxima: 'The offer will be enabled in an upcoming release',
   cargandoPerfil: 'Loading the profile…',
   perfilNoEncontrado: 'The profile does not exist or is no longer available.',
+
+  linajeTitulo: 'Sources used and their lineage',
+  colFuente: 'Source',
+  colTipo: 'Type',
+  colVersion: 'Version',
+  colConfianza: 'Confidence',
+  colConsultada: 'Queried',
+  colEstado: 'Status',
+  notaLinaje:
+    'Each source is queried only if its permission is in force. An unauthorized source is not invoked and its absence is reflected in the confidence score, not as an error.',
+  notaSinInvocar: 'No source without permission was invoked. The attempt is recorded in the customer decision history.',
+  sinConsentimientoTitulo: 'The customer did not authorize the use of their financial data.',
+  sinConsentimientoTexto: 'Without that authorization the customer risk cannot be classified.',
+  motivoConsentimiento: (motivo: string) => `Reason: ${motivo}.`,
+  solicitarConsentimiento: 'Request consent',
 };
 
 const ACENTOS: Record<string, string> = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', A: 'Å', E: 'Ë', I: 'Ï', O: 'Ö', U: 'Ü' };
@@ -219,6 +249,14 @@ const CATALOGO = {
       FA_INGRESOS_AGREGADOS: 'Ingresos agregados',
       DA_REGISTROS_PUBLICOS: 'Registros públicos del Estado',
     },
+    tiposFuente: { FINANZAS_ABIERTAS: 'Finanzas Abiertas', DATOS_ABIERTOS: 'Datos Abiertos', DECLARADO: 'Dato declarado' },
+    estadosFuente: {
+      CONSULTADA: 'Usada', NO_AUTORIZADA: 'No autorizada', NO_CONSULTADA: 'No consultada',
+      TIEMPO_AGOTADO: 'Sin respuesta', NO_DISPONIBLE: 'No disponible', RESPUESTA_INVALIDA: 'Respuesta inválida',
+    },
+    causasConsentimiento: {
+      REVOCADO: 'consentimiento revocado', VENCIDO: 'consentimiento vencido', SIN_CONSENTIMIENTO: 'sin consentimiento registrado',
+    },
     motivos: {
       NO_AUTORIZADO: 'No autorizado',
       NO_DISPONIBLE_EN_FUENTE: 'No disponible en la fuente',
@@ -257,6 +295,14 @@ const CATALOGO = {
       FA_HISTORIAL_PAGOS_12M: '12-month payment history',
       FA_INGRESOS_AGREGADOS: 'Aggregated income',
       DA_REGISTROS_PUBLICOS: 'Public government records',
+    },
+    tiposFuente: { FINANZAS_ABIERTAS: 'Open Finance', DATOS_ABIERTOS: 'Open Data', DECLARADO: 'Declared data' },
+    estadosFuente: {
+      CONSULTADA: 'Used', NO_AUTORIZADA: 'Not authorized', NO_CONSULTADA: 'Not queried',
+      TIEMPO_AGOTADO: 'No response', NO_DISPONIBLE: 'Not available', RESPUESTA_INVALIDA: 'Invalid response',
+    },
+    causasConsentimiento: {
+      REVOCADO: 'consent revoked', VENCIDO: 'consent expired', SIN_CONSENTIMIENTO: 'no consent on record',
     },
     motivos: {
       NO_AUTORIZADO: 'Not authorized',
@@ -304,6 +350,18 @@ export class TextosPerfilamientoService {
 
   motivo(motivo: MotivoDato): string {
     return this.marcar(this.catalogo().motivos[motivo]);
+  }
+
+  tipoFuente(tipo: TipoFuente): string {
+    return this.marcar(this.catalogo().tiposFuente[tipo]);
+  }
+
+  estadoFuente(estado: EstadoFuente): string {
+    return this.marcar(this.catalogo().estadosFuente[estado]);
+  }
+
+  causaConsentimiento(causa: CausaConsentimiento): string {
+    return this.marcar(this.catalogo().causasConsentimiento[causa]);
   }
 
   /** Número con el locale del usuario; `decimales` fija los decimales (p. ej., 2 para la confianza). */

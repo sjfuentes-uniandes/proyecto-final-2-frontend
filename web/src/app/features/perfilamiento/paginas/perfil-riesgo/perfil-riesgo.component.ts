@@ -4,12 +4,13 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
 import { PanelFactoresComponent } from '../../componentes/panel-factores/panel-factores.component';
+import { TablaLinajeComponent } from '../../componentes/tabla-linaje/tabla-linaje.component';
 import { TarjetaMetricaComponent } from '../../componentes/tarjeta-metrica/tarjeta-metrica.component';
 import { ErrorPerfilamiento, errorPerfilamiento } from '../../perfilamiento.errores';
 import { TextosPerfilamientoService } from '../../perfilamiento.i18n';
 import { PerfilRespuesta } from '../../perfilamiento.modelo';
 import { PerfilamientoService } from '../../perfilamiento.service';
-import { claseNivel, claseTiempo, textoFuentes } from '../../presentacion';
+import { claseNivel, claseTiempo, motivoConsentimiento, sinConsentimiento, textoFuentes } from '../../presentacion';
 
 type Carga =
   | { estado: 'cargando' }
@@ -20,7 +21,7 @@ type Carga =
 /** D02: perfil de riesgo con sus métricas y factores, o los datos requeridos si es insuficiente. */
 @Component({
   selector: 'app-perfil-riesgo',
-  imports: [TarjetaMetricaComponent, PanelFactoresComponent],
+  imports: [TarjetaMetricaComponent, PanelFactoresComponent, TablaLinajeComponent],
   templateUrl: './perfil-riesgo.component.html',
   styleUrls: ['../../perfilamiento.scss', './perfil-riesgo.component.scss'],
 })
@@ -81,6 +82,13 @@ export class PerfilRiesgoComponent {
   readonly tonoNivel = (perfil: PerfilRespuesta) => claseNivel(perfil.estado, perfil.nivelRiesgo);
   readonly tonoTiempo = (perfil: PerfilRespuesta) => claseTiempo(perfil.duracionMs, perfil.presupuestoMs);
   readonly fuentes = (perfil: PerfilRespuesta) => textoFuentes(this.textos.t(), perfil);
+  readonly sinConsentimiento = sinConsentimiento;
+
+  /** " Motivo: consentimiento revocado." si la causa tiene texto; vacío si no (W10-P14). */
+  motivoSinConsentimiento(perfil: PerfilRespuesta): string {
+    const causa = motivoConsentimiento(perfil.consentimiento?.causa);
+    return causa ? this.textos.t().motivoConsentimiento(this.textos.causaConsentimiento(causa)) : '';
+  }
 
   /** "Ver factores": desplaza la vista y mueve el foco al panel de factores (o de datos requeridos). */
   verFactores(): void {

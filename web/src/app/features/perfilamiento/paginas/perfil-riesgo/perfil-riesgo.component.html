@@ -50,6 +50,12 @@
     <li>3 · {{ t.paso3 }}</li>
   </ol>
 
+  @if (sinConsentimiento(p)) {
+    <p class="nota nota--alerta" role="status">
+      <strong>{{ t.sinConsentimientoTitulo }}</strong> {{ t.sinConsentimientoTexto }} {{ motivoSinConsentimiento(p) }}
+    </p>
+  }
+
   <section class="metricas" [attr.aria-label]="t.metricas">
     <app-tarjeta-metrica [etiqueta]="t.metricaNivel" [valor]="valorNivel(p)" [detalle]="detalleNivel(p)" [tono]="tonoNivel(p)" />
     <app-tarjeta-metrica [etiqueta]="t.metricaConfianza" [valor]="textos.numero(p.confianza, 2)" [detalle]="fuentes(p)" />
@@ -60,7 +66,7 @@
 
   <div class="detalle">
     <div class="columna">
-      <!-- W10-P13: tabla de linaje -->
+      <app-tabla-linaje [fuentes]="p.fuentes" [sinConsentimiento]="sinConsentimiento(p)" />
     </div>
     <div class="lateral">
       @if (insuficiente(p)) {
@@ -82,8 +88,16 @@
       } @else {
         <app-panel-factores [factores]="p.factores" />
       }
-      <button class="btn btn--primario" type="button" disabled aria-describedby="ayuda-oferta">{{ t.generarOferta }}</button>
-      <p class="ayuda ayuda--centro" id="ayuda-oferta">{{ t.ofertaProxima }}</p>
+      @if (sinConsentimiento(p)) {
+        <!-- DT-05/DT-23: reemplaza a "Generar la oferta" hasta que exista la gestión de consentimientos. -->
+        <button class="btn btn--primario" type="button" disabled aria-describedby="ayuda-solicitar">
+          {{ t.solicitarConsentimiento }}
+        </button>
+        <p class="ayuda ayuda--centro" id="ayuda-solicitar">{{ t.disponibleConConsentimientos }}</p>
+      } @else {
+        <button class="btn btn--primario" type="button" disabled aria-describedby="ayuda-oferta">{{ t.generarOferta }}</button>
+        <p class="ayuda ayuda--centro" id="ayuda-oferta">{{ t.ofertaProxima }}</p>
+      }
     </div>
   </div>
 }

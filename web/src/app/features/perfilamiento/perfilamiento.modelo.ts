@@ -20,6 +20,8 @@ export type EstadoFuente =
   | 'RESPUESTA_INVALIDA';
 export type AccionSugerida = 'COMPLETAR_CONSENTIMIENTO' | 'RECALCULAR';
 export type DecisionConsentimiento = 'PERMITIDO' | 'PERMITIDO_PARCIAL' | 'RECHAZADO';
+/** Causas con texto para el asesor (contrato propuesto de clientes, 01 §3.4.1); `causa` llega como string. */
+export type CausaConsentimiento = 'REVOCADO' | 'VENCIDO' | 'SIN_CONSENTIMIENTO';
 
 /** Único producto en S1 (DT-09). */
 export const PRODUCTO_VIDA_HIPOTECARIO = 'vida-hipotecario';

@@ -6,7 +6,7 @@ import { ConfigService } from '../../../../core/config/app-config';
 import { Idioma, IdiomaService } from '../../../../core/i18n/idioma.service';
 import { violacionesA11y } from '../../../../testing';
 import { PerfilRespuesta } from '../../perfilamiento.modelo';
-import { BASE_PERFILES, PERFIL_C01, PERFIL_C03, PERFIL_ID } from '../../perfilamiento.testing';
+import { BASE_PERFILES, PERFIL_C01, PERFIL_C03, PERFIL_C08, PERFIL_C16, PERFIL_ID } from '../../perfilamiento.testing';
 import { PerfilRiesgoComponent } from './perfil-riesgo.component';
 
 describe('PerfilRiesgoComponent (D02)', () => {
@@ -101,10 +101,10 @@ describe('PerfilRiesgoComponent (D02)', () => {
       expect(document.activeElement?.id).toBe('titulo-factores');
     });
 
-    it('reserva la columna izquierda, vacía, para la tabla de linaje (W10-P13)', () => {
-      const columna = html().querySelector('.detalle > .columna');
-      expect(columna).not.toBeNull();
-      expect(columna?.children.length).toBe(0);
+    it('muestra la tabla de linaje en la columna izquierda (W10-P13), sin la variante de consentimiento', () => {
+      expect(html().querySelector('.detalle > .columna app-tabla-linaje caption')?.textContent).toBe('Fuentes utilizadas y su linaje');
+      expect(html().querySelector('.nota--alerta')).toBeNull();
+      expect(html().textContent).not.toContain('Solicitar consentimiento');
     });
   });
 
@@ -204,6 +204,75 @@ describe('PerfilRiesgoComponent (D02)', () => {
         fixture.componentRef.setInput('perfilId', PERFIL_ID);
         fixture.detectChanges();
         fallar(404);
+        expect(await violacionesA11y(html())).toEqual([]);
+      });
+    }
+  });
+
+  describe('W10-P14 · sin consentimiento (DT-05)', () => {
+    it('WT-W10-06 · C08: alerta con el motivo, solicitar consentimiento deshabilitado y sin clasificación', () => {
+      montar('es-CO', PERFIL_C08.id);
+      responder(PERFIL_C08, PERFIL_C08.id);
+      const alerta = html().querySelector('.nota--alerta[role=status]');
+      expect(alerta?.querySelector('strong')?.textContent).toBe('El cliente no autorizó el uso de sus datos financieros.');
+      expect(alerta?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'El cliente no autorizó el uso de sus datos financieros. Sin esa autorización no es posible clasificar su riesgo. ' +
+          'Motivo: consentimiento revocado.',
+      );
+      const solicitar = Array.from(html().querySelectorAll<HTMLButtonElement>('.lateral > button')).pop()!;
+      expect(solicitar.textContent?.trim()).toBe('Solicitar consentimiento');
+      expect(solicitar.disabled).toBeTrue();
+      expect(html().querySelector(`#${solicitar.getAttribute('aria-describedby')}`)?.textContent)
+        .toBe('Disponible cuando exista la gestión de consentimientos');
+      expect(html().textContent).not.toContain('Generar la oferta');
+      expect(textos('app-tarjeta-metrica .valor')[0]).toBe('Información insuficiente');
+      expect(textos('.requerido__motivo')).toEqual(['No autorizado', 'No autorizado']);
+      expect(textos('app-tabla-linaje .tag')).toEqual(['No autorizada', 'No autorizada', 'No autorizada', 'No autorizada']);
+      expect(textos('app-tabla-linaje .nota')).toContain(
+        'Ninguna fuente sin permiso fue invocada. El intento queda registrado en el historial de decisiones del cliente.',
+      );
+    });
+
+    it('cada causa tiene su motivo; una causa sin texto o ausente no agrega motivo', () => {
+      const casos: [string | null, string][] = [
+        ['VENCIDO', 'Motivo: consentimiento vencido.'],
+        ['SIN_CONSENTIMIENTO', 'Motivo: sin consentimiento registrado.'],
+        ['PROPOSITO_NO_AUTORIZADO', ''],
+        [null, ''],
+      ];
+      montar('es-CO', PERFIL_C08.id);
+      responder(PERFIL_C08, PERFIL_C08.id);
+      for (const [causa, esperado] of casos) {
+        const perfil = { ...PERFIL_C08, consentimiento: { ...PERFIL_C08.consentimiento!, causa } };
+        expect(fixture.componentInstance.motivoSinConsentimiento(perfil)).withContext(String(causa)).toBe(esperado);
+      }
+    });
+
+    it('WT-W10-07 · C16: consentimiento parcial, fuentes autorizadas "No consultada" y sin motivo', () => {
+      montar('es-CO', PERFIL_C16.id);
+      responder(PERFIL_C16, PERFIL_C16.id);
+      expect(html().querySelector('.nota--alerta')?.textContent).not.toContain('Motivo');
+      expect(textos('app-tabla-linaje .tag')).toEqual(['No consultada', 'No autorizada', 'No consultada', 'No consultada']);
+    });
+
+    it('se presenta en en-US', () => {
+      montar('en-US', PERFIL_C08.id);
+      responder(PERFIL_C08, PERFIL_C08.id);
+      expect(html().querySelector('.nota--alerta')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'The customer did not authorize the use of their financial data. Without that authorization the customer risk cannot ' +
+          'be classified. Reason: consent revoked.',
+      );
+      expect(Array.from(html().querySelectorAll('.lateral > button')).pop()?.textContent?.trim()).toBe('Request consent');
+    });
+
+    for (const idioma of ['es-CO', 'en-US'] as Idioma[]) {
+      it(`WT-W10-08 · cumple axe-core (${idioma})`, async () => {
+        montar(idioma, PERFIL_C08.id);
+        responder(PERFIL_C08, PERFIL_C08.id);
+        expect(await violacionesA11y(html())).toEqual([]);
+        fixture.componentRef.setInput('perfilId', PERFIL_C16.id);
+        fixture.detectChanges();
+        responder(PERFIL_C16, PERFIL_C16.id);
         expect(await violacionesA11y(html())).toEqual([]);
       });
     }

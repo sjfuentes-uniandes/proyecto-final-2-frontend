@@ -17,6 +17,8 @@
 h3:focus { outline: 3px solid var(--sv-azul-medio); outline-offset: 4px; }
 
 .alerta p { margin: 0; }
+/* WCAG AA: el naranja del token no alcanza 4,5:1 sobre su fondo. */
+.nota--alerta { color: #7a4a00; }
 .seguimiento { font-variant-numeric: tabular-nums; }
 
 @media (max-width: 1100px) {

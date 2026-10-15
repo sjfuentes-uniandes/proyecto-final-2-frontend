@@ -1,6 +1,16 @@
 import { TEXTOS } from './perfilamiento.i18n';
 import { Factor } from './perfilamiento.modelo';
-import { claseNivel, claseTiempo, claseValoracion, etiquetaValoracion, porcentajeBarra, textoFuentes } from './presentacion';
+import {
+  claseEstadoFuente,
+  claseNivel,
+  claseTiempo,
+  claseValoracion,
+  etiquetaValoracion,
+  motivoConsentimiento,
+  porcentajeBarra,
+  sinConsentimiento,
+  textoFuentes,
+} from './presentacion';
 
 const factor = (cambios: Partial<Factor> = {}): Factor => ({
   codigo: 'PUNTUALIDAD_PAGOS', fuente: 'FA_HISTORIAL_PAGOS_12M', peso: 0.3, estado: 'EVALUADO',
@@ -57,5 +67,29 @@ describe('Presentación de D02', () => {
   it('textoFuentes', () => {
     expect(textoFuentes(TEXTOS['es-CO'], { fuentesConsultadas: 3, fuentesDeclaradas: 4 })).toBe('3 de 4 fuentes disponibles');
     expect(textoFuentes(TEXTOS['en-US'], { fuentesConsultadas: 4, fuentesDeclaradas: 4 })).toBe('4 of 4 sources available');
+  });
+});
+
+describe('Presentación de la variante sin consentimiento y del linaje (W10-P13, W10-P14)', () => {
+  it('claseEstadoFuente', () => {
+    const casos = [
+      ['CONSULTADA', 'ok'], ['NO_AUTORIZADA', 'neutro'], ['NO_CONSULTADA', 'neutro'],
+      ['TIEMPO_AGOTADO', 'alerta'], ['NO_DISPONIBLE', 'error'], ['RESPUESTA_INVALIDA', 'error'],
+    ] as const;
+    for (const [estado, tono] of casos) {
+      expect(claseEstadoFuente(estado)).withContext(estado).toBe(tono);
+    }
+  });
+
+  it('sinConsentimiento solo con la acción COMPLETAR_CONSENTIMIENTO', () => {
+    expect(sinConsentimiento({ accionSugerida: 'COMPLETAR_CONSENTIMIENTO' })).toBeTrue();
+    expect(sinConsentimiento({ accionSugerida: 'RECALCULAR' })).toBeFalse();
+    expect(sinConsentimiento({ accionSugerida: null })).toBeFalse();
+  });
+
+  it('motivoConsentimiento', () => {
+    expect(['REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', 'PROPOSITO_NO_AUTORIZADO', null, undefined].map(motivoConsentimiento)).toEqual([
+      'REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', null, null, null,
+    ]);
   });
 });

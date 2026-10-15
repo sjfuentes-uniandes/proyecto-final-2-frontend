@@ -1,4 +1,4 @@
-import { Factor, PerfilRespuesta } from './perfilamiento.modelo';
+import { Factor, FuenteLinaje, PerfilRespuesta } from './perfilamiento.modelo';
 
 /** Datos sintéticos de las pruebas web: las respuestas de bff-web para C01 y C03 (01 §3.5). */
 export const BASE_PERFILES = 'https://api/web/v1/perfiles';
@@ -57,4 +57,58 @@ export const PERFIL_C03: PerfilRespuesta = {
   puntaje: null,
   factores: [],
   datosRequeridos: [{ campo: 'moras_12m', fuente: 'FA_HISTORIAL_PAGOS_12M', motivo: 'NO_DISPONIBLE_EN_FUENTE' }],
+};
+
+const sinConsultar = (fuente: FuenteLinaje, estado: FuenteLinaje['estado']): FuenteLinaje => ({
+  ...fuente, estado, versionFuente: null, confianza: null, consultadaEn: null, duracionMs: null,
+});
+const [PRODUCTOS, HISTORIAL, INGRESOS, REGISTROS] = PERFIL_C01.fuentes;
+
+/** C02: consentimiento parcial sin ingresos agregados. */
+export const PERFIL_C02: PerfilRespuesta = {
+  ...PERFIL_C01,
+  id: '00000000-0000-4000-a000-000000000002',
+  puntaje: 75,
+  confianza: 0.87,
+  fuentes: [PRODUCTOS, HISTORIAL, sinConsultar(INGRESOS, 'NO_AUTORIZADA'), REGISTROS],
+  fuentesConsultadas: 3,
+};
+
+/** C06: Datos Abiertos no respondió a tiempo (perfil degradado). */
+export const PERFIL_C06: PerfilRespuesta = {
+  ...PERFIL_C01,
+  id: '00000000-0000-4000-a000-000000000006',
+  estado: 'DEGRADADO',
+  puntaje: 74.09,
+  confianza: 0.79,
+  accionSugerida: 'RECALCULAR',
+  fuentes: [PRODUCTOS, HISTORIAL, INGRESOS, sinConsultar(REGISTROS, 'TIEMPO_AGOTADO')],
+  fuentesConsultadas: 3,
+};
+
+/** C08: consentimiento revocado; ninguna fuente se invoca (DT-05). */
+export const PERFIL_C08: PerfilRespuesta = {
+  ...PERFIL_C03,
+  id: '00000000-0000-4000-a000-000000000008',
+  confianza: 0,
+  accionSugerida: 'COMPLETAR_CONSENTIMIENTO',
+  consentimiento: { decision: 'RECHAZADO', causa: 'REVOCADO', vigenteHasta: null },
+  datosRequeridos: [
+    { campo: 'cuota_mensual_obligaciones', fuente: 'FA_PRODUCTOS_VIGENTES', motivo: 'NO_AUTORIZADO' },
+    { campo: 'moras_12m', fuente: 'FA_HISTORIAL_PAGOS_12M', motivo: 'NO_AUTORIZADO' },
+  ],
+  fuentes: PERFIL_C01.fuentes.map((f) => sinConsultar(f, 'NO_AUTORIZADA')),
+  fuentesConsultadas: 0,
+};
+
+/** C16: sin historial de pagos; las fuentes autorizadas quedan sin consultar (DT-07). */
+export const PERFIL_C16: PerfilRespuesta = {
+  ...PERFIL_C08,
+  id: '00000000-0000-4000-a000-000000000010',
+  consentimiento: { decision: 'PERMITIDO_PARCIAL', causa: null, vigenteHasta: '2027-10-01T00:00:00Z' },
+  datosRequeridos: [{ campo: 'moras_12m', fuente: 'FA_HISTORIAL_PAGOS_12M', motivo: 'NO_AUTORIZADO' }],
+  fuentes: [
+    sinConsultar(PRODUCTOS, 'NO_CONSULTADA'), sinConsultar(HISTORIAL, 'NO_AUTORIZADA'),
+    sinConsultar(INGRESOS, 'NO_CONSULTADA'), sinConsultar(REGISTROS, 'NO_CONSULTADA'),
+  ],
 };
