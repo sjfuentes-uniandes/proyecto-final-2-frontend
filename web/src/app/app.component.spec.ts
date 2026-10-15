@@ -41,4 +41,21 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     expect(html(fixture).textContent).not.toContain('Administración');
   });
+
+  it('un asesor ve Cotización como enlace al perfilamiento y su rol', async () => {
+    await iniciarSesion({ name: 'Carlos Portillo', 'cognito:groups': ['asesores'] });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const cotizacion = html(fixture).querySelector<HTMLAnchorElement>('a.nav__item');
+    expect(cotizacion?.textContent?.trim()).toBe('Cotización');
+    expect(cotizacion?.getAttribute('href')).toBe('/perfilamiento');
+    expect(html(fixture).querySelector('.usuario')?.textContent).toBe('Carlos Portillo · Asesor');
+  });
+
+  it('sin el grupo asesores, Cotización sigue deshabilitada', async () => {
+    await iniciarSesion({ name: 'Ana', 'cognito:groups': ['operacion'] });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    expect(html(fixture).querySelector('span.nav__item--off')?.textContent?.trim()).toBe('Cotización');
+  });
 });
