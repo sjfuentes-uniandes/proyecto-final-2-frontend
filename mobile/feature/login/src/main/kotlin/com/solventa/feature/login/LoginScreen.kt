@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -107,15 +108,15 @@ private fun EncabezadoSolventa() {
     }
     Spacer(Modifier.height(16.dp))
     Text(
-        "Solventa",
+        stringResource(R.string.login_marca),
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold,
         color = colores.textoPrimario,
     )
     Spacer(Modifier.height(4.dp))
-    Text("Bienvenido", style = MaterialTheme.typography.bodyLarge, color = colores.textoPrimario)
+    Text(stringResource(R.string.login_bienvenido), style = MaterialTheme.typography.bodyLarge, color = colores.textoPrimario)
     Text(
-        "Use un método de autenticación",
+        stringResource(R.string.login_subtitulo),
         style = MaterialTheme.typography.bodyMedium,
         color = colores.textoSecundario,
         textAlign = TextAlign.Center,
@@ -141,13 +142,13 @@ private fun MensajeAdvertencia(mensaje: MensajeLogin, modifier: Modifier = Modif
     val colores = SolventaTema.colores
     Column(modifier = modifier) {
         Text(
-            mensaje.titulo,
+            stringResource(mensaje.tituloRes),
             color = colores.advertencia,
             fontWeight = FontWeight.SemiBold,
             style = MaterialTheme.typography.bodyMedium,
         )
         Text(
-            mensaje.subtitulo,
+            stringResource(mensaje.subtituloRes),
             color = colores.advertencia,
             style = MaterialTheme.typography.bodySmall,
             textDecoration = TextDecoration.Underline,
@@ -169,15 +170,15 @@ private fun PanelCredenciales(
     Surface(shape = RoundedCornerShape(20.dp), color = colores.panel, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
             CampoEtiquetado(
-                etiqueta = "Correo electrónico",
+                etiqueta = stringResource(R.string.login_etiqueta_correo),
                 valor = uiState.correo,
                 onValorCambiado = onCorreoCambiado,
                 colores = colores,
-                placeholder = "user@domain.com",
+                placeholder = stringResource(R.string.login_placeholder_correo),
             )
             Spacer(Modifier.height(12.dp))
             CampoEtiquetado(
-                etiqueta = "Contraseña",
+                etiqueta = stringResource(R.string.login_etiqueta_contrasena),
                 valor = uiState.contrasena,
                 onValorCambiado = onContrasenaCambiada,
                 colores = colores,
@@ -188,12 +189,12 @@ private fun PanelCredenciales(
 
             uiState.errorCredenciales?.let { error ->
                 Spacer(Modifier.height(8.dp))
-                Text(error, color = colores.advertencia, style = MaterialTheme.typography.bodySmall)
+                Text(error.textoResuelto(), color = colores.advertencia, style = MaterialTheme.typography.bodySmall)
             }
 
             Spacer(Modifier.height(4.dp))
             TextButton(onClick = onOlvideClaveClick, modifier = Modifier.align(Alignment.End)) {
-                Text("Olvidé mi contraseña", color = colores.acento)
+                Text(stringResource(R.string.login_olvide_clave), color = colores.acento)
             }
 
             Spacer(Modifier.height(8.dp))
@@ -204,14 +205,18 @@ private fun PanelCredenciales(
                 colors = ButtonDefaults.buttonColors(containerColor = colores.acento),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (uiState.cargando) "Ingresando…" else "Ingresar")
+                Text(stringResource(if (uiState.cargando) R.string.login_boton_ingresando else R.string.login_boton_ingresar))
             }
 
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Text("No tiene una cuenta? ", color = colores.textoSecundario, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "${stringResource(R.string.login_sin_cuenta)} ",
+                    color = colores.textoSecundario,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 TextButton(onClick = onRegistrarmeClick) {
-                    Text("Registrarme", color = colores.acento)
+                    Text(stringResource(R.string.login_registrarme), color = colores.acento)
                 }
             }
         }
@@ -227,7 +232,7 @@ private fun PanelBiometrico(
     Surface(shape = RoundedCornerShape(20.dp), color = colores.panel, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "Ingreso biométrico",
+                stringResource(R.string.login_titulo_biometrico),
                 fontWeight = FontWeight.Bold,
                 color = colores.textoPrimario,
                 style = MaterialTheme.typography.titleMedium,
@@ -239,7 +244,7 @@ private fun PanelBiometrico(
                 colors = ButtonDefaults.buttonColors(containerColor = colores.acento),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Ingreso con biometría")
+                Text(stringResource(R.string.login_boton_biometria))
             }
             mensaje?.let {
                 Spacer(Modifier.height(12.dp))
@@ -274,7 +279,9 @@ private fun CampoEtiquetado(
                 IconButton(onClick = onCambiarVisibilidad) {
                     Icon(
                         imageVector = iconoVisibilidad(contrasenaVisible),
-                        contentDescription = if (contrasenaVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                        contentDescription = stringResource(
+                            if (contrasenaVisible) R.string.login_ocultar_contrasena else R.string.login_mostrar_contrasena,
+                        ),
                     )
                 }
             }

@@ -5,7 +5,7 @@ plugins {
     id("solventa.android.compose")
 }
 
-// Config pública (no secretos) de Cognito para esta máquina de desarrollo; vive en
+// Config pública (no secretos) de Cognito/bff-movil para esta máquina de desarrollo; vive en
 // local.properties (gitignored). Ver mobile/local.properties.example para las claves esperadas.
 val propiedadesLocales = Properties().apply {
     val archivo = rootProject.file("local.properties")
@@ -23,6 +23,9 @@ android {
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // 10.0.2.2 es cómo el emulador de Android ve el `localhost` de la máquina anfitriona
+        // (bff-movil corriendo en docker compose, ver README del repo back).
+        buildConfigField("String", "BFF_MOVIL_BASE_URL", "\"${propiedadLocal("bffMovilBaseUrl", "http://10.0.2.2:8081/")}\"")
         buildConfigField("String", "COGNITO_POOL_ID", "\"${propiedadLocal("cognitoPoolId", "")}\"")
         buildConfigField("String", "COGNITO_CLIENT_ID", "\"${propiedadLocal("cognitoClientId", "")}\"")
         buildConfigField("String", "COGNITO_REGION", "\"${propiedadLocal("cognitoRegion", "us-east-1")}\"")
@@ -41,6 +44,7 @@ android {
 
 dependencies {
     implementation(project(":core:auth"))
+    implementation(project(":core:network"))
     implementation(project(":core:security"))
     implementation(project(":core:designsystem"))
     implementation(project(":feature:login"))

@@ -6,6 +6,8 @@ import com.solventa.core.auth.CognitoClienteIdentidad
 import com.solventa.core.auth.ConfiguracionCognito
 import com.solventa.core.auth.GestorSesion
 import com.solventa.core.auth.ResultadoAutenticacion
+import com.solventa.core.network.BffMovilCliente
+import com.solventa.core.network.RedModule
 import com.solventa.core.security.AlmacenSesionSeguraKeystore
 import com.solventa.core.security.GestorBiometria
 
@@ -18,6 +20,8 @@ class SolventaApp : Application() {
         private set
     lateinit var gestorBiometria: GestorBiometria
         private set
+    lateinit var bffMovilCliente: BffMovilCliente
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -26,6 +30,9 @@ class SolventaApp : Application() {
 
         val almacenSesionSegura = AlmacenSesionSeguraKeystore(this)
         gestorSesion = GestorSesion(crearClienteIdentidad(), almacenSesionSegura)
+
+        val api = RedModule.crearApi(BuildConfig.BFF_MOVIL_BASE_URL, gestorSesion)
+        bffMovilCliente = BffMovilCliente(api)
     }
 
     private fun crearClienteIdentidad(): ClienteIdentidad {

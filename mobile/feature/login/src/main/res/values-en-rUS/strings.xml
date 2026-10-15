@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_marca">Solventa</string>
+    <string name="login_bienvenido">Welcome</string>
+    <string name="login_subtitulo">Use an authentication method</string>
+
+    <string name="login_etiqueta_correo">Email</string>
+    <string name="login_placeholder_correo">user@domain.com</string>
+    <string name="login_etiqueta_contrasena">Password</string>
+    <string name="login_mostrar_contrasena">Show password</string>
+    <string name="login_ocultar_contrasena">Hide password</string>
+    <string name="login_olvide_clave">Forgot your password?</string>
+    <string name="login_boton_ingresar">Sign in</string>
+    <string name="login_boton_ingresando">Signing in…</string>
+    <string name="login_sin_cuenta">Don\'t have an account?</string>
+    <string name="login_registrarme">Sign up</string>
+
+    <string name="login_titulo_biometrico">Biometric sign-in</string>
+    <string name="login_boton_biometria">Sign in with biometrics</string>
+    <string name="login_biometria_subtitulo">Confirm your identity with your fingerprint or face</string>
+    <string name="login_biometria_negativo">Use username and password</string>
+
+    <string name="login_mensaje_reintentar_titulo">Repeat biometric check</string>
+    <string name="login_mensaje_reintentar_subtitulo">Avoid wearing glasses or a face covering during capture</string>
+    <string name="login_mensaje_limite_titulo">Biometric attempt limit exceeded</string>
+    <string name="login_mensaje_limite_subtitulo">Please sign in with your username and password</string>
+    <string name="login_mensaje_revocada_titulo">Your session is no longer valid</string>
+    <string name="login_mensaje_revocada_subtitulo">Please sign in with your username and password</string>
+    <string name="login_mensaje_error_verificacion_titulo">We couldn\'t confirm your session</string>
+    <string name="login_mensaje_error_verificacion_subtitulo">Try again or sign in with your username and password</string>
+
+    <string name="login_error_credenciales_invalidas">Incorrect username or password</string>
+    <string name="login_error_usuario_no_confirmado">Confirm your account before signing in</string>
+    <string name="login_error_intentos_excedidos">Too many attempts. Try again later</string>
+    <string name="login_error_mfa_no_soportado">This account requires an additional code not yet available in the app</string>
+    <string name="login_error_sesion_no_disponible">Enter your username and password</string>
+</resources>

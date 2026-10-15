@@ -22,6 +22,9 @@ class GestorSesion(
 
     override fun actual(): String? = (_estado.value as? EstadoSesion.Autenticada)?.sesion?.accessToken
 
+    /** Si hay un usuario guardado que se pueda intentar restaurar (ver [restaurarSesion]). */
+    fun haySesionGuardada(): Boolean = almacenSesionSegura.usuarioActivo() != null
+
     suspend fun iniciarSesion(usuario: String, contrasena: String): ResultadoAutenticacion {
         usuarioEnCurso = usuario
         return afianzar(usuario, clienteIdentidad.autenticar(usuario, contrasena))

@@ -21,7 +21,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             SolventaTheme {
                 val viewModel = viewModel<LoginViewModel>(
-                    factory = LoginViewModelFactory(app.gestorSesion, app.gestorBiometria),
+                    factory = LoginViewModelFactory(app.gestorSesion, app.gestorBiometria, app.bffMovilCliente),
                 )
                 LoginRoute(
                     viewModel = viewModel,

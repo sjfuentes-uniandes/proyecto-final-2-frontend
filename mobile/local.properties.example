@@ -1,6 +1,11 @@
 # Copie este archivo a local.properties (gitignored) y ajuste los valores.
 sdk.dir=/ruta/al/Android/Sdk
 
+# bff-movil corriendo en local (docker compose del repo back); 10.0.2.2 es como el emulador
+# de Android ve el localhost de la maquina anfitriona. En un dispositivo fisico use la IP de
+# su maquina en la red local.
+bffMovilBaseUrl=http://10.0.2.2:8081/
+
 # Pool clientes de Cognito, app client mobile (ver infra/platform/identity.tf del repo back
 # o "terraform output cognito"). Sin estos valores la app arranca pero el ingreso con
 # credenciales/biometria falla con un error claro en vez de bloquear el arranque.

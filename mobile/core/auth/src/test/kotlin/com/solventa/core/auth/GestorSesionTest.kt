@@ -124,6 +124,17 @@ class GestorSesionTest {
         assertEquals(EstadoSesion.NoAutenticada, gestor.estado.value)
     }
 
+    @Test
+    fun `haySesionGuardada refleja si el almacen tiene un usuario activo`() = runTest {
+        val clienteIdentidad = mockk<ClienteIdentidad>()
+        val almacen = FakeAlmacenSesionSegura()
+        val gestor = GestorSesion(clienteIdentidad, almacen)
+
+        assertFalse(gestor.haySesionGuardada())
+        almacen.guardarUsuarioActivo("ana")
+        assertTrue(gestor.haySesionGuardada())
+    }
+
     private class FakeAlmacenSesionSegura : AlmacenSesionSegura {
         private var usuario: String? = null
 
