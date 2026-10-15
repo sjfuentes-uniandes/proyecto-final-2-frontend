@@ -1,6 +1,6 @@
 import axe from 'axe-core';
 
-import { Socio, SocioCreado } from './socios.service';
+import { Consumo, LimitesPlan, Socio, SocioCreado } from './socios.service';
 
 export const BASE = 'https://api/v1/web/socios';
 
@@ -15,6 +15,22 @@ export const SUSPENDIDO: Socio = {
 };
 
 export const CREADO: SocioCreado = { ...SOCIO, clientSecret: 'secreto-mostrado-una-vez', apiKey: 'api-key-mostrada-una-vez' };
+
+export const PLANES: LimitesPlan[] = [
+  { plan: 'basico', limitePorSegundo: 5, rafaga: 10, cuota: 1000, periodo: 'DAY' },
+  { plan: 'estandar', limitePorSegundo: 50, rafaga: 100, cuota: 50000, periodo: 'DAY' },
+  { plan: 'prueba', limitePorSegundo: 1, rafaga: 2, cuota: 5, periodo: 'DAY' },
+];
+
+export function consumo(usado: number, plan: LimitesPlan = PLANES[0], limitadas: number | null = 0): Consumo {
+  const restante = Math.max(0, plan.cuota - usado);
+  const porcentaje = Math.min(100, Math.floor((usado * 100) / plan.cuota));
+  return {
+    socioId: SOCIO.id, limites: plan, usado, restante, porcentaje, limitadas,
+    estado: restante === 0 ? 'agotada' : porcentaje >= 80 ? 'cerca_del_limite' : 'normal',
+    ventana: { inicio: '2026-10-13', fin: '2026-10-13', reinicio: '2026-10-14T00:00:00Z' },
+  };
+}
 
 export async function violacionesA11y(elemento: Element): Promise<string[]> {
   const resultado = await axe.run(elemento, {

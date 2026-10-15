@@ -11,44 +11,148 @@
 }
 
 @if (socio(); as s) {
+  @let c = consumo();
   <div class="h-row">
     <header>
       <h2>{{ s.nombre }}
         <span class="tag" [class.tag--ok]="s.estado === 'activo'" [class.tag--neutro]="s.estado !== 'activo'">{{ textos.estado(s.estado) }}</span>
+        @if (s.estado === 'activo' && c?.estado === 'agotada') {
+          <span class="tag tag--alerta" data-testid="cuota-excedida">{{ t.cuotaExcedida }}</span>
+        }
       </h2>
       <p class="sub">{{ t.integradoDesde(s.id, textos.fecha(s.creado)) }}</p>
     </header>
-    @if (s.estado === 'activo') {
-      <div class="acciones">
+    <div class="acciones">
+      @if (dashboardUrl) {
+        <a class="btn btn--secundario" [href]="dashboardUrl" target="_blank" rel="noopener" data-testid="tablero">{{ t.verTablero }}</a>
+      }
+      @if (s.estado === 'activo') {
         <button #botonSuspender class="btn btn--peligro" type="button" (click)="pedirConfirmacion()">{{ t.suspender }}</button>
-      </div>
-    }
+      }
+    </div>
   </div>
 
+  @if (s.estado === 'activo' && c?.estado === 'agotada') {
+    <p class="nota nota--alerta" data-testid="aviso-excedida">
+      <span aria-hidden="true">⚠ </span><strong>{{ t.avisoExcedidaTitulo }}</strong> {{ t.avisoExcedidaTexto }}
+    </p>
+  }
+
+  <section class="metricas" [attr.aria-label]="t.metricas">
+    @if (c) {
+      <div class="card metrica">
+        <h3 class="metrica__lbl">{{ t.usadas }}</h3>
+        <p class="metrica__val" [class.metrica__val--alerta]="c.estado !== 'normal'">{{ textos.numero(c.usado) }}</p>
+        <p class="metrica__nota">{{ t.cuotaDe(textos.numero(c.limites.cuota), textos.periodo(c.limites.periodo)) }}</p>
+      </div>
+      <div class="card metrica">
+        <h3 class="metrica__lbl">{{ t.restantes }}</h3>
+        <p class="metrica__val" [class.metrica__val--alerta]="c.estado !== 'normal'">{{ textos.numero(c.restante) }}</p>
+        <p class="metrica__nota">{{ t.seRepone(textos.fechaHora(c.ventana.reinicio)) }}</p>
+      </div>
+      <div class="card metrica">
+        <h3 class="metrica__lbl">{{ t.limitadas }}</h3>
+        <p class="metrica__val" [class.metrica__val--alerta]="!!c.limitadas">{{ c.limitadas === null ? '—' : textos.numero(c.limitadas) }}</p>
+        <p class="metrica__nota">{{ c.limitadas === null ? t.limitadasSinDatos : t.limitadasNota }}</p>
+      </div>
+      <div class="card metrica">
+        <h3 class="metrica__lbl">{{ t.planActual }}</h3>
+        <p class="metrica__val metrica__val--texto">{{ textos.plan(c.limites.plan) }}</p>
+        <p class="metrica__nota">{{ t.porSegundo(textos.numero(c.limites.limitePorSegundo)) }}</p>
+      </div>
+    } @else if (errorConsumo()) {
+      <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ errorConsumo() }}</span></p>
+    } @else {
+      <p class="sub" role="status">{{ t.cargandoConsumo }}</p>
+    }
+  </section>
+
   <div class="cols">
-    <section class="card">
-      <h3>{{ t.integracion }}</h3>
-      <dl class="kv">
-        <div><dt>{{ t.metodoAutenticacion }}</dt><dd>{{ t.metodoValor }}</dd></div>
-        <div><dt>{{ t.clientId }}</dt><dd class="mono">{{ s.clientId }}</dd></div>
-        <div><dt>{{ t.canal }}</dt><dd>{{ textos.canal(s.canal) }}</dd></div>
-        <div><dt>{{ t.plan }}</dt><dd>{{ textos.plan(s.plan) }}</dd></div>
-        <div><dt>{{ t.fechaAlta }}</dt><dd class="mono">{{ textos.fecha(s.creado) }}</dd></div>
-        @if (s.desactivado) {
-          <div><dt>{{ t.fechaDesactivacion }}</dt><dd class="mono">{{ textos.fecha(s.desactivado) }}</dd></div>
-        }
-      </dl>
-    </section>
-    <section class="card alcances" [attr.aria-label]="t.alcances">
-      <h3>{{ t.alcances }}</h3>
-      @for (permiso of permisos; track permiso) {
-        <div class="alcance">
-          <span><strong>{{ textos.permiso(permiso)[0] }}</strong> · {{ textos.permiso(permiso)[1] }}</span>
-          <input class="switch" type="checkbox" role="switch" disabled [checked]="s.permisos.includes(permiso)"
-                 [attr.aria-label]="textos.permiso(permiso)[0] + ': ' + (s.permisos.includes(permiso) ? t.permisoActivo : t.permisoInactivo)" />
-        </div>
+    <div class="columna">
+      @if (c) {
+        <section class="card" [attr.aria-label]="t.cuotaTitulo">
+          <h3>{{ t.cuotaTitulo }}</h3>
+          <app-barra-consumo [porcentaje]="c.porcentaje" [estado]="c.estado" [etiqueta]="t.barraConsumo(s.nombre)"
+                             [texto]="t.valorConsumo(textos.numero(c.usado), textos.numero(c.limites.cuota), c.porcentaje)" />
+          <p class="nota-celda">{{ t.valorConsumo(textos.numero(c.usado), textos.numero(c.limites.cuota), c.porcentaje) }} ·
+            {{ t.ventana(textos.dia(c.ventana.inicio), textos.dia(c.ventana.fin)) }}</p>
+        </section>
       }
-    </section>
+      <section class="card">
+        <h3>{{ t.integracion }}</h3>
+        <dl class="kv">
+          <div><dt>{{ t.metodoAutenticacion }}</dt><dd>{{ t.metodoValor }}</dd></div>
+          <div><dt>{{ t.clientId }}</dt><dd class="mono">{{ s.clientId }}</dd></div>
+          <div><dt>{{ t.canal }}</dt><dd>{{ textos.canal(s.canal) }}</dd></div>
+          <div><dt>{{ t.plan }}</dt><dd>{{ textos.plan(s.plan) }}</dd></div>
+          <div><dt>{{ t.fechaAlta }}</dt><dd class="mono">{{ textos.fecha(s.creado) }}</dd></div>
+          @if (s.desactivado) {
+            <div><dt>{{ t.fechaDesactivacion }}</dt><dd class="mono">{{ textos.fecha(s.desactivado) }}</dd></div>
+          }
+        </dl>
+      </section>
+      <section class="card" [attr.aria-label]="t.alcances">
+        <h3>{{ t.alcances }}</h3>
+        @for (permiso of permisos; track permiso) {
+          <div class="alcance">
+            <span><strong>{{ textos.permiso(permiso)[0] }}</strong> · {{ textos.permiso(permiso)[1] }}</span>
+            <input class="switch" type="checkbox" role="switch" disabled [checked]="s.permisos.includes(permiso)"
+                   [attr.aria-label]="textos.permiso(permiso)[0] + ': ' + (s.permisos.includes(permiso) ? t.permisoActivo : t.permisoInactivo)" />
+          </div>
+        }
+      </section>
+    </div>
+
+    <div class="lateral">
+      <section class="card">
+        <h3 id="titulo-limites">{{ t.limites }}</h3>
+        @if (s.estado === 'activo') {
+          <form (submit)="$event.preventDefault(); cambiarPlan()" aria-labelledby="titulo-limites" data-testid="cambio-plan">
+            <label class="fld">
+              <span>{{ t.planNuevo }}</span>
+              <select class="inp" name="plan" (change)="elegir($any($event.target).value)"
+                      [attr.aria-describedby]="errorPlan() ? 'error-plan' : null">
+                @for (p of planes(); track p.plan) {
+                  <option [value]="p.plan" [selected]="p.plan === planElegido()">{{ textos.planConLimites(p) }}</option>
+                }
+              </select>
+            </label>
+            @if (limitesElegidos(); as l) {
+              <dl class="kv">
+                <div><dt>{{ t.limitePorSegundo }}</dt><dd>{{ t.porSegundo(textos.numero(l.limitePorSegundo)) }}</dd></div>
+                <div><dt>{{ t.rafaga }}</dt><dd>{{ t.rafagaValor(textos.numero(l.rafaga)) }}</dd></div>
+                <div><dt>{{ t.cuota }}</dt><dd>{{ textos.cuota(l) }}</dd></div>
+                <div><dt>{{ t.alSuperar }}</dt><dd>{{ t.alSuperarValor }}</dd></div>
+              </dl>
+            }
+            @if (errorPlan(); as mensaje) {
+              <p class="fld__error" id="error-plan" role="alert">{{ mensaje }}</p>
+            }
+            <div role="status">
+              @if (planCambiado(); as plan) {
+                <p class="alerta alerta--ok" data-testid="plan-cambiado">{{ t.planCambiado(textos.plan(plan)) }}</p>
+              }
+            </div>
+            <button class="btn btn--primario btn--bloque" type="submit" [disabled]="cambiandoPlan() || planes().length === 0">
+              {{ cambiandoPlan() ? t.cambiandoPlan : t.cambiarPlan }}</button>
+          </form>
+        } @else {
+          <p class="sub">{{ t.planSuspendido }}</p>
+        }
+        <p class="nota nota--alerta">{{ t.avisoLimite }}</p>
+      </section>
+      <section class="card">
+        <h3>{{ t.queRecibe }}</h3>
+        <p class="sub parrafo">{{ t.queRecibeTexto }}</p>
+        <dl class="kv">
+          <div><dt>{{ t.codigoRespuesta }}</dt><dd class="mono">429</dd></div>
+          <div><dt>{{ t.esperaSugerida }}</dt><dd>{{ t.esperaValor }}</dd></div>
+          @if (c) {
+            <div><dt>{{ t.reposicion }}</dt><dd>{{ textos.fechaHora(c.ventana.reinicio) }}</dd></div>
+          }
+        </dl>
+      </section>
+    </div>
   </div>
 
   <dialog #confirmacion aria-labelledby="confirmar-titulo" aria-describedby="confirmar-aviso" (cancel)="cancelar()">

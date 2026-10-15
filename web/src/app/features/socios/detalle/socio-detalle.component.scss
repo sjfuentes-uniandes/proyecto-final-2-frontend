@@ -1,0 +1,10 @@
+.metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; padding-top: 6px; }
+.metrica { display: flex; flex-direction: column; gap: 3px; padding: 16px; }
+.metrica .metrica__lbl { margin: 0; font-size: 11.5px; font-weight: 400; letter-spacing: .5px; text-transform: uppercase;
+  color: var(--sv-texto-secundario); }
+.metrica__val { margin: 0; padding: 5px 0 3px; font-size: 25px; font-weight: 700; color: var(--sv-verde); }
+.metrica__val--alerta { color: var(--sv-naranja); }
+.metrica__val--texto { color: var(--sv-azul-oscuro); }
+.metrica__nota { margin: 0; font-size: 11.5px; color: var(--sv-texto-secundario); }
+form .kv { margin-bottom: 8px; }
+.parrafo { margin-bottom: 10px; line-height: 20.6px; }

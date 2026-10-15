@@ -1,0 +1,65 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">{{ t.inicio }} › {{ t.seccion }} › <strong>{{ t.consumoTitulo }}</strong></nav>
+<header>
+  <h2>{{ t.consumoTitulo }}</h2>
+  @if (filas(); as lista) {
+    <p class="sub">{{ t.consumoSub(lista.length) }}</p>
+  }
+</header>
+
+@if (error(); as mensaje) {
+  <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ mensaje }}</span></p>
+}
+
+<section class="card card--tabla" [attr.aria-label]="t.consumoTitulo">
+  @if (filas(); as lista) {
+    <div class="tabla-scroll">
+      <table class="data">
+        <thead>
+          <tr>
+            <th scope="col">{{ t.colSocio }}</th>
+            <th scope="col">{{ t.colPlan }}</th>
+            <th scope="col" class="col-consumo">{{ t.colConsumo }}</th>
+            <th scope="col">{{ t.colRestante }}</th>
+            <th scope="col">{{ t.col429 }}</th>
+            <th scope="col">{{ t.colEstado }}</th>
+            <th scope="col"><span class="sr-only">{{ t.colAcciones }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of lista; track fila.socio.id) {
+            <tr>
+              <td>{{ fila.socio.nombre }} <span class="nota-celda mono">{{ fila.socio.id }}</span></td>
+              <td>{{ textos.plan(fila.socio.plan) }}</td>
+              @if (fila.consumo; as c) {
+                <td class="col-consumo">
+                  <app-barra-consumo [porcentaje]="c.porcentaje" [estado]="c.estado" [etiqueta]="t.barraConsumo(fila.socio.nombre)"
+                                     [texto]="t.valorConsumo(textos.numero(c.usado), textos.numero(c.limites.cuota), c.porcentaje)" />
+                  <span class="nota-celda">{{ t.consumoDe(textos.numero(c.usado), textos.cuota(c.limites)) }}</span>
+                </td>
+                <td class="mono">{{ textos.numero(c.restante) }}</td>
+                <td class="mono">{{ c.limitadas === null ? t.sinMetricas : textos.numero(c.limitadas) }}</td>
+                <td>
+                  <span class="tag" [class.tag--ok]="c.estado === 'normal'" [class.tag--alerta]="c.estado === 'cerca_del_limite'"
+                        [class.tag--error]="c.estado === 'agotada'">{{ textos.estadoCuota(c.estado) }}</span>
+                </td>
+              } @else {
+                <td class="col-consumo"><span class="nota-celda">{{ t.consumoNoDisponible }}</span></td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+              }
+              <td><a class="enlace" [routerLink]="['..', fila.socio.id]" [attr.aria-label]="t.verDetalleDe(fila.socio.nombre)">{{ t.verDetalle }}</a></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7">{{ t.sinSociosActivos }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!error()) {
+    <p class="sub" role="status">{{ t.cargandoConsumo }}</p>
+  }
+</section>
+
+<p class="nota"><span aria-hidden="true">ℹ </span>{{ t.avisoAislamiento }}</p>

@@ -14,6 +14,10 @@ export function mensajeError(t: TextosSocios, error: HttpErrorResponse): string 
       return t.error403;
     case 'SOCIO_NO_ENCONTRADO':
       return t.error404;
+    case 'PLAN_NO_DISPONIBLE':
+      return t.errorPlanNoDisponible;
+    case 'SOCIO_DESACTIVADO':
+      return t.errorSocioDesactivado;
     case 'SERVICIO_NO_DISPONIBLE':
       return t.errorGeneral;
   }
