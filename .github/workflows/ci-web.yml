@@ -18,5 +18,6 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
-      - run: npx ng test --watch=false --browsers=ChromeHeadless
+      # Pruebas con cobertura y compuerta 80/75 de la feature de perfilamiento (CS-13, CS-15).
+      - run: npm run test:ci
       - run: npx ng build

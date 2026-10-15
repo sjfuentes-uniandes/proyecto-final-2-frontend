@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { IdiomaService } from '../../core/i18n/idioma.service';
-import { TEXTOS, TextosPerfilamiento, TextosPerfilamientoService, pseudo } from './perfilamiento.i18n';
+import { CATALOGO_PERFILAMIENTO, TEXTOS, TextosPerfilamiento, TextosPerfilamientoService, pseudo } from './perfilamiento.i18n';
 
 type Clave = keyof TextosPerfilamiento;
 
@@ -64,5 +64,33 @@ describe('Textos de Perfilamiento (es-CO, en-US y pseudo-localización)', () => 
     expect(textos.fechaHora('2026-10-15T15:00:02Z')).toContain('10/15/2026');
     expect(textos.hora(null)).toBe('—');
     expect(textos.fechaHora(undefined)).toBe('—');
+  });
+
+  it('los catálogos tienen las mismas tablas y claves en es-CO y en-US, y en-US las traduce', () => {
+    const es = CATALOGO_PERFILAMIENTO['es-CO'];
+    const en = CATALOGO_PERFILAMIENTO['en-US'];
+    // Iguales a propósito: "Favorable" se escribe igual en los dos idiomas.
+    const iguales = new Set(['valoraciones.REDUCE_RIESGO']);
+    expect(Object.keys(en).sort()).toEqual(Object.keys(es).sort());
+    for (const tabla of Object.keys(es) as (keyof typeof es)[]) {
+      const claves = Object.keys(es[tabla]).sort();
+      expect(Object.keys(en[tabla]).sort()).withContext(tabla).toEqual(claves);
+      for (const clave of claves) {
+        const id = `${tabla}.${clave}`;
+        const [textoEs, textoEn] = [es[tabla], en[tabla]].map((t) => (t as Record<string, string>)[clave]);
+        expect(textoEn.length).withContext(id).toBeGreaterThan(0);
+        expect(textoEn === textoEs).withContext(id).toBe(iguales.has(id));
+      }
+    }
+  });
+
+  it('el servicio pseudo-localiza también los textos de catálogo y deja ver códigos desconocidos', () => {
+    const textos = TestBed.inject(TextosPerfilamientoService);
+    TestBed.inject(IdiomaService).cambiar('pseudo');
+    for (const texto of [textos.nivel('BAJO'), textos.factor('EDAD_PLAZO'), textos.estadoFuente('CONSULTADA'),
+      textos.tipoFuente('DATOS_ABIERTOS'), textos.causaConsentimiento('VENCIDO'), textos.motivo('NO_AUTORIZADO')]) {
+      expect(texto).toMatch(/^⟦.+⟧$/);
+    }
+    expect(textos.factor('FACTOR_NUEVO')).toBe(pseudo('FACTOR_NUEVO'));
   });
 });
