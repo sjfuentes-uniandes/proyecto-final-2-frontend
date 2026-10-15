@@ -39,3 +39,28 @@ make desplegar ENV=int         # compila, genera config.json desde SSM, sube a S
   - Variables `AWS_WEB_ROLE_ARN` (salida `github_web_role_arn` de `make infra-bootstrap` en el repo back) y `AWS_REGION`.
   - El environment `int`.
 - **Primer usuario:** se crea en el repo back con `EMAIL=... NOMBRE=... make infra-usuario-admin`. Los demás se crean desde Administración › Usuarios.
+
+## Aplicación móvil (`mobile/`)
+
+Android (Kotlin + Jetpack Compose), multi-módulo:
+
+| Módulo | Qué hace |
+| --- | --- |
+| `core:network` | Cliente del BFF móvil (Retrofit/OkHttp): `GET /v1/sesion`, mapeo de errores del contrato `bff-movil.yaml`. |
+| `core:auth` | Sesión del cliente: ingreso SRP contra el pool `clientes` de Cognito (app client `mobile`), MFA TOTP opcional y restauración silenciosa de sesión (`GestorSesion`). |
+| `core:security` | Desbloqueo biométrico (`BiometricPrompt`) y almacenamiento cifrado con Android Keystore de qué usuario puede restaurar sesión sin contraseña (HU-M07). |
+| `core:designsystem` | Paleta y tema de Compose compartidos. |
+| `feature:login` | Pantalla de ingreso (credenciales + biometría), fiel a los mockups de HU-M07. |
+| `app` | Composición manual (sin Hilt) y punto de entrada. |
+
+### Correr en local
+
+1. Copie `mobile/local.properties.example` a `mobile/local.properties` (gitignored) y complete `cognitoPoolId`/`cognitoClientId` del pool `clientes` (app client `mobile`; ver `infra/platform/identity.tf` o `terraform output cognito` en el repo back). Sin esos valores la app arranca igual, pero el ingreso falla con un mensaje claro en vez de bloquearse. `bffMovilBaseUrl` ya trae por defecto `http://10.0.2.2:8081/` (cómo el emulador ve el `bff-movil` del docker compose del repo back).
+2. Abra `mobile/` en Android Studio y corra el módulo `app`, o desde la terminal:
+   ```bash
+   cd mobile
+   ./gradlew assembleDebug   # genera app/build/outputs/apk/debug/app-debug.apk
+   ./gradlew test            # pruebas unitarias de todos los módulos
+   ```
+3. El ingreso biométrico necesita un dispositivo/emulador con huella o rostro registrado en el sistema operativo y una sesión guardada (un ingreso previo con usuario/contraseña); si no hay ninguno, la app lo detecta y solo ofrece usuario/contraseña.
+4. Tras el desbloqueo biométrico o el ingreso con credenciales, la app confirma la sesión contra `bff-movil` (`GET /v1/sesion`); sin el backend corriendo en local, verá el mensaje "No fue posible confirmar su sesión".

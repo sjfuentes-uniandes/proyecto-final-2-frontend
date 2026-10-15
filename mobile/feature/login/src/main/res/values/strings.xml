@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_marca">Solventa</string>
+    <string name="login_bienvenido">Bienvenido</string>
+    <string name="login_subtitulo">Use un método de autenticación</string>
+
+    <string name="login_etiqueta_correo">Correo electrónico</string>
+    <string name="login_placeholder_correo">user@domain.com</string>
+    <string name="login_etiqueta_contrasena">Contraseña</string>
+    <string name="login_mostrar_contrasena">Mostrar contraseña</string>
+    <string name="login_ocultar_contrasena">Ocultar contraseña</string>
+    <string name="login_olvide_clave">Olvidé mi contraseña</string>
+    <string name="login_boton_ingresar">Ingresar</string>
+    <string name="login_boton_ingresando">Ingresando…</string>
+    <string name="login_sin_cuenta">No tiene una cuenta?</string>
+    <string name="login_registrarme">Registrarme</string>
+
+    <string name="login_titulo_biometrico">Ingreso biométrico</string>
+    <string name="login_boton_biometria">Ingreso con biometría</string>
+    <string name="login_biometria_subtitulo">Confirme su identidad con huella o rostro</string>
+    <string name="login_biometria_negativo">Usar usuario y contraseña</string>
+
+    <string name="login_mensaje_reintentar_titulo">Repetir comprobación biométrica</string>
+    <string name="login_mensaje_reintentar_subtitulo">Evite el uso de anteojos y cubrebocas durante la captura</string>
+    <string name="login_mensaje_limite_titulo">Límite de intentos biométricos superados</string>
+    <string name="login_mensaje_limite_subtitulo">Ingrese por favor con usuario y contraseña</string>
+    <string name="login_mensaje_revocada_titulo">Su sesión ya no es válida</string>
+    <string name="login_mensaje_revocada_subtitulo">Ingrese por favor con usuario y contraseña</string>
+    <string name="login_mensaje_error_verificacion_titulo">No fue posible confirmar su sesión</string>
+    <string name="login_mensaje_error_verificacion_subtitulo">Intente de nuevo o ingrese con usuario y contraseña</string>
+
+    <string name="login_error_credenciales_invalidas">Usuario o contraseña incorrectos</string>
+    <string name="login_error_usuario_no_confirmado">Confirme su cuenta antes de ingresar</string>
+    <string name="login_error_intentos_excedidos">Demasiados intentos. Inténtelo más tarde</string>
+    <string name="login_error_mfa_no_soportado">Esta cuenta requiere un código adicional no disponible aún en la app</string>
+    <string name="login_error_sesion_no_disponible">Ingrese su usuario y contraseña</string>
+</resources>

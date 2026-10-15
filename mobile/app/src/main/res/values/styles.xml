@@ -1,0 +1,4 @@
+<resources>
+    <!-- Tema mínimo; el color real (botón azul, fondo lavanda) vive en core:designsystem (Compose). -->
+    <style name="Theme.Solventa" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
