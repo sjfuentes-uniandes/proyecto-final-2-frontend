@@ -3,7 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { ConfigService } from '../../core/config/app-config';
-import { PerfilamientoService, ResumenPerfil, SolicitudPerfil } from './perfilamiento.service';
+import { ResumenPerfil, SolicitudPerfil } from './perfilamiento.modelo';
+import { PerfilamientoService } from './perfilamiento.service';
 
 const BASE = 'https://api/web/v1/perfiles';
 const SOLICITUD: SolicitudPerfil = {

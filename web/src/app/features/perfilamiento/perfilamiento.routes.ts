@@ -10,8 +10,14 @@ export const routes: Routes = [
     canActivate: [requiereGrupo('asesores')],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'nuevo' },
-      // La pantalla del paso 1 la agrega W11-P17 (FW2).
-      { path: 'nuevo', title: 'Nueva cotización · Solventa', children: [] },
+      {
+        path: 'nuevo',
+        title: 'Nueva cotización · Solventa',
+        loadComponent: () =>
+          import('./paginas/nuevo-perfilamiento/nuevo-perfilamiento.component').then((m) => m.NuevoPerfilamientoComponent),
+      },
+      // La pantalla D02 la agrega W11-P18 (FW3).
+      { path: ':perfilId', title: 'Perfil de riesgo · Solventa', children: [] },
     ],
   },
 ];

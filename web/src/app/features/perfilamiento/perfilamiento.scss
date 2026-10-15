@@ -1,0 +1,23 @@
+/* Estilos comunes de las pantallas de perfilamiento (C01 y D02); los globales están en styles.scss. */
+:host { display: flex; flex-direction: column; gap: 10px; }
+
+h2 { margin: 0 0 4px; font-size: 22px; color: var(--sv-azul-oscuro); }
+h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
+.sub { margin: 0; font-size: 13px; color: var(--sv-texto-secundario); }
+/* Contraste WCAG AA: --sv-texto-tenue no alcanza 4,5:1 en 12 px. */
+.crumb { color: var(--sv-texto-secundario); }
+.h-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+.pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 8px 0 0; list-style: none; }
+.pasos li { padding-top: 9px; border-top: 4px solid var(--sv-borde); font-size: 11.5px; color: var(--sv-texto-secundario); }
+.pasos .hecho { border-color: var(--sv-verde); color: #00663f; font-weight: 600; }
+.pasos [aria-current='step'] { border-color: var(--sv-azul-medio); color: var(--sv-azul); font-weight: 700; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; padding-top: 10px; align-items: start; }
+.columna { display: flex; flex-direction: column; gap: 16px; }
+.lateral { display: flex; flex-direction: column; gap: 8px; }
+.fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 20px; }
+
+@media (max-width: 900px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}

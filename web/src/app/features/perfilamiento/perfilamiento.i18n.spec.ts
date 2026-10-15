@@ -6,7 +6,7 @@ import { TEXTOS, TextosPerfilamiento, TextosPerfilamientoService, pseudo } from 
 type Clave = keyof TextosPerfilamiento;
 
 /** Textos que son iguales en los dos idiomas a propósito (códigos y versiones). */
-const IGUALES_A_PROPOSITO: Clave[] = [];
+const IGUALES_A_PROPOSITO: Clave[] = ['paisColombia'];
 
 describe('Textos de Perfilamiento (es-CO, en-US y pseudo-localización)', () => {
   afterEach(() => TestBed.inject(IdiomaService).cambiar('es-CO'));
