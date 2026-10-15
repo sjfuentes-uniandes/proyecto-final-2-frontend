@@ -1,0 +1,17 @@
+:host { display: block; }
+h3:focus { outline: 3px solid var(--sv-azul-medio); outline-offset: 4px; }
+.factores { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; list-style: none; }
+.factor__fila { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; font-size: 13px;
+  color: var(--sv-texto-secundario); }
+.valoracion { font-weight: 600; white-space: nowrap; }
+/* Texto: tonos oscuros para WCAG AA; barras: los tokens del mockup. */
+.valoracion--ok { color: #00663f; }
+.valoracion--alerta { color: #7a4a00; }
+.valoracion--error { color: var(--sv-error); }
+.valoracion--neutro { color: var(--sv-texto-secundario); }
+.barra { height: 8px; border-radius: 999px; background: var(--sv-borde); overflow: hidden; }
+.barra__relleno { display: block; height: 100%; border-radius: 999px; }
+.barra__relleno--ok { background: var(--sv-verde); }
+.barra__relleno--alerta { background: var(--sv-naranja); }
+.barra__relleno--error { background: var(--sv-error); }
+.barra__relleno--neutro { background: var(--sv-texto-tenue); }

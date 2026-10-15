@@ -16,8 +16,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./paginas/nuevo-perfilamiento/nuevo-perfilamiento.component').then((m) => m.NuevoPerfilamientoComponent),
       },
-      // La pantalla D02 la agrega W11-P18 (FW3).
-      { path: ':perfilId', title: 'Perfil de riesgo · Solventa', children: [] },
+      {
+        path: ':perfilId',
+        title: 'Perfil de riesgo · Solventa',
+        loadComponent: () => import('./paginas/perfil-riesgo/perfil-riesgo.component').then((m) => m.PerfilRiesgoComponent),
+      },
     ],
   },
 ];

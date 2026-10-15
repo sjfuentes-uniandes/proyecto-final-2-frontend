@@ -1,0 +1,89 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.inicio }} › {{ t.grupoContratacion }} › <strong>{{ t.perfilamientoMiga }}</strong>
+</nav>
+
+@switch (carga().estado) {
+  @case ('cargando') {
+    <p class="sub" role="status">{{ t.cargandoPerfil }}</p>
+  }
+  @case ('no-encontrado') {
+    <h2>{{ t.perfilTitulo }}</h2>
+    <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ t.perfilNoEncontrado }}</span></p>
+  }
+  @case ('error') {
+    @if (error(); as e) {
+      <h2>{{ t.perfilTitulo }}</h2>
+      <div class="alerta alerta--error" role="alert">
+        <span aria-hidden="true">⚠</span>
+        <p>
+          {{ e.mensaje }}
+          @if (e.correlationId) {
+            <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+          }
+        </p>
+      </div>
+    }
+  }
+}
+
+@if (perfil(); as p) {
+  <div class="h-row">
+    <header>
+      <h2>{{ t.perfilTitulo }}</h2>
+      <p class="sub">{{ t.calculadoEn(textos.numero(p.duracionMs), p.versionModelo) }}</p>
+    </header>
+    <div class="acciones">
+      <div class="botones">
+        <button class="btn btn--secundario" type="button" disabled aria-describedby="ayuda-consentimiento">
+          {{ t.revisarConsentimiento }}
+        </button>
+        <button class="btn btn--secundario" type="button" (click)="verFactores()">{{ t.verFactores }}</button>
+      </div>
+      <p class="ayuda" id="ayuda-consentimiento">{{ t.disponibleConConsentimientos }}</p>
+    </div>
+  </div>
+
+  <ol class="pasos" [attr.aria-label]="t.pasos">
+    <li class="hecho">1 · {{ t.paso1 }}</li>
+    <li aria-current="step">2 · {{ t.paso2 }}</li>
+    <li>3 · {{ t.paso3 }}</li>
+  </ol>
+
+  <section class="metricas" [attr.aria-label]="t.metricas">
+    <app-tarjeta-metrica [etiqueta]="t.metricaNivel" [valor]="valorNivel(p)" [detalle]="detalleNivel(p)" [tono]="tonoNivel(p)" />
+    <app-tarjeta-metrica [etiqueta]="t.metricaConfianza" [valor]="textos.numero(p.confianza, 2)" [detalle]="fuentes(p)" />
+    <app-tarjeta-metrica [etiqueta]="t.metricaTiempo" [valor]="t.milisegundos(textos.numero(p.duracionMs))"
+                         [detalle]="t.presupuestoDe(textos.numero(p.presupuestoMs))" [tono]="tonoTiempo(p)" />
+    <app-tarjeta-metrica [etiqueta]="t.metricaAjuste" valor="—" [detalle]="t.ajusteDisponible" />
+  </section>
+
+  <div class="detalle">
+    <div class="columna">
+      <!-- W10-P13: tabla de linaje -->
+    </div>
+    <div class="lateral">
+      @if (insuficiente(p)) {
+        <section class="card" aria-labelledby="titulo-requeridos">
+          <h3 id="titulo-requeridos" tabindex="-1" #tituloRequeridos>{{ t.datosRequeridosTitulo }}</h3>
+          <p class="sub">{{ t.datosRequeridosAyuda }}</p>
+          <ul class="requeridos">
+            @for (dato of p.datosRequeridos; track dato.campo) {
+              <li>
+                <strong>{{ textos.campo(dato.campo) }}</strong>
+                @if (dato.fuente) {
+                  <span class="requerido__fuente">{{ textos.fuente(dato.fuente) }}</span>
+                }
+                <span class="requerido__motivo">{{ textos.motivo(dato.motivo) }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+      } @else {
+        <app-panel-factores [factores]="p.factores" />
+      }
+      <button class="btn btn--primario" type="button" disabled aria-describedby="ayuda-oferta">{{ t.generarOferta }}</button>
+      <p class="ayuda ayuda--centro" id="ayuda-oferta">{{ t.ofertaProxima }}</p>
+    </div>
+  </div>
+}

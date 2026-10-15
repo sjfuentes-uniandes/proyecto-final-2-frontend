@@ -1,6 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 
 import { Idioma, IdiomaService } from '../../core/i18n/idioma.service';
+import { Direccion, Fuente, MotivoDato, NivelRiesgo } from './perfilamiento.modelo';
 
 type Texto = string | ((...valores: never[]) => string);
 
@@ -55,6 +56,33 @@ const ES = {
   errorProductoNoDisponible: 'El producto no tiene un modelo de riesgo vigente.',
   errorDependenciaNoDisponible: 'Un servicio necesario para el perfilamiento no respondió. Inténtalo de nuevo.',
   errorServicioNoDisponible: 'El servicio de perfilamiento no está disponible. Inténtalo de nuevo.',
+
+  perfilamientoMiga: 'Perfilamiento',
+  perfilTitulo: 'Perfil de riesgo',
+  calculadoEn: (ms: string, version: string) => `Calculado en ${ms} ms · modelo versión ${version}`,
+  revisarConsentimiento: 'Revisar consentimiento',
+  disponibleConConsentimientos: 'Disponible cuando exista la gestión de consentimientos',
+  verFactores: 'Ver factores',
+  metricas: 'Resumen del perfil',
+  metricaNivel: 'Nivel de riesgo',
+  metricaConfianza: 'Confianza del perfil',
+  metricaTiempo: 'Tiempo de cálculo',
+  metricaAjuste: 'Ajuste sobre la tarifa base',
+  informacionInsuficiente: 'Información insuficiente',
+  puntajeDe: (puntaje: string) => `Puntaje ${puntaje} de 100`,
+  sinClasificacion: 'Sin clasificación',
+  fuentesDisponibles: (consultadas: number, declaradas: number) => `${consultadas} de ${declaradas} fuentes disponibles`,
+  milisegundos: (ms: string) => `${ms} ms`,
+  presupuestoDe: (ms: string) => `Presupuesto de ${ms} ms`,
+  ajusteDisponible: 'Disponible al generar la oferta',
+  factoresTitulo: 'Factores que influyeron',
+  contribucionDe: (factor: string) => `Contribución de ${factor}`,
+  datosRequeridosTitulo: 'Datos requeridos',
+  datosRequeridosAyuda: 'Sin estos datos no es posible clasificar el riesgo del cliente.',
+  generarOferta: 'Generar la oferta',
+  ofertaProxima: 'La oferta se habilita en una próxima versión',
+  cargandoPerfil: 'Cargando el perfil…',
+  perfilNoEncontrado: 'El perfil no existe o ya no está disponible.',
 };
 
 export type TextosPerfilamiento = typeof ES;
@@ -110,6 +138,33 @@ const EN: TextosPerfilamiento = {
   errorProductoNoDisponible: 'The product has no risk model in force.',
   errorDependenciaNoDisponible: 'A service needed for profiling did not respond. Please try again.',
   errorServicioNoDisponible: 'The profiling service is not available. Please try again.',
+
+  perfilamientoMiga: 'Profiling',
+  perfilTitulo: 'Risk profile',
+  calculadoEn: (ms: string, version: string) => `Calculated in ${ms} ms · model version ${version}`,
+  revisarConsentimiento: 'Review consent',
+  disponibleConConsentimientos: 'Available once consent management is in place',
+  verFactores: 'View factors',
+  metricas: 'Profile summary',
+  metricaNivel: 'Risk level',
+  metricaConfianza: 'Profile confidence',
+  metricaTiempo: 'Calculation time',
+  metricaAjuste: 'Adjustment to base rate',
+  informacionInsuficiente: 'Insufficient information',
+  puntajeDe: (puntaje: string) => `Score ${puntaje} out of 100`,
+  sinClasificacion: 'Not classified',
+  fuentesDisponibles: (consultadas: number, declaradas: number) => `${consultadas} of ${declaradas} sources available`,
+  milisegundos: (ms: string) => `${ms} ms`,
+  presupuestoDe: (ms: string) => `Budget of ${ms} ms`,
+  ajusteDisponible: 'Available when the offer is generated',
+  factoresTitulo: 'Contributing factors',
+  contribucionDe: (factor: string) => `Contribution of ${factor}`,
+  datosRequeridosTitulo: 'Required data',
+  datosRequeridosAyuda: 'Without this data the customer risk cannot be classified.',
+  generarOferta: 'Generate offer',
+  ofertaProxima: 'The offer will be enabled in an upcoming release',
+  cargandoPerfil: 'Loading the profile…',
+  perfilNoEncontrado: 'The profile does not exist or is no longer available.',
 };
 
 const ACENTOS: Record<string, string> = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', A: 'Å', E: 'Ë', I: 'Ï', O: 'Ö', U: 'Ü' };
@@ -131,6 +186,91 @@ function pseudoLocalizar(textos: TextosPerfilamiento): TextosPerfilamiento {
 
 export const TEXTOS: Record<Idioma, TextosPerfilamiento> = { 'es-CO': ES, 'en-US': EN, pseudo: pseudoLocalizar(ES) };
 
+const CATALOGO = {
+  'es-CO': {
+    niveles: { BAJO: 'Bajo', MEDIO: 'Medio', ALTO: 'Alto' },
+    // Vocabulario de D02 para las direcciones de D04 (CF-16).
+    valoraciones: {
+      REDUCE_RIESGO: 'Favorable', NEUTRO: 'Neutro', AUMENTA_LEVEMENTE: 'Ligeramente adverso',
+      AUMENTA_RIESGO: 'Adverso', NO_EVALUADO: 'No evaluado',
+    },
+    factores: {
+      PUNTUALIDAD_PAGOS: 'Puntualidad de pagos (12 meses)',
+      ANTIGUEDAD_PRODUCTOS: 'Antigüedad de productos financieros',
+      RELACION_CUOTA_INGRESO: 'Relación cuota / ingreso estimado',
+      EDAD_PLAZO: 'Edad frente al plazo del crédito',
+      CONCENTRACION_DEUDA: 'Concentración de deuda',
+      LISTAS_RESTRICTIVAS: 'Coincidencias en listas restrictivas',
+    },
+    campos: {
+      antiguedad_productos_anios: 'Antigüedad de productos financieros',
+      cuota_mensual_obligaciones: 'Cuota mensual de obligaciones',
+      entidades_con_deuda: 'Entidades con deuda',
+      moras_12m: 'Moras en los últimos 12 meses',
+      ingreso_mensual_estimado: 'Ingreso mensual estimado',
+      coincidencias_listas_restrictivas: 'Coincidencias en listas restrictivas',
+      edad: 'Edad',
+      plazo_credito_meses: 'Plazo del crédito',
+      suma_asegurada: 'Suma asegurada',
+    },
+    fuentes: {
+      FA_PRODUCTOS_VIGENTES: 'Productos financieros vigentes',
+      FA_HISTORIAL_PAGOS_12M: 'Historial de pagos de 12 meses',
+      FA_INGRESOS_AGREGADOS: 'Ingresos agregados',
+      DA_REGISTROS_PUBLICOS: 'Registros públicos del Estado',
+    },
+    motivos: {
+      NO_AUTORIZADO: 'No autorizado',
+      NO_DISPONIBLE_EN_FUENTE: 'No disponible en la fuente',
+      TIEMPO_AGOTADO: 'La fuente no respondió a tiempo',
+      FUENTE_NO_DISPONIBLE: 'Fuente no disponible',
+      RESPUESTA_INVALIDA: 'Respuesta inválida de la fuente',
+    },
+  },
+  'en-US': {
+    niveles: { BAJO: 'Low', MEDIO: 'Medium', ALTO: 'High' },
+    valoraciones: {
+      REDUCE_RIESGO: 'Favorable', NEUTRO: 'Neutral', AUMENTA_LEVEMENTE: 'Slightly adverse',
+      AUMENTA_RIESGO: 'Adverse', NO_EVALUADO: 'Not evaluated',
+    },
+    factores: {
+      PUNTUALIDAD_PAGOS: 'Payment punctuality (12 months)',
+      ANTIGUEDAD_PRODUCTOS: 'Age of financial products',
+      RELACION_CUOTA_INGRESO: 'Installment-to-income ratio',
+      EDAD_PLAZO: 'Age versus loan term',
+      CONCENTRACION_DEUDA: 'Debt concentration',
+      LISTAS_RESTRICTIVAS: 'Restrictive list matches',
+    },
+    campos: {
+      antiguedad_productos_anios: 'Age of financial products',
+      cuota_mensual_obligaciones: 'Monthly debt installment',
+      entidades_con_deuda: 'Creditors',
+      moras_12m: 'Late payments in the last 12 months',
+      ingreso_mensual_estimado: 'Estimated monthly income',
+      coincidencias_listas_restrictivas: 'Restrictive list matches',
+      edad: 'Age',
+      plazo_credito_meses: 'Loan term',
+      suma_asegurada: 'Sum insured',
+    },
+    fuentes: {
+      FA_PRODUCTOS_VIGENTES: 'Current financial products',
+      FA_HISTORIAL_PAGOS_12M: '12-month payment history',
+      FA_INGRESOS_AGREGADOS: 'Aggregated income',
+      DA_REGISTROS_PUBLICOS: 'Public government records',
+    },
+    motivos: {
+      NO_AUTORIZADO: 'Not authorized',
+      NO_DISPONIBLE_EN_FUENTE: 'Not available in the source',
+      TIEMPO_AGOTADO: 'The source did not respond in time',
+      FUENTE_NO_DISPONIBLE: 'Source not available',
+      RESPUESTA_INVALIDA: 'Invalid response from the source',
+    },
+  },
+} satisfies Record<Exclude<Idioma, 'pseudo'>, unknown>;
+
+export type CatalogoPerfilamiento = (typeof CATALOGO)['es-CO'];
+export const CATALOGO_PERFILAMIENTO: Record<Exclude<Idioma, 'pseudo'>, CatalogoPerfilamiento> = CATALOGO;
+
 @Injectable({ providedIn: 'root' })
 export class TextosPerfilamientoService {
   private readonly idioma = inject(IdiomaService);
@@ -138,6 +278,33 @@ export class TextosPerfilamientoService {
 
   /** pseudo usa es-CO. */
   readonly locale = computed(() => (this.idioma.actual() === 'en-US' ? 'en-US' : 'es-CO'));
+  private readonly catalogo = computed(() => CATALOGO[this.locale()]);
+  private readonly esPseudo = computed(() => this.idioma.actual() === 'pseudo');
+
+  nivel(nivel: NivelRiesgo): string {
+    return this.marcar(this.catalogo().niveles[nivel]);
+  }
+
+  valoracion(valoracion: Direccion | 'NO_EVALUADO'): string {
+    return this.marcar(this.catalogo().valoraciones[valoracion]);
+  }
+
+  /** Un código que el modelo agregue después se muestra tal cual, sin romper la pantalla. */
+  factor(codigo: string): string {
+    return this.marcar(this.buscar(this.catalogo().factores, codigo));
+  }
+
+  campo(campo: string): string {
+    return this.marcar(this.buscar(this.catalogo().campos, campo));
+  }
+
+  fuente(fuente: Fuente): string {
+    return this.marcar(this.catalogo().fuentes[fuente]);
+  }
+
+  motivo(motivo: MotivoDato): string {
+    return this.marcar(this.catalogo().motivos[motivo]);
+  }
 
   /** Número con el locale del usuario; `decimales` fija los decimales (p. ej., 2 para la confianza). */
   numero(valor: number, decimales?: number): string {
@@ -169,5 +336,13 @@ export class TextosPerfilamientoService {
     return new Intl.DateTimeFormat(this.locale(), {
       hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
     }).format(new Date(iso));
+  }
+
+  private buscar(tabla: Record<string, string>, clave: string): string {
+    return Object.hasOwn(tabla, clave) ? tabla[clave] : clave;
+  }
+
+  private marcar(texto: string): string {
+    return this.esPseudo() ? pseudo(texto) : texto;
   }
 }
