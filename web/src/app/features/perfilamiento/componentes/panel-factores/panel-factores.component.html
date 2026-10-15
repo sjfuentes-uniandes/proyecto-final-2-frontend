@@ -1,0 +1,21 @@
+@let t = textos.t();
+<section class="card" aria-labelledby="titulo-factores">
+  <h3 id="titulo-factores" tabindex="-1" #titulo>{{ t.factoresTitulo }}</h3>
+  <ul class="factores">
+    @for (factor of factores(); track factor.codigo) {
+      @let nombre = textos.factor(factor.codigo);
+      @let etiqueta = textos.valoracion(valoracion(factor));
+      <li class="factor">
+        <div class="factor__fila">
+          <span>{{ nombre }}</span>
+          <span class="valoracion valoracion--{{ tono(factor) }}">{{ etiqueta }}</span>
+        </div>
+        <div class="barra" role="meter" aria-valuemin="0" aria-valuemax="100"
+             [attr.aria-valuenow]="porcentaje(factor)" [attr.aria-valuetext]="etiqueta"
+             [attr.aria-label]="t.contribucionDe(nombre)">
+          <span class="barra__relleno barra__relleno--{{ tono(factor) }}" [style.width.%]="porcentaje(factor)"></span>
+        </div>
+      </li>
+    }
+  </ul>
+</section>

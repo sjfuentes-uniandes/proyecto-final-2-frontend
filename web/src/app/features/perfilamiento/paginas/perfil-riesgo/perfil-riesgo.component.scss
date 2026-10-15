@@ -1,0 +1,31 @@
+/* D02 (W11-P18): solo lo propio de esta pantalla; lo común está en perfilamiento.scss. */
+.acciones { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.botones { display: flex; flex-wrap: wrap; gap: 10px; }
+.ayuda { margin: 0; font-size: 12px; color: var(--sv-texto-secundario); }
+.ayuda--centro { text-align: center; }
+
+.metricas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding-top: 10px; }
+
+.detalle { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.lateral .btn { width: 100%; }
+
+.requeridos { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; font-size: 13px; }
+.requeridos li { display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--sv-borde); }
+.requeridos li:last-child { padding-bottom: 0; border-bottom: 0; }
+.requeridos strong { color: var(--sv-texto); }
+.requerido__fuente, .requerido__motivo { color: var(--sv-texto-secundario); }
+h3:focus { outline: 3px solid var(--sv-azul-medio); outline-offset: 4px; }
+
+.alerta p { margin: 0; }
+/* WCAG AA: el naranja del token no alcanza 4,5:1 sobre su fondo. */
+.nota--alerta { color: #7a4a00; }
+.seguimiento { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1100px) {
+  .metricas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .detalle { grid-template-columns: minmax(0, 1fr); }
+  .acciones { align-items: flex-start; }
+}

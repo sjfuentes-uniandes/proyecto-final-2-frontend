@@ -1,3 +1,4 @@
+import axe from 'axe-core';
 import { Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
@@ -103,3 +104,13 @@ export const TRAZA: Traza = {
   interpretacion: 'El paso más costoso es cotizacion · perfilamiento con 418 ms.',
   contexto: { canal: 'Socios', servicio_entrada: 'api-socios', servicios_internos: 2, servicios_externos: 1, ambiente: 'int' },
 };
+
+/** Violaciones de axe (WCAG 2.x A/AA y buenas prácticas); la prueba espera []. Igual que en socios. */
+export async function violacionesA11y(elemento: Element): Promise<string[]> {
+  const resultado = await axe.run(elemento, {
+    runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] },
+    // La página completa la arma el shell.
+    rules: { region: { enabled: false }, 'page-has-heading-one': { enabled: false }, 'landmark-one-main': { enabled: false } },
+  });
+  return resultado.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+}

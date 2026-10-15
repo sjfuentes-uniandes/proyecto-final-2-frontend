@@ -1,0 +1,9 @@
+:host { display: block; }
+.card { display: flex; flex-direction: column; gap: 12px; }
+.tabla-scroll { overflow-x: auto; }
+caption { padding: 0 0 14px; font-size: 15px; font-weight: 700; text-align: left; color: var(--sv-azul-oscuro); }
+td { font-size: 13px; }
+/* Contraste WCAG AA de las insignias: tonos más oscuros que los tokens del mockup. */
+.tag--ok { color: #00663f; }
+.tag--alerta { color: #7a4a00; }
+.tag--neutro { border: 1px solid var(--sv-borde); background: var(--sv-fondo); color: var(--sv-texto-secundario); }

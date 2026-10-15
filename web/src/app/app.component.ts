@@ -13,6 +13,7 @@ const ROLES: Record<string, string> = {
   operacion: 'Operación',
   administradores: 'Administración',
   'administradores-socios': 'Administración de socios',
+  asesores: 'Asesor',
 };
 
 @Component({
@@ -27,11 +28,11 @@ export class AppComponent {
   readonly idiomas = IDIOMAS;
   private readonly router = inject(Router);
 
-  // Cotización, Pólizas y Siniestros llegan en otras historias.
+  // Pólizas y Siniestros llegan en otras historias; Cotización abre el perfilamiento (HU-W11).
   readonly menu = computed<ItemMenu[]>(() => {
     this.sesion.claims();
     return [
-      { etiqueta: 'Cotización' },
+      this.sesion.tieneGrupo('asesores') ? { etiqueta: 'Cotización', ruta: '/perfilamiento' } : { etiqueta: 'Cotización' },
       { etiqueta: 'Pólizas' },
       { etiqueta: 'Siniestros' },
       this.sesion.tieneGrupo('administradores-socios') ? { etiqueta: 'Socios', ruta: '/socios' } : { etiqueta: 'Socios' },
