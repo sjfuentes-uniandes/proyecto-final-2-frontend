@@ -1,0 +1,17 @@
+/* D01 simplificado (W12-P09): lo común está en perfilamiento.scss. */
+.metricas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding-top: 10px; }
+.tarjeta { display: flex; flex-direction: column; gap: 10px; padding: 18px 16px 16px; border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-tarjeta); background: var(--sv-blanco); }
+.etiqueta { margin: 0; font-size: 11.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase;
+  color: var(--sv-texto-secundario); }
+.bloque { display: block; height: 12px; border-radius: 4px; background: var(--sv-fondo); }
+.bloque--valor { width: 60%; height: 24px; }
+.bloque--detalle { width: 85%; }
+
+/* Solo para lectores de pantalla: el título ya está a la vista. */
+.anuncio { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 900px) {
+  .metricas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

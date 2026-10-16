@@ -42,6 +42,7 @@ const ES = {
   plazoMeses: (meses: number) => `${meses} meses`,
   continuar: 'Continuar al perfilamiento',
   calculando: 'Calculando el perfil de riesgo',
+  consultandoFuentes: 'Consultando las fuentes autorizadas en paralelo',
   codigoSeguimiento: (id: string) => `Código de seguimiento: ${id}`,
 
   errorGeneral: 'No fue posible calcular el perfil. Inténtalo de nuevo.',
@@ -139,6 +140,7 @@ const EN: TextosPerfilamiento = {
   plazoMeses: (meses: number) => `${meses} months`,
   continuar: 'Continue to profiling',
   calculando: 'Calculating the risk profile',
+  consultandoFuentes: 'Querying the authorized sources in parallel',
   codigoSeguimiento: (id: string) => `Tracking code: ${id}`,
 
   errorGeneral: 'The profile could not be calculated. Please try again.',

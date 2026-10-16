@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { PerfilCargandoComponent } from '../../componentes/perfil-cargando/perfil-cargando.component';
 import { ErrorPerfilamiento, errorPerfilamiento, esFallaTransitoria } from '../../perfilamiento.errores';
 import { TextosPerfilamientoService } from '../../perfilamiento.i18n';
 import { PRODUCTO_VIDA_HIPOTECARIO } from '../../perfilamiento.modelo';
@@ -42,7 +43,7 @@ function sumaEnRango(control: AbstractControl<string>): ValidationErrors | null 
 
 @Component({
   selector: 'app-nuevo-perfilamiento',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PerfilCargandoComponent],
   templateUrl: './nuevo-perfilamiento.component.html',
   styleUrls: ['../../perfilamiento.scss', './nuevo-perfilamiento.component.scss'],
 })

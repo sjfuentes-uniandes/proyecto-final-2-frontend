@@ -3,8 +3,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { ConfigService } from '../../core/config/app-config';
-import { ResumenPerfil, SolicitudPerfil } from './perfilamiento.modelo';
+import { ComparacionPerfiles, ResumenPerfil, SolicitudPerfil } from './perfilamiento.modelo';
 import { PerfilamientoService } from './perfilamiento.service';
+import { PERFIL_C01, PERFIL_C06 } from './perfilamiento.testing';
 
 const BASE = 'https://api/web/v1/perfiles';
 const SOLICITUD: SolicitudPerfil = {
@@ -49,5 +50,24 @@ describe('PerfilamientoService', () => {
     servicio.listar(SOLICITUD.clienteId).subscribe((lista) => (items = lista));
     http.expectOne(`${BASE}?clienteId=${SOLICITUD.clienteId}`).flush({ items: [RESUMEN] });
     expect(items).toEqual([RESUMEN]);
+  });
+
+  it('recalcula un perfil con la Idempotency-Key y sin cuerpo (HU-W12)', () => {
+    servicio.recalcular(RESUMEN.id, 'clave-2').subscribe();
+    const solicitud = http.expectOne(`${BASE}/${RESUMEN.id}/recalculos`);
+    expect(solicitud.request.method).toBe('POST');
+    expect(solicitud.request.body).toBeNull();
+    expect(solicitud.request.headers.get('Idempotency-Key')).toBe('clave-2');
+    solicitud.flush({});
+  });
+
+  it('obtiene la comparación del perfil recalculado con su anterior (HU-W12)', () => {
+    const comparacion: ComparacionPerfiles = { anterior: PERFIL_C06, actual: { ...PERFIL_C01, perfilAnteriorId: PERFIL_C06.id } };
+    let recibida: ComparacionPerfiles | undefined;
+    servicio.comparacion(PERFIL_C01.id).subscribe((c) => (recibida = c));
+    const solicitud = http.expectOne(`${BASE}/${PERFIL_C01.id}/comparacion`);
+    expect(solicitud.request.method).toBe('GET');
+    solicitud.flush(comparacion);
+    expect(recibida).toEqual(comparacion);
   });
 });

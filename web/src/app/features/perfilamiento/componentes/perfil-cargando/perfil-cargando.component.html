@@ -1,0 +1,26 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.inicio }} › {{ t.grupoContratacion }} › <strong>{{ t.perfilamientoMiga }}</strong>
+</nav>
+<header>
+  <h2>{{ t.calculando }}</h2>
+  <p class="sub">{{ t.consultandoFuentes }}</p>
+</header>
+
+<ol class="pasos" [attr.aria-label]="t.pasos">
+  <li class="hecho">1 · {{ t.paso1 }}</li>
+  <li aria-current="step">2 · {{ t.paso2 }}</li>
+  <li>3 · {{ t.paso3 }}</li>
+</ol>
+
+<div class="metricas" aria-hidden="true">
+  @for (etiqueta of tarjetas(); track $index) {
+    <div class="tarjeta">
+      <p class="etiqueta">{{ etiqueta }}</p>
+      <span class="bloque bloque--valor"></span>
+      <span class="bloque bloque--detalle"></span>
+    </div>
+  }
+</div>
+
+<p class="anuncio" role="status" aria-live="polite">{{ t.calculando }}</p>

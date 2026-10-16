@@ -6,4 +6,5 @@
 .alerta:focus { outline: 3px solid var(--sv-azul-medio); outline-offset: 2px; }
 .seguimiento { font-variant-numeric: tabular-nums; }
 .lateral .btn { width: 100%; }
-.calculando { margin: 4px 0 0; font-size: 13px; text-align: center; color: var(--sv-texto-secundario); }
+/* W12-P09: las clases comunes (.pasos, .cols) fijan display; [hidden] debe ganarles. */
+[hidden] { display: none !important; }

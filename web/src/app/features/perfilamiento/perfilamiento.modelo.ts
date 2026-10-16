@@ -115,3 +115,9 @@ export interface ResumenPerfil {
 export interface ListaPerfiles {
   items: ResumenPerfil[];
 }
+
+/** GET /v1/perfiles/{perfilId}/comparacion (HU-W12, D05): el perfil recalculado y su anterior. */
+export interface ComparacionPerfiles {
+  anterior: PerfilRespuesta;
+  actual: PerfilRespuesta;
+}
