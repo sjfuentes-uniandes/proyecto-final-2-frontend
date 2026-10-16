@@ -99,6 +99,13 @@ const ES = {
   sinConsentimientoTexto: 'Sin esa autorización no es posible clasificar su riesgo.',
   motivoConsentimiento: (motivo: string) => `Motivo: ${motivo}.`,
   solicitarConsentimiento: 'Solicitar consentimiento',
+
+  perfilProvisional: 'Perfil provisional:',
+  fuentesSinRespuesta: (n: number, nombres: string) =>
+    n === 1
+      ? `1 fuente no respondió a tiempo o no estuvo disponible (${nombres}). Puede recalcular cuando la fuente se restablezca.`
+      : `${n} fuentes no respondieron a tiempo o no estuvieron disponibles (${nombres}). Puede recalcular cuando las fuentes se restablezcan.`,
+  recalcularPerfil: 'Recalcular perfil',
 };
 
 export type TextosPerfilamiento = typeof ES;
@@ -197,6 +204,13 @@ const EN: TextosPerfilamiento = {
   sinConsentimientoTexto: 'Without that authorization the customer risk cannot be classified.',
   motivoConsentimiento: (motivo: string) => `Reason: ${motivo}.`,
   solicitarConsentimiento: 'Request consent',
+
+  perfilProvisional: 'Provisional profile:',
+  fuentesSinRespuesta: (n: number, nombres: string) =>
+    n === 1
+      ? `1 source did not respond in time or was unavailable (${nombres}). You can recalculate once the source is back.`
+      : `${n} sources did not respond in time or were unavailable (${nombres}). You can recalculate once the sources are back.`,
+  recalcularPerfil: 'Recalculate profile',
 };
 
 const ACENTOS: Record<string, string> = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', A: 'Å', E: 'Ë', I: 'Ï', O: 'Ö', U: 'Ü' };
@@ -344,6 +358,11 @@ export class TextosPerfilamientoService {
 
   campo(campo: string): string {
     return this.marcar(this.buscar(this.catalogo().campos, campo));
+  }
+
+  /** "A, B y C" o "A, B and C", según el idioma. */
+  lista(valores: string[]): string {
+    return new Intl.ListFormat(this.locale(), { style: 'long', type: 'conjunction' }).format(valores);
   }
 
   fuente(fuente: Fuente): string {

@@ -6,6 +6,7 @@ import {
   EstadoFuente,
   EstadoPerfil,
   Factor,
+  Fuente,
   NivelRiesgo,
   PerfilRespuesta,
 } from './perfilamiento.modelo';
@@ -76,4 +77,12 @@ const CAUSAS: readonly CausaConsentimiento[] = ['REVOCADO', 'VENCIDO', 'SIN_CONS
 /** La causa del rechazo si tiene texto para el asesor (W10-P14); otra causa no se muestra. */
 export function motivoConsentimiento(causa: string | null | undefined): CausaConsentimiento | null {
   return CAUSAS.find((c) => c === causa) ?? null;
+}
+
+/** Estados de una fuente que se consultó y no entregó datos (HU-W12): se puede recalcular cuando se restablezca. */
+const SIN_RESPUESTA: readonly EstadoFuente[] = ['TIEMPO_AGOTADO', 'NO_DISPONIBLE', 'RESPUESTA_INVALIDA'];
+
+/** Las fuentes que no respondieron a tiempo o no estuvieron disponibles, en el orden del perfil (W12-P10). */
+export function fuentesSinRespuesta(perfil: Pick<PerfilRespuesta, 'fuentes'>): Fuente[] {
+  return perfil.fuentes.filter((f) => SIN_RESPUESTA.includes(f.estado)).map((f) => f.fuente);
 }

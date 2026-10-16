@@ -1,28 +1,31 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flush } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 
 import { ConfigService } from '../../../../core/config/app-config';
 import { Idioma, IdiomaService } from '../../../../core/i18n/idioma.service';
 import { violacionesA11y } from '../../../../testing';
 import { PerfilRespuesta } from '../../perfilamiento.modelo';
-import { BASE_PERFILES, PERFIL_C01, PERFIL_C03, PERFIL_C08, PERFIL_C16, PERFIL_ID } from '../../perfilamiento.testing';
+import { BASE_PERFILES, PERFIL_C01, PERFIL_C03, PERFIL_C06, PERFIL_C08, PERFIL_C13, PERFIL_C16, PERFIL_ID } from '../../perfilamiento.testing';
 import { PerfilRiesgoComponent } from './perfil-riesgo.component';
 
 describe('PerfilRiesgoComponent (D02)', () => {
   let fixture: ComponentFixture<PerfilRiesgoComponent>;
   let http: HttpTestingController;
+  let navegar: jasmine.Spy;
   const html = () => fixture.nativeElement as HTMLElement;
   const textos = (selector: string) => Array.from(html().querySelectorAll(selector)).map((e) => e.textContent?.trim());
 
   function montar(idioma: Idioma = 'es-CO', id = PERFIL_ID): void {
     TestBed.configureTestingModule({
       imports: [PerfilRiesgoComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     TestBed.inject(ConfigService).establecer({ apiBaseUrl: 'https://api/' });
     TestBed.inject(IdiomaService).cambiar(idioma);
     http = TestBed.inject(HttpTestingController);
+    navegar = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
     fixture = TestBed.createComponent(PerfilRiesgoComponent);
     fixture.componentRef.setInput('perfilId', id);
     fixture.detectChanges();
@@ -273,6 +276,158 @@ describe('PerfilRiesgoComponent (D02)', () => {
         fixture.componentRef.setInput('perfilId', PERFIL_C16.id);
         fixture.detectChanges();
         responder(PERFIL_C16, PERFIL_C16.id);
+        expect(await violacionesA11y(html())).toEqual([]);
+      });
+    }
+  });
+
+  describe('HU-W12 · perfil provisional y recálculo (W12-P10)', () => {
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+    const NUEVO = { ...PERFIL_C01, id: '00000000-0000-4000-a000-0000000000a1', perfilAnteriorId: PERFIL_C06.id };
+    const recalculos = (id = PERFIL_C06.id) => `${BASE_PERFILES}/${id}/recalculos`;
+    const boton = () =>
+      Array.from(html().querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.trim() === 'Recalcular perfil');
+
+    function montarC06(idioma: Idioma = 'es-CO'): void {
+      montar(idioma, PERFIL_C06.id);
+      responder(PERFIL_C06, PERFIL_C06.id);
+    }
+
+    function clicRecalcular(): void {
+      boton()!.click();
+      fixture.detectChanges();
+    }
+
+    it('WT-W12-03 · C06: alerta de perfil provisional con "Registros públicos del Estado" arriba de las tarjetas', () => {
+      montarC06();
+      const nota = html().querySelector('.provisional .nota.nota--alerta');
+      expect(nota?.getAttribute('role')).toBe('status');
+      expect(nota?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'Perfil provisional: 1 fuente no respondió a tiempo o no estuvo disponible (Registros públicos del Estado). ' +
+          'Puede recalcular cuando la fuente se restablezca.',
+      );
+      expect(nota?.querySelector('strong')?.textContent).toBe('Perfil provisional:');
+      const provisional = html().querySelector('.provisional')!;
+      const metricas = html().querySelector('.metricas')!;
+      expect(provisional.compareDocumentPosition(metricas) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(boton()?.classList).toContain('btn--secundario');
+      expect(boton()?.closest('.provisional')).toBe(provisional);
+    });
+
+    it('con varias fuentes sin respuesta las nombra todas, en plural', () => {
+      const [productos, historial, ingresos, registros] = PERFIL_C06.fuentes;
+      montar('es-CO', PERFIL_C06.id);
+      responder(
+        { ...PERFIL_C06, fuentes: [productos, historial, { ...ingresos, estado: 'NO_DISPONIBLE' }, registros] },
+        PERFIL_C06.id,
+      );
+      expect(html().querySelector('.provisional .nota')?.textContent).toContain(
+        '2 fuentes no respondieron a tiempo o no estuvieron disponibles (Ingresos agregados y Registros públicos del Estado)',
+      );
+    });
+
+    it('C01 y C03 no muestran la alerta ni el botón', () => {
+      montar();
+      responder(PERFIL_C01);
+      expect(html().querySelector('.provisional')).toBeNull();
+      expect(boton()).toBeUndefined();
+      fixture.componentRef.setInput('perfilId', PERFIL_C03.id);
+      fixture.detectChanges();
+      responder(PERFIL_C03, PERFIL_C03.id);
+      expect(boton()).toBeUndefined();
+    });
+
+    it('WT-W12-04 · el clic llama a POST …/recalculos con una Idempotency-Key nueva y muestra la carga', () => {
+      montarC06();
+      clicRecalcular();
+      const solicitud = http.expectOne(recalculos());
+      expect(solicitud.request.method).toBe('POST');
+      expect(solicitud.request.headers.get('Idempotency-Key')).toMatch(UUID);
+      expect(html().querySelector('app-perfil-cargando h2')?.textContent?.trim()).toBe('Calculando el perfil de riesgo');
+      expect(html().querySelector('.metricas:not(app-perfil-cargando *)')).toBeNull();
+      expect(html().querySelectorAll('nav.crumb').length).toBe(1);
+      fixture.componentInstance.recalcular(PERFIL_C06);
+      http.expectNone(recalculos());
+      solicitud.flush(NUEVO, { status: 201, statusText: 'Created' });
+    });
+
+    it('WT-W12-05 · al terminar navega a /perfilamiento/{nuevoId}/actualizacion', () => {
+      montarC06();
+      clicRecalcular();
+      http.expectOne(recalculos()).flush(NUEVO, { status: 201, statusText: 'Created' });
+      fixture.detectChanges();
+      expect(navegar).toHaveBeenCalledWith(['/perfilamiento', NUEVO.id, 'actualizacion']);
+      expect(html().querySelector('app-perfil-cargando')).toBeNull();
+    });
+
+    it('una falla muestra la alerta con su código de seguimiento, enfocada, y el reintento reutiliza la clave', fakeAsync(() => {
+      montarC06();
+      clicRecalcular();
+      const primera = http.expectOne(recalculos());
+      const clave = primera.request.headers.get('Idempotency-Key');
+      primera.flush({ codigo: 'SERVICIO_NO_DISPONIBLE', correlationId: 'corr-w12' }, { status: 503, statusText: 'x' });
+      fixture.detectChanges();
+      flush();
+      const alerta = html().querySelector<HTMLElement>('[role=alert]');
+      expect(alerta?.textContent).toContain('El servicio de perfilamiento no está disponible');
+      expect(alerta?.textContent).toContain('Código de seguimiento: corr-w12');
+      expect(document.activeElement).toBe(alerta);
+      expect(navegar).not.toHaveBeenCalled();
+      clicRecalcular();
+      const reintento = http.expectOne(recalculos());
+      expect(reintento.request.headers.get('Idempotency-Key')).toBe(clave);
+      reintento.flush(NUEVO, { status: 201, statusText: 'Created' });
+    }));
+
+    it('un error que no es transitorio descarta la clave: el siguiente clic usa otra', fakeAsync(() => {
+      montarC06();
+      clicRecalcular();
+      const primera = http.expectOne(recalculos());
+      const clave = primera.request.headers.get('Idempotency-Key');
+      primera.flush({ codigo: 'IDEMPOTENCIA_CONFLICTO' }, { status: 422, statusText: 'x' });
+      fixture.detectChanges();
+      flush();
+      expect(html().querySelector('[role=alert]')?.textContent).toContain('Esta solicitud ya se envió con otros datos');
+      clicRecalcular();
+      const segunda = http.expectOne(recalculos());
+      expect(segunda.request.headers.get('Idempotency-Key')).not.toBe(clave);
+      segunda.flush(NUEVO, { status: 201, statusText: 'Created' });
+    }));
+
+    it('WT-W12-06 · C13: el botón está dentro de "Datos requeridos" y recalcula ese perfil', () => {
+      montar('es-CO', PERFIL_C13.id);
+      responder(PERFIL_C13, PERFIL_C13.id);
+      expect(html().querySelector('.provisional')).toBeNull();
+      const seccion = boton()?.closest('section');
+      expect(seccion?.querySelector('h3')?.textContent).toBe('Datos requeridos');
+      expect(seccion?.textContent).toContain('Historial de pagos de 12 meses');
+      clicRecalcular();
+      http.expectOne(recalculos(PERFIL_C13.id)).flush(NUEVO, { status: 201, statusText: 'Created' });
+    });
+
+    it('se presenta en en-US', () => {
+      montarC06('en-US');
+      expect(html().querySelector('.provisional .nota')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'Provisional profile: 1 source did not respond in time or was unavailable (Public government records). ' +
+          'You can recalculate once the source is back.',
+      );
+      expect(html().querySelector('.provisional button')?.textContent?.trim()).toBe('Recalculate profile');
+    });
+
+    for (const idioma of ['es-CO', 'en-US'] as const) {
+      it(`WT-W12-07 · cumple axe-core con C06, C13 y el error de recálculo (${idioma})`, async () => {
+        montarC06(idioma);
+        expect(await violacionesA11y(html())).toEqual([]);
+        html().querySelector<HTMLButtonElement>('.provisional button')!.click();
+        fixture.detectChanges();
+        expect(await violacionesA11y(html())).toEqual([]);
+        http.expectOne(recalculos()).flush({ codigo: 'SERVICIO_NO_DISPONIBLE' }, { status: 503, statusText: 'x' });
+        fixture.detectChanges();
+        expect(await violacionesA11y(html())).toEqual([]);
+        fixture.componentRef.setInput('perfilId', PERFIL_C13.id);
+        fixture.detectChanges();
+        responder(PERFIL_C13, PERFIL_C13.id);
+        expect(html().querySelector('[role=alert]')).withContext('el error era del perfil anterior').toBeNull();
         expect(await violacionesA11y(html())).toEqual([]);
       });
     }

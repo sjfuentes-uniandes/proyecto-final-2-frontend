@@ -1,11 +1,13 @@
 import { TEXTOS } from './perfilamiento.i18n';
 import { Factor } from './perfilamiento.modelo';
+import { PERFIL_C01, PERFIL_C02, PERFIL_C06, PERFIL_C13 } from './perfilamiento.testing';
 import {
   claseEstadoFuente,
   claseNivel,
   claseTiempo,
   claseValoracion,
   etiquetaValoracion,
+  fuentesSinRespuesta,
   motivoConsentimiento,
   porcentajeBarra,
   sinConsentimiento,
@@ -91,5 +93,17 @@ describe('Presentación de la variante sin consentimiento y del linaje (W10-P13,
     expect(['REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', 'PROPOSITO_NO_AUTORIZADO', null, undefined].map(motivoConsentimiento)).toEqual([
       'REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', null, null, null,
     ]);
+  });
+
+  it('fuentesSinRespuesta: solo las consultadas sin datos, en el orden del perfil (W12-P10)', () => {
+    expect(fuentesSinRespuesta(PERFIL_C01)).toEqual([]);
+    expect(fuentesSinRespuesta(PERFIL_C02)).toEqual([]); // NO_AUTORIZADA no se recalcula
+    expect(fuentesSinRespuesta(PERFIL_C06)).toEqual(['DA_REGISTROS_PUBLICOS']);
+    expect(fuentesSinRespuesta(PERFIL_C13)).toEqual(['FA_HISTORIAL_PAGOS_12M']);
+    const [productos, historial, ingresos, registros] = PERFIL_C01.fuentes;
+    const fuentes = [
+      productos, { ...historial, estado: 'RESPUESTA_INVALIDA' as const }, { ...ingresos, estado: 'NO_DISPONIBLE' as const }, registros,
+    ];
+    expect(fuentesSinRespuesta({ fuentes })).toEqual(['FA_HISTORIAL_PAGOS_12M', 'FA_INGRESOS_AGREGADOS']);
   });
 });
