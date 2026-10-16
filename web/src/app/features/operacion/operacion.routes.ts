@@ -15,6 +15,11 @@ export const routes: Routes = [
         title: 'Trazas · Operación · Solventa',
         loadComponent: () => import('./trazas/trazas.component').then((m) => m.TrazasComponent),
       },
+      {
+        path: 'alertas',
+        title: 'Alertas · Operación · Solventa',
+        loadComponent: () => import('./alertas/alertas.component').then((m) => m.AlertasComponent),
+      },
     ],
   },
 ];

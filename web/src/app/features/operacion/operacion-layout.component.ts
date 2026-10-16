@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { ConfigService } from '../../core/config/app-config';
 import { ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 
-/** Menú de Operación. Tablero abre CloudWatch; Alertas y Continuidad llegan en otras historias. */
+/** Menú de Operación. Tablero abre CloudWatch; Continuidad llega en otra historia. */
 @Component({
   selector: 'app-operacion-layout',
   imports: [SeccionLayoutComponent],
@@ -15,7 +15,7 @@ export class OperacionLayoutComponent {
   readonly items: ItemSeccion[] = [
     { etiqueta: 'Tablero', icono: '📈', href: this.dashboardUrl || undefined, pendiente: 'Configure dashboardUrl en config.json' },
     { etiqueta: 'Trazas', icono: '🔍', ruta: 'trazas' },
-    { etiqueta: 'Alertas', icono: '🔔' },
+    { etiqueta: 'Alertas', icono: '🔔', ruta: 'alertas' },
     { etiqueta: 'Continuidad', icono: '🛡' },
   ];
 }

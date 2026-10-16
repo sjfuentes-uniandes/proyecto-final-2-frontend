@@ -1,0 +1,118 @@
+<nav class="crumb" aria-label="Ruta de navegación">
+  <span class="crumb__link">Inicio</span> › <span class="crumb__link">Operación</span> › <strong>Alertas</strong>
+</nav>
+
+<header class="h-row">
+  <div>
+    <h2>Alertas abiertas</h2>
+    <p class="sub" data-testid="subtitulo">{{ cargando() ? 'Consultando las alarmas del ambiente…' : subtitulo() }}</p>
+  </div>
+</header>
+
+@if (error(); as mensaje) {
+  <p class="aviso" role="alert">{{ mensaje }}</p>
+}
+
+@if (panel(); as p) {
+  <section class="card" aria-labelledby="titulo-abiertas">
+    <h3 id="titulo-abiertas" class="oculto">Alertas abiertas</h3>
+    @if (p.abiertas.length === 0) {
+      <p class="vacio" data-testid="sin-alertas">No hay alertas abiertas en {{ p.ambiente }}.</p>
+    } @else {
+      <div class="tabla-scroll">
+        <table class="data" data-testid="abiertas">
+          <thead>
+            <tr>
+              <th>Severidad</th>
+              <th class="col-alerta">Alerta</th>
+              <th>Valor actual</th>
+              <th>Umbral</th>
+              <th>Abierta hace</th>
+              <th><span class="oculto">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (alerta of p.abiertas; track alerta.alarma) {
+              <tr>
+                <td><span class="tag" [class]="severidades[alerta.severidad].clase">{{ severidades[alerta.severidad].etiqueta }}</span></td>
+                <td [title]="alerta.alarma">{{ alerta.titulo }}</td>
+                <td class="mono">{{ valor(alerta.valor_actual, alerta.unidad) }}</td>
+                <td class="mono">{{ valor(alerta.umbral, alerta.unidad) }}</td>
+                <td class="mono">{{ abiertaHace(alerta) }}</td>
+                <td>
+                  @if (ruta(alerta); as destino) {
+                    <a class="enlace" [routerLink]="destino" [queryParams]="parametros(alerta)">{{ accion(alerta) }}</a>
+                  } @else if (alerta.enlace.url) {
+                    <a class="enlace" [href]="alerta.enlace.url" target="_blank" rel="noopener">{{ accion(alerta) }}</a>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="titulo-umbrales">
+      <h3 id="titulo-umbrales">Umbrales configurados</h3>
+      <div class="tabla-scroll">
+        <table class="data" data-testid="umbrales">
+          <thead>
+            <tr>
+              <th>Métrica</th>
+              <th>Meta comprometida</th>
+              <th>Advertencia</th>
+              <th>Crítica</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (umbral of p.umbrales; track umbral.metrica) {
+              <tr>
+                <td>{{ umbral.metrica }}</td>
+                <td class="mono">{{ valor(umbral.meta, umbral.unidad) }}</td>
+                <td class="mono">{{ valor(umbral.advertencia, umbral.unidad) }}</td>
+                <td class="mono">{{ valor(umbral.critica, umbral.unidad) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="lateral">
+      <section class="card" aria-labelledby="titulo-criterio">
+        <h3 id="titulo-criterio">Criterio de diseño</h3>
+        <p class="texto" data-testid="criterio">
+          Cada umbral de advertencia se fija en el {{ valor(p.porcentaje_advertencia, '%') }} de la meta comprometida. Eso da
+          margen para reaccionar antes de incumplir con el cliente, en lugar de enterarse cuando ya se rompió el compromiso.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="titulo-resumen">
+        <h3 id="titulo-resumen">Resumen del mes</h3>
+        <dl class="kv" data-testid="resumen">
+          <div><dt>Alertas generadas</dt><dd>{{ p.resumen.generadas }}</dd></div>
+          <div><dt>Críticas</dt><dd>{{ p.resumen.criticas }}</dd></div>
+          <div>
+            <dt [title]="'Se recuperaron en menos de ' + p.falso_positivo_min + ' min'">Falsos positivos</dt>
+            <dd>{{ p.resumen.falsos_positivos }}</dd>
+          </div>
+          <div>
+            <dt>Tiempo medio de atención</dt>
+            <dd>{{ p.resumen.tiempo_medio_atencion_min === null ? '—' : p.resumen.tiempo_medio_atencion_min + ' min' }}</dd>
+          </div>
+          <div>
+            <dt [title]="'Críticas abiertas más de ' + p.atencion_min + ' min'">Metas incumplidas</dt>
+            <dd [class.ok]="p.resumen.metas_incumplidas === 0">{{ p.resumen.metas_incumplidas }}</dd>
+          </div>
+        </dl>
+        <p class="nota-pie">
+          Últimos 30 días. Falso positivo: se recuperó en menos de {{ p.falso_positivo_min }} min. Meta incumplida: alerta
+          crítica abierta más de {{ p.atencion_min }} min.
+        </p>
+      </section>
+    </div>
+  </div>
+}
