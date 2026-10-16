@@ -1,0 +1,106 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.inicio }} › {{ t.grupoContratacion }} › <strong>{{ t.perfilActualizadoMiga }}</strong>
+</nav>
+
+@switch (carga().estado) {
+  @case ('cargando') {
+    <p class="sub" role="status">{{ t.cargandoComparacion }}</p>
+  }
+  @case ('no-encontrado') {
+    <h2>{{ t.perfilActualizadoMiga }}</h2>
+    <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ t.perfilNoEncontrado }}</span></p>
+  }
+  @case ('sin-anterior') {
+    <h2>{{ t.perfilActualizadoMiga }}</h2>
+    <p class="nota" role="status">
+      {{ t.sinPerfilAnterior }} <a [routerLink]="['/perfilamiento', perfilId()]">{{ t.verPerfil }}</a>
+    </p>
+  }
+  @case ('error') {
+    @if (error(); as e) {
+      <h2>{{ t.perfilActualizadoMiga }}</h2>
+      <div class="alerta alerta--error" role="alert">
+        <span aria-hidden="true">⚠</span>
+        <p>
+          {{ e.mensaje }}
+          @if (e.correlationId) {
+            <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+          }
+        </p>
+      </div>
+    }
+  }
+}
+
+@if (comparacion(); as c) {
+  <div class="h-row">
+    <header>
+      <h2>{{ titulo(c.actual) }}</h2>
+      <p class="sub">{{ subtitulo(c.actual) }}</p>
+    </header>
+    <a class="btn btn--primario" [routerLink]="['/perfilamiento', c.actual.id]">{{ t.verPerfilDefinitivo }}</a>
+  </div>
+
+  @if (recuperado() && restablecidas().length > 0) {
+    <p class="alerta alerta--ok" role="status"><span aria-hidden="true">✓</span><span>{{ avisoRestablecidas() }}</span></p>
+  } @else {
+    <p class="nota">{{ t.recalculoInformativo }}</p>
+  }
+
+  <div class="detalle">
+    <section class="card">
+      <div class="tabla-scroll">
+        <table class="data">
+          <caption>{{ t.comparacionTitulo }}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{{ t.colConcepto }}</th>
+              <th scope="col">{{ t.colProvisional }}</th>
+              <th scope="col">{{ t.colDefinitivo }}</th>
+              <th scope="col">{{ t.colCambio }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of filas(); track fila.concepto) {
+              <tr>
+                <th scope="row">{{ concepto(fila) }}</th>
+                @for (perfil of [c.anterior, c.actual]; track $index) {
+                  <td>
+                    @if (fila.concepto === 'ESTADO') {
+                      <span class="tag tag--{{ tonoEstado(perfil.estado) }}">{{ valor(fila, perfil) }}</span>
+                    } @else {
+                      {{ valor(fila, perfil) }}
+                    }
+                  </td>
+                }
+                <td>
+                  @if (cambio(fila); as texto) {
+                    <span class="tag tag--{{ fila.tono }}">{{ texto }}</span>
+                  } @else {
+                    —
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="lateral">
+      <section class="card" aria-labelledby="titulo-que-paso">
+        <h3 id="titulo-que-paso">{{ t.queTitulo }}</h3>
+        <ol class="linea">
+          @for (evento of eventos(); track $index) {
+            <li class="evento evento--{{ evento.tono }}">
+              <strong>{{ textos.evento(evento.tipo) }}</strong>
+              <span class="evento__detalle">{{ detalleEvento(evento) }}</span>
+            </li>
+          }
+        </ol>
+      </section>
+      <p class="nota">{{ t.notaPerfilAnterior }}</p>
+    </div>
+  </div>
+}

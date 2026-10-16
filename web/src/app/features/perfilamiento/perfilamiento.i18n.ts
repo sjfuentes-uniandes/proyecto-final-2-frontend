@@ -1,7 +1,17 @@
 import { Injectable, computed, inject } from '@angular/core';
 
 import { Idioma, IdiomaService } from '../../core/i18n/idioma.service';
-import { CausaConsentimiento, Direccion, EstadoFuente, Fuente, MotivoDato, NivelRiesgo, TipoFuente } from './perfilamiento.modelo';
+import {
+  CausaConsentimiento,
+  Direccion,
+  EstadoFuente,
+  EstadoPerfil,
+  Fuente,
+  MotivoDato,
+  NivelRiesgo,
+  TipoFuente,
+} from './perfilamiento.modelo';
+import { Cambio, TipoEvento } from './presentacion';
 
 type Texto = string | ((...valores: never[]) => string);
 
@@ -106,6 +116,33 @@ const ES = {
       ? `1 fuente no respondió a tiempo o no estuvo disponible (${nombres}). Puede recalcular cuando la fuente se restablezca.`
       : `${n} fuentes no respondieron a tiempo o no estuvieron disponibles (${nombres}). Puede recalcular cuando las fuentes se restablezcan.`,
   recalcularPerfil: 'Recalcular perfil',
+
+  // D05 limitado (W12-P11).
+  perfilActualizadoMiga: 'Perfil actualizado',
+  perfilSeActualizo: 'El perfil se actualizó',
+  perfilSeRecalculo: 'El perfil se recalculó',
+  subtituloActualizado: (id: string, texto: string) => `Perfil ${id} · ${texto}`,
+  fuenteVolvio: 'la fuente que fallaba volvió a responder',
+  recalculadoConModelo: (version: string) => `recalculado con el modelo ${version}`,
+  fuentesRestablecidas: (n: number, nombres: string) =>
+    `${nombres} ${n === 1 ? 'se restableció' : 'se restablecieron'} y el perfil se recalculó con la información completa.`,
+  recalculoInformativo: 'El perfil se recalculó con el modelo vigente. Compare los dos perfiles antes de continuar.',
+  comparacionTitulo: 'Comparación antes y después',
+  colConcepto: 'Concepto',
+  colProvisional: 'Perfil provisional',
+  colDefinitivo: 'Perfil definitivo',
+  colCambio: 'Cambio',
+  filaFuentes: 'Fuentes consultadas',
+  filaEstado: 'Estado',
+  deTotal: (x: number, y: number) => `${x} de ${y}`,
+  queTitulo: 'Qué pasó',
+  detalleFuente: (fuente: string, hora: string) => `${fuente} · ${hora}`,
+  detalleConfianza: (hora: string, confianza: string) => `${hora} · confianza ${confianza}`,
+  notaPerfilAnterior: 'El perfil anterior se conserva sin cambios con su versión de modelo.',
+  verPerfilDefinitivo: 'Ver perfil definitivo',
+  cargandoComparacion: 'Cargando la comparación…',
+  sinPerfilAnterior: 'Este perfil no proviene de un recálculo: no hay un perfil anterior con el cual compararlo.',
+  verPerfil: 'Ver el perfil',
 };
 
 export type TextosPerfilamiento = typeof ES;
@@ -211,6 +248,33 @@ const EN: TextosPerfilamiento = {
       ? `1 source did not respond in time or was unavailable (${nombres}). You can recalculate once the source is back.`
       : `${n} sources did not respond in time or were unavailable (${nombres}). You can recalculate once the sources are back.`,
   recalcularPerfil: 'Recalculate profile',
+
+  // D05 limitado (W12-P11).
+  perfilActualizadoMiga: 'Profile updated',
+  perfilSeActualizo: 'The profile was updated',
+  perfilSeRecalculo: 'The profile was recalculated',
+  subtituloActualizado: (id: string, texto: string) => `Profile ${id} · ${texto}`,
+  fuenteVolvio: 'the failing source responded again',
+  recalculadoConModelo: (version: string) => `recalculated with model ${version}`,
+  fuentesRestablecidas: (n: number, nombres: string) =>
+    `${nombres} ${n === 1 ? 'is' : 'are'} back and the profile was recalculated with complete information.`,
+  recalculoInformativo: 'The profile was recalculated with the current model. Compare both profiles before continuing.',
+  comparacionTitulo: 'Before and after',
+  colConcepto: 'Concept',
+  colProvisional: 'Provisional profile',
+  colDefinitivo: 'Final profile',
+  colCambio: 'Change',
+  filaFuentes: 'Sources queried',
+  filaEstado: 'Status',
+  deTotal: (x: number, y: number) => `${x} of ${y}`,
+  queTitulo: 'What happened',
+  detalleFuente: (fuente: string, hora: string) => `${fuente} · ${hora}`,
+  detalleConfianza: (hora: string, confianza: string) => `${hora} · confidence ${confianza}`,
+  notaPerfilAnterior: 'The previous profile is kept unchanged with its model version.',
+  verPerfilDefinitivo: 'View final profile',
+  cargandoComparacion: 'Loading the comparison…',
+  sinPerfilAnterior: 'This profile does not come from a recalculation: there is no previous profile to compare it with.',
+  verPerfil: 'View the profile',
 };
 
 const ACENTOS: Record<string, string> = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', A: 'Å', E: 'Ë', I: 'Ï', O: 'Ö', U: 'Ü' };
@@ -235,6 +299,17 @@ export const TEXTOS: Record<Idioma, TextosPerfilamiento> = { 'es-CO': ES, 'en-US
 const CATALOGO = {
   'es-CO': {
     niveles: { BAJO: 'Bajo', MEDIO: 'Medio', ALTO: 'Alto' },
+    // D05 (W12-P11): cambio de cada fila y estado del perfil.
+    cambios: {
+      COMPLETO: 'Completo', SIN_CAMBIO: 'Sin cambio', PARCIAL: 'Parcial', MEJORO: 'Mejoró', EMPEORO: 'Empeoró',
+      CLASIFICADO: 'Clasificado',
+    },
+    estadosPerfil: { CALCULADO: 'En firme', DEGRADADO: 'Provisional', INFORMACION_INSUFICIENTE: 'Insuficiente' },
+    eventos: {
+      FUENTE_SIN_RESPUESTA: 'Fuente sin respuesta', PERFIL_PROVISIONAL: 'Perfil provisional entregado',
+      PERFIL_INSUFICIENTE: 'Perfil con información insuficiente', PERFIL_ANTERIOR: 'Perfil anterior entregado',
+      PERFIL_RECALCULADO: 'Perfil recalculado',
+    },
     // Vocabulario de D02 para las direcciones de D04 (CF-16).
     valoraciones: {
       REDUCE_RIESGO: 'Favorable', NEUTRO: 'Neutro', AUMENTA_LEVEMENTE: 'Ligeramente adverso',
@@ -283,6 +358,16 @@ const CATALOGO = {
   },
   'en-US': {
     niveles: { BAJO: 'Low', MEDIO: 'Medium', ALTO: 'High' },
+    cambios: {
+      COMPLETO: 'Complete', SIN_CAMBIO: 'No change', PARCIAL: 'Partial', MEJORO: 'Improved', EMPEORO: 'Worsened',
+      CLASIFICADO: 'Classified',
+    },
+    estadosPerfil: { CALCULADO: 'Confirmed', DEGRADADO: 'Provisional', INFORMACION_INSUFICIENTE: 'Insufficient' },
+    eventos: {
+      FUENTE_SIN_RESPUESTA: 'Source did not respond', PERFIL_PROVISIONAL: 'Provisional profile delivered',
+      PERFIL_INSUFICIENTE: 'Profile with insufficient information', PERFIL_ANTERIOR: 'Previous profile delivered',
+      PERFIL_RECALCULADO: 'Profile recalculated',
+    },
     valoraciones: {
       REDUCE_RIESGO: 'Favorable', NEUTRO: 'Neutral', AUMENTA_LEVEMENTE: 'Slightly adverse',
       AUMENTA_RIESGO: 'Adverse', NO_EVALUADO: 'Not evaluated',
@@ -347,6 +432,18 @@ export class TextosPerfilamientoService {
     return this.marcar(this.catalogo().niveles[nivel]);
   }
 
+  cambio(cambio: Cambio): string {
+    return this.marcar(this.catalogo().cambios[cambio]);
+  }
+
+  estadoPerfil(estado: EstadoPerfil): string {
+    return this.marcar(this.catalogo().estadosPerfil[estado]);
+  }
+
+  evento(tipo: TipoEvento): string {
+    return this.marcar(this.catalogo().eventos[tipo]);
+  }
+
   valoracion(valoracion: Direccion | 'NO_EVALUADO'): string {
     return this.marcar(this.catalogo().valoraciones[valoracion]);
   }
@@ -392,6 +489,13 @@ export class TextosPerfilamientoService {
     return new Intl.NumberFormat(this.locale(), opciones).format(valor);
   }
 
+  /** Diferencia con signo y 2 decimales (`+0,13`, `−0,05`, `0,00`), para la confianza de D05. */
+  diferencia(valor: number): string {
+    return new Intl.NumberFormat(this.locale(), {
+      minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero',
+    }).format(valor);
+  }
+
   /** Pesos colombianos sin decimales, para la suma asegurada. */
   moneda(valor: number): string {
     return new Intl.NumberFormat(this.locale(), { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
@@ -405,6 +509,11 @@ export class TextosPerfilamientoService {
     return new Intl.DateTimeFormat(this.locale(), {
       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
     }).format(new Date(iso));
+  }
+
+  /** Hora HH:mm en la zona del navegador (panel "Qué pasó" de D05). */
+  horaCorta(iso: string): string {
+    return new Intl.DateTimeFormat(this.locale(), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
   }
 
   /** Hora HH:mm:ss en la zona del navegador (tabla de linaje, W10-P13). */

@@ -17,6 +17,12 @@ export const routes: Routes = [
           import('./paginas/nuevo-perfilamiento/nuevo-perfilamiento.component').then((m) => m.NuevoPerfilamientoComponent),
       },
       {
+        path: ':perfilId/actualizacion',
+        title: 'Perfil actualizado · Solventa',
+        loadComponent: () =>
+          import('./paginas/perfil-actualizado/perfil-actualizado.component').then((m) => m.PerfilActualizadoComponent),
+      },
+      {
         path: ':perfilId',
         title: 'Perfil de riesgo · Solventa',
         loadComponent: () => import('./paginas/perfil-riesgo/perfil-riesgo.component').then((m) => m.PerfilRiesgoComponent),
