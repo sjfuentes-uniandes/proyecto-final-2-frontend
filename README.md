@@ -10,6 +10,7 @@
 | --- | --- | --- |
 | `/ingresar`, `/recuperar` | — | Ingreso con Cognito (SRP, sin Hosted UI) y MFA TOTP obligatorio. El primer ingreso pide cambiar la contraseña temporal y registrar el autenticador (QR). |
 | `/operacion/trazas` | `operacion` | Traza de un recorrido por correlationId (HU-W27). |
+| `/operacion/alertas` | `operacion` | Alertas abiertas, umbrales configurados y resumen del mes (HU-W28). Los umbrales se cambian en `infra/envs/<env>/apps.tfvars` del repo back. |
 | `/administracion/usuarios` | `administradores` | Alta de usuarios del back-office: Cognito les envía la contraseña temporal. |
 
 Los grupos solo deciden qué se muestra; API Gateway valida el token y el BFF vuelve a exigir el grupo. El ID token se guarda en `sessionStorage` (la sesión termina al cerrar el navegador).
