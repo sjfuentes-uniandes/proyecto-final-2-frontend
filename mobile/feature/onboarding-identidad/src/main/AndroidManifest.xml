@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- La verificación pide la cámara frontal, pero no se excluye a dispositivos sin ella:
+         la app detecta la falta de cámara y lo informa en lugar de no instalarse. -->
+    <uses-feature
+        android:name="android.hardware.camera.front"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+</manifest>
