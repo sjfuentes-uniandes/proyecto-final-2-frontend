@@ -62,6 +62,9 @@ Android (Kotlin + Jetpack Compose), multi-módulo:
    cd mobile
    ./gradlew assembleDebug   # genera app/build/outputs/apk/debug/app-debug.apk
    ./gradlew test            # pruebas unitarias de todos los módulos
+   ./gradlew lint            # MissingTranslation y HardcodedText son error en todos los módulos
+   ./gradlew :feature:privacidad:koverVerify   # cobertura ≥ 80 % líneas / ≥ 75 % ramas
    ```
+   Lo mismo corre `.github/workflows/ci-mobile.yml` en cada PR que toque `mobile/`. Toda cadena va en `values/strings.xml` (es-CO) y en `values-en-rUS/strings.xml` (en-US); una traducción faltante rompe el lint. `HardcodedText` solo revisa recursos XML: los literales dentro de Compose no los detecta.
 3. El ingreso biométrico necesita un dispositivo/emulador con huella o rostro registrado en el sistema operativo y una sesión guardada (un ingreso previo con usuario/contraseña); si no hay ninguno, la app lo detecta y solo ofrece usuario/contraseña.
 4. Tras el desbloqueo biométrico o el ingreso con credenciales, la app confirma la sesión contra `bff-movil` (`GET /v1/sesion`); sin el backend corriendo en local, verá el mensaje "No fue posible confirmar su sesión".
