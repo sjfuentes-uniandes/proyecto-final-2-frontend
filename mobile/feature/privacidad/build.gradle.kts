@@ -19,6 +19,15 @@ android {
 // Umbral de la estrategia de pruebas para móvil: ≥ 80 % líneas / ≥ 75 % ramas.
 kover {
     reports {
+        // Las @Preview (src/debug, solo para Android Studio) no son código de la app: no cuentan.
+        // Convención: los archivos de previews terminan en `Previews.kt`; sus lambdas generadas
+        // (ComposableSingletons$...PreviewsKt) y los datos de muestra se excluyen por nombre.
+        filters {
+            excludes {
+                annotatedBy("androidx.compose.ui.tooling.preview.Preview")
+                classes("*PreviewsKt*", "*.MuestrasPreview")
+            }
+        }
         total {
             verify {
                 rule("Cobertura de :feature:privacidad") {
@@ -45,6 +54,9 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    // @Preview en src/debug: la anotación y el renderizado de Android Studio no llegan a release.
+    debugImplementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(platform(libs.junit5.bom))
     testImplementation(libs.junit5.jupiter)
