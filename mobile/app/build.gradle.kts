@@ -48,6 +48,7 @@ dependencies {
     implementation(project(":core:security"))
     implementation(project(":core:designsystem"))
     implementation(project(":feature:login"))
+    implementation(project(":feature:privacidad"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

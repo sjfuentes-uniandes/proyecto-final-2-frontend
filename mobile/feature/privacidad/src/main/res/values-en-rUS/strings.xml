@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="privacidad_barra_titulo">Consents and Privacy</string>
+    <string name="privacidad_lista_titulo">Permissions to use personal data</string>
+    <string name="privacidad_lista_subtitulo">Permissions granted by the user. Biometric validation is required for any change</string>
+    <string name="privacidad_cargando">Loading…</string>
+    <string name="privacidad_reintentar">Retry</string>
+    <string name="privacidad_volver">Back</string>
+
+    <string name="privacidad_permiso_personales">Personal and financial data</string>
+    <string name="privacidad_permiso_personales_descripcion">See how personal and financial data is used</string>
+    <string name="privacidad_permiso_open_finance">Open Finance and Open Data</string>
+    <string name="privacidad_permiso_open_finance_descripcion">See data granted through Open Finance and Open Data</string>
+    <string name="privacidad_permiso_biometricos">Biometric and identity data</string>
+    <string name="privacidad_permiso_biometricos_descripcion">See how biometric and identity information is used</string>
+    <string name="privacidad_no_disponible">Not available in this version</string>
+    <string name="privacidad_accion_abrir_permiso">View details</string>
+
+    <string name="privacidad_estado_activa">ACTIVE</string>
+    <string name="privacidad_estado_revocada">REVOKED</string>
+    <string name="privacidad_estado_vencida">EXPIRED</string>
+    <string name="privacidad_estado_sin_otorgar">NOT GRANTED</string>
+    <string name="privacidad_estado_desconocido">UNKNOWN STATUS</string>
+    <string name="privacidad_estado_no_disponible">NOT AVAILABLE</string>
+    <string name="privacidad_estado_descripcion">Status: %1$s</string>
+
+    <string name="privacidad_detalle_titulo">Access to Open Finance and Open Data</string>
+    <string name="privacidad_seccion_proposito">PURPOSE</string>
+    <string name="privacidad_seccion_datos">REQUESTED DATA</string>
+    <string name="privacidad_seccion_vigencia">VALIDITY</string>
+    <string name="privacidad_seccion_texto">AUTHORIZATION TEXT</string>
+    <string name="privacidad_proposito_perfilamiento">Profiling and pricing</string>
+    <string name="privacidad_proposito_perfilamiento_descripcion">Solventa uses this financial data to calculate your risk profile and the price of your offer.</string>
+    <string name="privacidad_alcance_productos">Active financial products</string>
+    <string name="privacidad_alcance_historial">12-month payment history</string>
+    <string name="privacidad_alcance_ingresos">Aggregated income</string>
+    <string name="privacidad_alcance_registros">Public records</string>
+    <string name="privacidad_datos_instruccion">Select at least one item.</string>
+    <plurals name="privacidad_vigencia_opcion">
+        <item quantity="one">%1$d month</item>
+        <item quantity="other">%1$d months</item>
+    </plurals>
+    <string name="privacidad_vencimiento">Expires: %1$s</string>
+    <string name="privacidad_otorgado_en">Granted: %1$s</string>
+    <string name="privacidad_revocado_en">Revoked: %1$s</string>
+    <string name="privacidad_version_texto">Text version: %1$s</string>
+    <string name="privacidad_boton_otorgar">GRANT AUTHORIZATION</string>
+    <string name="privacidad_boton_otorgando">GRANTING…</string>
+    <string name="privacidad_otorgada">Authorization granted. This is your receipt.</string>
+    <string name="privacidad_ya_otorgada">This authorization is already granted.</string>
+    <string name="privacidad_biometria_cancelada">You canceled the confirmation. The authorization was not granted.</string>
+
+    <string name="privacidad_biometria_titulo">Confirm the authorization</string>
+    <string name="privacidad_biometria_subtitulo">Use your fingerprint or face to grant the authorization</string>
+    <string name="privacidad_biometria_negativo">Cancel</string>
+
+    <string name="privacidad_error_titulo">The authorization could not be granted</string>
+    <string name="privacidad_error_cerrar">Close</string>
+    <string name="privacidad_error_carga">The information could not be loaded.</string>
+    <string name="privacidad_error_sin_conexion">No connection. Check your network and try again.</string>
+    <string name="privacidad_error_servicio">The service is not available right now. Try again.</string>
+    <string name="privacidad_error_inesperado">An unexpected error occurred. Try again.</string>
+    <string name="privacidad_error_sesion">Your session expired. Sign in again.</string>
+    <string name="privacidad_error_no_autorizado">Your account cannot grant this authorization.</string>
+    <string name="privacidad_error_identidad">You must verify your identity before granting the authorization.</string>
+    <string name="privacidad_error_cliente">You must complete your registration before granting the authorization.</string>
+    <string name="privacidad_error_no_encontrado">We could not find this authorization.</string>
+    <string name="privacidad_error_solicitud">Complete the requested information: %1$s.</string>
+    <string name="privacidad_error_solicitud_generica">Complete the requested information.</string>
+    <string name="privacidad_campo_proposito">purpose</string>
+    <string name="privacidad_campo_datos">requested data</string>
+    <string name="privacidad_campo_vigencia">validity</string>
+    <string name="privacidad_campo_texto">authorization text</string>
+    <string name="privacidad_error_vigencia">The authorization cannot be granted without a valid validity period.</string>
+    <string name="privacidad_error_texto">The authorization text changed. Review the updated text before confirming.</string>
+    <string name="privacidad_error_conflicto">The request changed while it was being processed. Try again.</string>
+    <string name="privacidad_error_permiso">This permission is not available in this version.</string>
+    <string name="privacidad_error_biometria_fallida">Your identity could not be confirmed. Try again.</string>
+    <string name="privacidad_error_biometria_no_disponible">To grant the authorization, set up your fingerprint or face on your device.</string>
+</resources>

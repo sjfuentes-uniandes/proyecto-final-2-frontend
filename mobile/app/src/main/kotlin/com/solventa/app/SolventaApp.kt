@@ -7,9 +7,13 @@ import com.solventa.core.auth.ConfiguracionCognito
 import com.solventa.core.auth.GestorSesion
 import com.solventa.core.auth.ResultadoAutenticacion
 import com.solventa.core.network.BffMovilCliente
+import com.solventa.core.network.ConsentimientosCliente
 import com.solventa.core.network.RedModule
 import com.solventa.core.security.AlmacenSesionSeguraKeystore
 import com.solventa.core.security.GestorBiometria
+import com.solventa.feature.privacidad.biometria.VerificadorBiometricoPrompt
+import com.solventa.feature.privacidad.datos.RepositorioConsentimientosRed
+import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
 
 /**
  * Punto de arranque de la app y raíz de composición (DI manual: no hay Hilt/Koin en el proyecto).
@@ -22,6 +26,11 @@ class SolventaApp : Application() {
         private set
     lateinit var bffMovilCliente: BffMovilCliente
         private set
+    lateinit var repositorioConsentimientos: RepositorioConsentimientos
+        private set
+    /** Uno por proceso: la actividad en pantalla se adjunta al crearse y se suelta al destruirse. */
+    lateinit var verificadorBiometrico: VerificadorBiometricoPrompt
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -33,6 +42,8 @@ class SolventaApp : Application() {
 
         val api = RedModule.crearApi(BuildConfig.BFF_MOVIL_BASE_URL, gestorSesion)
         bffMovilCliente = BffMovilCliente(api)
+        repositorioConsentimientos = RepositorioConsentimientosRed(ConsentimientosCliente(api))
+        verificadorBiometrico = VerificadorBiometricoPrompt(gestorBiometria)
     }
 
     private fun crearClienteIdentidad(): ClienteIdentidad {
