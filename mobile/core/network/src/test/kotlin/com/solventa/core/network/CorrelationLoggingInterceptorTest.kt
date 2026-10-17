@@ -1,5 +1,7 @@
 package com.solventa.core.network
 
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
@@ -52,5 +54,22 @@ class CorrelationLoggingInterceptorTest {
         cliente.newCall(solicitud).execute().use { it.body?.string() }
 
         assertTrue(mensajesRegistrados.isEmpty())
+    }
+
+    @Test
+    fun `no registra el cuerpo de la solicitud, por ejemplo una selfie`() {
+        servidor.enqueue(MockResponse().setResponseCode(200).setHeader("X-Correlation-Id", "corr-1").setBody("{}"))
+        val mensajesRegistrados = mutableListOf<String>()
+        val cliente = okhttp3.OkHttpClient.Builder()
+            .addInterceptor(CorrelationLoggingInterceptor { mensajesRegistrados += it })
+            .build()
+        val cuerpo = """{"selfie":"selfie-secreta-que-no-debe-aparecer-en-logs"}"""
+            .toRequestBody("application/json".toMediaType())
+        val solicitud = okhttp3.Request.Builder().url(servidor.url("/v1/identidad/verificaciones")).post(cuerpo).build()
+
+        cliente.newCall(solicitud).execute().use { it.body?.string() }
+
+        assertTrue(mensajesRegistrados.isNotEmpty())
+        assertFalse(mensajesRegistrados.any { it.contains("selfie-secreta") })
     }
 }

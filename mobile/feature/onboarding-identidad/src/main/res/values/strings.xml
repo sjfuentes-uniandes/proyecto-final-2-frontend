@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Registro -->
+    <string name="onboarding_marca">Solventa</string>
+    <string name="onboarding_registro_titulo">Registro</string>
+    <string name="onboarding_registro_subtitulo">Por favor ingrese sus datos para continuar</string>
+    <string name="onboarding_etiqueta_correo">Correo electrónico</string>
+    <string name="onboarding_placeholder_correo">user@domain.com</string>
+    <string name="onboarding_etiqueta_contrasena">Contraseña</string>
+    <string name="onboarding_etiqueta_confirmar_contrasena">Confirmar contraseña</string>
+    <string name="onboarding_mostrar_contrasena">Mostrar contraseña</string>
+    <string name="onboarding_ocultar_contrasena">Ocultar contraseña</string>
+    <string name="onboarding_contrasenas_no_coinciden">Las contraseñas no coinciden</string>
+    <string name="onboarding_correo_invalido">Ingrese un correo válido</string>
+    <string name="onboarding_contrasena_politica">Mínimo 10 caracteres, con mayúscula, minúscula y número</string>
+    <string name="onboarding_etiqueta_biometria">Registrar verificación biométrica</string>
+    <string name="onboarding_boton_registrar_biometria">Registrar mi biometría</string>
+    <string name="onboarding_biometria_verificada">Identidad verificada</string>
+    <string name="onboarding_advertencia_titulo">Repetir comprobación biométrica</string>
+    <string name="onboarding_advertencia_subtitulo">Evite el uso de anteojos y cubrebocas durante la captura</string>
+    <string name="onboarding_advertencia_iluminacion">Busque un lugar con más luz y repita la captura</string>
+    <string name="onboarding_boton_registrarme">Registrarme</string>
+
+    <!-- Captura -->
+    <string name="onboarding_captura_titulo">Verificación de identidad</string>
+    <string name="onboarding_camara_descripcion">Vista previa de la cámara frontal</string>
+    <string name="onboarding_guia_inicial">Mire a la cámara</string>
+    <string name="onboarding_guia_iluminacion">Busque un lugar con más luz</string>
+    <string name="onboarding_guia_sin_rostro">Muestre su rostro frente a la cámara</string>
+    <string name="onboarding_guia_varios_rostros">Debe aparecer una sola persona</string>
+    <string name="onboarding_guia_acercar">Acerque un poco el rostro</string>
+    <string name="onboarding_guia_alejar">Aleje un poco el rostro</string>
+    <string name="onboarding_guia_centrar">Centre su rostro en el recuadro</string>
+    <string name="onboarding_guia_frente">Mire de frente a la cámara</string>
+    <string name="onboarding_guia_ojos">Mantenga los ojos abiertos</string>
+    <string name="onboarding_reto_parpadeo">Parpadee una vez</string>
+    <string name="onboarding_reto_giro">Gire la cabeza hacia un lado y vuelva a mirar al frente</string>
+    <string name="onboarding_reto_expirado">Se agotó el tiempo. Intente de nuevo</string>
+    <string name="onboarding_guia_capturando">Perfecto, no se mueva</string>
+    <string name="onboarding_enviando">Verificando su identidad…</string>
+    <string name="onboarding_boton_cancelar">Cancelar</string>
+
+    <!-- Permiso de cámara -->
+    <string name="onboarding_permiso_titulo">Necesitamos usar su cámara</string>
+    <string name="onboarding_permiso_mensaje">Usamos la cámara solo para tomar su selfie y verificar su identidad. La imagen no se guarda en su dispositivo.</string>
+    <string name="onboarding_permiso_boton_permitir">Permitir cámara</string>
+    <string name="onboarding_permiso_boton_ajustes">Abrir configuración</string>
+
+    <!-- Resultados -->
+    <string name="onboarding_aprobada_titulo">Identidad verificada</string>
+    <string name="onboarding_aprobada_mensaje">Su identidad fue verificada correctamente.</string>
+    <string name="onboarding_rechazada_titulo">No pudimos verificar su identidad</string>
+    <string name="onboarding_rechazada_rostro">Su rostro no coincidió con la información registrada.</string>
+    <string name="onboarding_rechazada_generico">No fue posible completar la verificación.</string>
+    <string name="onboarding_interrumpida_titulo">La verificación no terminó</string>
+    <string name="onboarding_interrumpida_mensaje">Hubo un problema de comunicación. Puede reintentar: no se creará un segundo registro.</string>
+    <string name="onboarding_correo_distinto_titulo">Verifique su identidad de nuevo</string>
+    <string name="onboarding_correo_distinto_mensaje">El correo cambió desde la última verificación. Repita la captura con el correo actual.</string>
+    <string name="onboarding_cuenta_existente_titulo">Ya tiene una cuenta</string>
+    <string name="onboarding_cuenta_existente_mensaje">Este correo ya está registrado. Inicie sesión para continuar.</string>
+    <string name="onboarding_error_titulo">Algo salió mal</string>
+    <string name="onboarding_error_mensaje">No pudimos completar la verificación.</string>
+    <string name="onboarding_codigo_soporte">Código de soporte: %1$s</string>
+    <string name="onboarding_boton_continuar">Continuar</string>
+    <string name="onboarding_boton_reintentar">Reintentar</string>
+    <string name="onboarding_boton_intentar_de_nuevo">Intentar de nuevo</string>
+    <string name="onboarding_boton_ir_a_ingreso">Iniciar sesión</string>
+
+    <!-- Creación de la cuenta -->
+    <string name="onboarding_creando_cuenta">Creando su cuenta…</string>
+    <string name="onboarding_codigo_titulo">Confirme su correo</string>
+    <string name="onboarding_codigo_mensaje">Enviamos un código de verificación a %1$s.</string>
+    <string name="onboarding_codigo_etiqueta">Código de verificación</string>
+    <string name="onboarding_codigo_confirmar">Confirmar</string>
+    <string name="onboarding_codigo_reenviar">Reenviar código</string>
+    <string name="onboarding_codigo_reenviado">Le enviamos un nuevo código.</string>
+    <string name="onboarding_codigo_incorrecto">El código no es correcto.</string>
+    <string name="onboarding_codigo_vencido">El código venció. Solicite uno nuevo.</string>
+    <string name="onboarding_cuenta_requiere_verificar">Su verificación venció o no corresponde a este correo. Repita la captura.</string>
+    <string name="onboarding_cuenta_contrasena_invalida">La contraseña no cumple la política: mínimo 10 caracteres con mayúscula, minúscula y número.</string>
+    <string name="onboarding_cuenta_intentos">Demasiados intentos. Espere unos minutos y vuelva a intentar.</string>
+    <string name="onboarding_cuenta_sin_conexion">Sin conexión. Revise su red y reintente.</string>
+    <string name="onboarding_cuenta_error">No pudimos crear su cuenta. Intente de nuevo.</string>
+    <string name="onboarding_cuenta_vinculacion_pendiente">Su cuenta se creó, pero no pudimos terminar el registro. Reintente.</string>
+    <string name="onboarding_cuenta_ingreso_pendiente">Su cuenta se creó. Inicie sesión para continuar.</string>
+</resources>
