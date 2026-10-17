@@ -37,6 +37,9 @@ kover {
 }
 
 dependencies {
+    implementation(project(":core:network"))
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
 
@@ -46,6 +49,8 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Simulador de bff-movil para las pruebas del repositorio.
+    testImplementation(libs.okhttp.mockwebserver)
     // Pruebas de semántica de Compose en la JVM (Robolectric, JUnit 4 sobre el motor vintage).
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
