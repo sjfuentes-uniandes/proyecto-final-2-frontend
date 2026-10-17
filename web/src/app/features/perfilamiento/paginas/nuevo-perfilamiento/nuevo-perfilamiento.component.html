@@ -1,11 +1,11 @@
 @let t = textos.t();
-<nav class="crumb" [attr.aria-label]="t.migas">{{ t.inicio }} › {{ t.grupoContratacion }} › <strong>{{ t.nuevaCotizacion }}</strong></nav>
-<header>
+<nav class="crumb" [attr.aria-label]="t.migas" [hidden]="enviando()">{{ t.inicio }} › {{ t.grupoContratacion }} › <strong>{{ t.nuevaCotizacion }}</strong></nav>
+<header [hidden]="enviando()">
   <h2>{{ t.nuevaCotizacion }}</h2>
   <p class="sub">{{ t.pasoProducto }}</p>
 </header>
 
-<ol class="pasos" [attr.aria-label]="t.pasos">
+<ol class="pasos" [attr.aria-label]="t.pasos" [hidden]="enviando()">
   <li aria-current="step">1 · {{ t.paso1 }}</li>
   <li>2 · {{ t.paso2 }}</li>
   <li>3 · {{ t.paso3 }}</li>
@@ -23,7 +23,12 @@
   </div>
 }
 
-<form #formularioHtml [formGroup]="formulario" (ngSubmit)="enviar()" novalidate [attr.aria-busy]="enviando()">
+<!-- W12-P09: mientras se consultan las fuentes, D01 reemplaza al formulario, que conserva su estado. -->
+@if (enviando()) {
+  <app-perfil-cargando />
+}
+
+<form #formularioHtml [formGroup]="formulario" (ngSubmit)="enviar()" novalidate [attr.aria-busy]="enviando()" [hidden]="enviando()">
   <div class="cols">
     <div class="columna">
       <section class="card" aria-labelledby="titulo-producto">
@@ -90,9 +95,6 @@
 
     <div class="lateral">
       <button class="btn btn--primario" type="submit" [disabled]="enviando()">{{ t.continuar }}</button>
-      @if (enviando()) {
-        <p class="calculando" role="status">{{ t.calculando }}</p>
-      }
     </div>
   </div>
 </form>

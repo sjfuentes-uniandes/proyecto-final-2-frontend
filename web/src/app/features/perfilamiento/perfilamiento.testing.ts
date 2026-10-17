@@ -86,6 +86,18 @@ export const PERFIL_C06: PerfilRespuesta = {
   fuentesConsultadas: 3,
 };
 
+/** C13: el historial de pagos (obligatorio) no respondió a tiempo: insuficiente y se sugiere recalcular. */
+export const PERFIL_C13: PerfilRespuesta = {
+  ...PERFIL_C03,
+  id: '00000000-0000-4000-a000-00000000000d',
+  clienteId: '00000000-0000-4000-8000-00000000000d',
+  confianza: 0.6,
+  accionSugerida: 'RECALCULAR',
+  datosRequeridos: [{ campo: 'moras_12m', fuente: 'FA_HISTORIAL_PAGOS_12M', motivo: 'TIEMPO_AGOTADO' }],
+  fuentes: [PRODUCTOS, sinConsultar(HISTORIAL, 'TIEMPO_AGOTADO'), INGRESOS, REGISTROS],
+  fuentesConsultadas: 3,
+};
+
 /** C08: consentimiento revocado; ninguna fuente se invoca (DT-05). */
 export const PERFIL_C08: PerfilRespuesta = {
   ...PERFIL_C03,

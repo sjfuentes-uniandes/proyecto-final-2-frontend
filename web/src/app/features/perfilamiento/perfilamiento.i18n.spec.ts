@@ -69,8 +69,8 @@ describe('Textos de Perfilamiento (es-CO, en-US y pseudo-localización)', () => 
   it('los catálogos tienen las mismas tablas y claves en es-CO y en-US, y en-US las traduce', () => {
     const es = CATALOGO_PERFILAMIENTO['es-CO'];
     const en = CATALOGO_PERFILAMIENTO['en-US'];
-    // Iguales a propósito: "Favorable" se escribe igual en los dos idiomas.
-    const iguales = new Set(['valoraciones.REDUCE_RIESGO']);
+    // Iguales a propósito: "Favorable" y "Provisional" se escriben igual en los dos idiomas.
+    const iguales = new Set(['valoraciones.REDUCE_RIESGO', 'estadosPerfil.DEGRADADO']);
     expect(Object.keys(en).sort()).toEqual(Object.keys(es).sort());
     for (const tabla of Object.keys(es) as (keyof typeof es)[]) {
       const claves = Object.keys(es[tabla]).sort();
@@ -88,9 +88,19 @@ describe('Textos de Perfilamiento (es-CO, en-US y pseudo-localización)', () => 
     const textos = TestBed.inject(TextosPerfilamientoService);
     TestBed.inject(IdiomaService).cambiar('pseudo');
     for (const texto of [textos.nivel('BAJO'), textos.factor('EDAD_PLAZO'), textos.estadoFuente('CONSULTADA'),
-      textos.tipoFuente('DATOS_ABIERTOS'), textos.causaConsentimiento('VENCIDO'), textos.motivo('NO_AUTORIZADO')]) {
+      textos.tipoFuente('DATOS_ABIERTOS'), textos.causaConsentimiento('VENCIDO'), textos.motivo('NO_AUTORIZADO'),
+      textos.cambio('MEJORO'), textos.estadoPerfil('CALCULADO'), textos.evento('PERFIL_RECALCULADO')]) {
       expect(texto).toMatch(/^⟦.+⟧$/);
     }
     expect(textos.factor('FACTOR_NUEVO')).toBe(pseudo('FACTOR_NUEVO'));
+  });
+
+  it('D05: diferencia con signo y hora HH:mm según el idioma (W12-P11)', () => {
+    const textos = TestBed.inject(TextosPerfilamientoService);
+    expect([0.13, -0.05, 0].map((v) => textos.diferencia(v))).toEqual(['+0,13', '-0,05', '0,00']);
+    expect(textos.horaCorta('2026-10-15T15:04:59Z')).toMatch(/^\d{2}:\d{2}$/);
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    expect(textos.diferencia(0.38)).toBe('+0.38');
+    expect(textos.lista(['A', 'B'])).toBe('A and B');
   });
 });

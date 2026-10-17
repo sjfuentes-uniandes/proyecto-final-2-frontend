@@ -29,3 +29,9 @@ h3:focus { outline: 3px solid var(--sv-azul-medio); outline-offset: 4px; }
   .detalle { grid-template-columns: minmax(0, 1fr); }
   .acciones { align-items: flex-start; }
 }
+
+/* W12-P10: aviso de perfil provisional con su botón de recálculo. */
+.provisional { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.provisional .nota { flex: 1 1 320px; margin: 0; }
+.recalcular { margin-top: 14px; width: 100%; }
+.alerta:focus { outline: 3px solid var(--sv-azul-medio); outline-offset: 2px; }

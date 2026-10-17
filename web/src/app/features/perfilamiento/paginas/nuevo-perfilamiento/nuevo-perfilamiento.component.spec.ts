@@ -192,6 +192,34 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
     });
   });
 
+  describe('WT-W12-01 · estado de carga (D01 simplificado)', () => {
+    beforeEach(() => montar());
+
+    const cargando = () => html().querySelector('app-perfil-cargando');
+    const formulario = () => html().querySelector<HTMLFormElement>('form')!;
+
+    it('aparece mientras la solicitud está pendiente y oculta el formulario', () => {
+      expect(cargando()).toBeNull();
+      const solicitud = enviarC01();
+      expect(cargando()).not.toBeNull();
+      expect(cargando()?.querySelector('h2')?.textContent?.trim()).toBe('Calculando el perfil de riesgo');
+      expect(formulario().hidden).toBeTrue();
+      expect(html().querySelector<HTMLElement>('ol.pasos:not(app-perfil-cargando *)')?.hidden).toBeTrue();
+      solicitud.flush({ id: 'perfil-1' });
+      fixture.detectChanges();
+      expect(cargando()).toBeNull();
+    });
+
+    it('desaparece si la solicitud falla y vuelve el formulario con sus datos y la alerta', () => {
+      fallar(enviarC01(), 503, { codigo: 'SERVICIO_NO_DISPONIBLE', correlationId: 'corr-1' });
+      fixture.detectChanges();
+      expect(cargando()).toBeNull();
+      expect(formulario().hidden).toBeFalse();
+      expect(c().formulario.controls.clienteId.value).toBe(C01.clienteId);
+      expect(html().querySelector('[role=alert]')).not.toBeNull();
+    });
+  });
+
   describe('WT-W11-04 · errores', () => {
     beforeEach(() => montar());
 
