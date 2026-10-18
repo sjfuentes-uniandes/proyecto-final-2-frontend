@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
 import { PanelFactoresComponent } from '../../componentes/panel-factores/panel-factores.component';
@@ -12,7 +12,15 @@ import { ErrorPerfilamiento, errorPerfilamiento, esFallaTransitoria } from '../.
 import { TextosPerfilamientoService } from '../../perfilamiento.i18n';
 import { PerfilRespuesta } from '../../perfilamiento.modelo';
 import { PerfilamientoService } from '../../perfilamiento.service';
-import { claseNivel, claseTiempo, fuentesSinRespuesta, motivoConsentimiento, sinConsentimiento, textoFuentes } from '../../presentacion';
+import {
+  claseNivel,
+  claseTiempo,
+  fuentesSinRespuesta,
+  motivoConsentimiento,
+  revocadoDurante,
+  sinConsentimiento,
+  textoFuentes,
+} from '../../presentacion';
 
 type Carga =
   | { estado: 'cargando' }
@@ -26,7 +34,7 @@ type Carga =
  */
 @Component({
   selector: 'app-perfil-riesgo',
-  imports: [TarjetaMetricaComponent, PanelFactoresComponent, TablaLinajeComponent, PerfilCargandoComponent],
+  imports: [TarjetaMetricaComponent, PanelFactoresComponent, TablaLinajeComponent, PerfilCargandoComponent, RouterLink],
   templateUrl: './perfil-riesgo.component.html',
   styleUrls: ['../../perfilamiento.scss', './perfil-riesgo.component.scss'],
 })
@@ -141,6 +149,14 @@ export class PerfilRiesgoComponent {
   /** " Motivo: consentimiento revocado." si la causa tiene texto; vacío si no (W10-P14). */
   motivoSinConsentimiento(perfil: PerfilRespuesta): string {
     const causa = motivoConsentimiento(perfil.consentimiento?.causa);
+    return causa ? this.textos.t().motivoConsentimiento(this.textos.causaConsentimiento(causa)) : '';
+  }
+
+  readonly revocadoDurante = revocadoDurante;
+
+  /** HU-W31: la causa del aviso sale de la comprobación final (" Motivo: consentimiento revocado."). */
+  motivoRevocadoDurante(perfil: PerfilRespuesta): string {
+    const causa = motivoConsentimiento(perfil.comprobacionFinal?.causa);
     return causa ? this.textos.t().motivoConsentimiento(this.textos.causaConsentimiento(causa)) : '';
   }
 

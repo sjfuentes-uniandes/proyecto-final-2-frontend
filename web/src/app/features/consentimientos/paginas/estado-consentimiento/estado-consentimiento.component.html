@@ -1,0 +1,139 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">{{ t.inicio }} › {{ t.grupoClientes }} › <strong>{{ t.consentimientoMiga }}</strong></nav>
+<header>
+  <h2>{{ t.titulo }}</h2>
+  <p class="sub">{{ t.subtitulo }}</p>
+</header>
+
+<!-- ADR 0002: sin "Registrar autorización" ni "Revocar"; el mockup se implementa sin sus acciones de escritura. -->
+<p class="solo-lectura">{{ t.soloLectura }}</p>
+
+<form class="card buscar" [formGroup]="formulario" (ngSubmit)="enviar()" novalidate aria-labelledby="titulo-buscar">
+  <h3 id="titulo-buscar">{{ t.buscarTitulo }}</h3>
+  <div class="buscar__fila">
+    <label class="fld">
+      <span>{{ t.identificadorCliente }}</span>
+      <input #campo class="inp mono" formControlName="clienteId" autocomplete="off" spellcheck="false" maxlength="40"
+             [attr.aria-invalid]="invalido() || null"
+             [attr.aria-describedby]="invalido() ? 'ayuda-cliente error-cliente' : 'ayuda-cliente'" />
+      <small class="fld__ayuda" id="ayuda-cliente">{{ t.identificadorAyuda }}</small>
+      @if (invalido()) {
+        <small class="fld__error" id="error-cliente">{{ t.identificadorError }}</small>
+      }
+    </label>
+    <button class="btn btn--primario" type="submit">{{ t.consultar }}</button>
+  </div>
+</form>
+
+<p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
+
+<div class="resultado" tabindex="-1" #resultado [attr.aria-busy]="cargando() || null">
+  @if (cargando()) {
+    <p class="sub cargando">{{ t.cargando }}</p>
+  }
+
+  @if (error(); as e) {
+    <div class="alerta alerta--error" role="alert">
+      <span aria-hidden="true">⚠</span>
+      <div class="alerta__cuerpo">
+        <p class="mensaje">{{ e.mensaje }}</p>
+        @if (e.correlationId) {
+          <p class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</p>
+        }
+        @if (e.reintentable) {
+          <button class="btn btn--secundario reintentar" type="button" (click)="reintentar()">{{ t.reintentar }}</button>
+        }
+      </div>
+    </div>
+  }
+
+  @if (lista()) {
+    @if (actual(); as c) {
+      <div class="cols">
+        <section class="card actual" aria-labelledby="titulo-actual">
+          <div class="encabezado">
+            <h3 id="titulo-actual">{{ t.actualTitulo }}</h3>
+            <p class="estado-fila"><span class="sr-only">{{ t.estado }}</span><span class="tag estado" [class]="tono(c.estado)">{{ textos.estado(c.estado) }}</span></p>
+          </div>
+          <dl class="kv">
+            <div><dt>{{ t.proposito }}</dt><dd>{{ textos.proposito(c.proposito) }}</dd></div>
+            <div><dt>{{ t.otorgadoEn }}</dt><dd><time [attr.datetime]="c.otorgadoEn">{{ textos.fechaHora(c.otorgadoEn) }}</time></dd></div>
+            <div><dt>{{ t.vigenteHasta }}</dt><dd><time [attr.datetime]="c.vigenteHasta">{{ textos.fechaHora(c.vigenteHasta) }}</time></dd></div>
+            @if (c.revocadoEn) {
+              <div><dt>{{ t.revocadoEn }}</dt><dd><time [attr.datetime]="c.revocadoEn">{{ textos.fechaHora(c.revocadoEn) }}</time></dd></div>
+            }
+            <div><dt>{{ t.versionTexto }}</dt><dd>{{ c.versionTexto }}</dd></div>
+            <div><dt>{{ t.idiomaTexto }}</dt><dd>{{ textos.idiomaTexto(c.idioma) }}</dd></div>
+          </dl>
+
+          <h4 id="titulo-alcances">{{ t.alcancesTitulo }}</h4>
+          <ul class="alcances" aria-labelledby="titulo-alcances">
+            @for (a of alcances(); track a.codigo) {
+              <li>
+                <span class="alcance__nombre">{{ textos.alcance(a.codigo) }}</span>
+                <span class="tag" [class]="a.autorizado ? 'tag--ok' : 'tag--no'">{{ a.autorizado ? t.autorizada : t.noAutorizada }}</span>
+              </li>
+            }
+          </ul>
+
+          <a class="btn btn--secundario historial" [routerLink]="rutaHistorial(c)"
+             [attr.aria-label]="t.verHistorialDe(textos.fechaHora(c.otorgadoEn))">{{ t.verHistorial }}</a>
+        </section>
+
+        <section class="card garantias" aria-labelledby="titulo-garantias">
+          <h3 id="titulo-garantias">{{ t.garantiasTitulo }}</h3>
+          <p class="sub">{{ t.garantiasTexto }}</p>
+          <dl class="kv">
+            <div><dt>{{ t.revocacionEfectiva }}</dt><dd>{{ t.revocacionEfectivaValor }}</dd></div>
+            <div><dt>{{ t.registro }}</dt><dd>{{ t.registroValor }}</dd></div>
+            <div><dt>{{ t.marco }}</dt><dd>{{ t.marcoValor }}</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      @if (anteriores().length) {
+        <section class="card anteriores" aria-labelledby="titulo-anteriores">
+          <h3 id="titulo-anteriores">{{ t.anterioresTitulo }}</h3>
+          <div class="tabla">
+            <table class="data" aria-labelledby="titulo-anteriores">
+              <thead>
+                <tr>
+                  <th scope="col">{{ t.colEstado }}</th>
+                  <th scope="col">{{ t.colOtorgado }}</th>
+                  <th scope="col">{{ t.colVigenteHasta }}</th>
+                  <th scope="col">{{ t.colRevocado }}</th>
+                  <th scope="col">{{ t.colHistorial }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (a of anteriores(); track a.consentimientoId) {
+                  <tr>
+                    <td><span class="tag" [class]="tono(a.estado)">{{ textos.estado(a.estado) }}</span></td>
+                    <td><time [attr.datetime]="a.otorgadoEn">{{ textos.fechaHora(a.otorgadoEn) }}</time></td>
+                    <td><time [attr.datetime]="a.vigenteHasta">{{ textos.fechaHora(a.vigenteHasta) }}</time></td>
+                    <td>
+                      @if (a.revocadoEn) {
+                        <time [attr.datetime]="a.revocadoEn">{{ textos.fechaHora(a.revocadoEn) }}</time>
+                      } @else {
+                        {{ textos.fechaHora(null) }}
+                      }
+                    </td>
+                    <td>
+                      <a class="historial" [routerLink]="rutaHistorial(a)"
+                         [attr.aria-label]="t.verHistorialDe(textos.fechaHora(a.otorgadoEn))">{{ t.verHistorial }}</a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    } @else {
+      <section class="card vacio" aria-labelledby="titulo-vacio">
+        <h3 id="titulo-vacio">{{ t.vacioTitulo }}</h3>
+        <p>{{ t.vacioTexto }}</p>
+      </section>
+    }
+  }
+</div>

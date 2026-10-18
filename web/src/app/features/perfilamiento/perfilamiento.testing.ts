@@ -124,3 +124,11 @@ export const PERFIL_C16: PerfilRespuesta = {
     sinConsultar(INGRESOS, 'NO_CONSULTADA'), sinConsultar(REGISTROS, 'NO_CONSULTADA'),
   ],
 };
+
+/** HU-W31 (ADR 0004): el titular revocó mientras se consultaban las fuentes; el perfil se conserva y queda marcado. */
+export const PERFIL_C01_REVOCADO_DURANTE: PerfilRespuesta = {
+  ...PERFIL_C01,
+  id: '00000000-0000-4000-a000-000000000031',
+  comprobacionFinal: { decision: 'RECHAZADO', causa: 'REVOCADO', vigenteHasta: null },
+  revocadoDurantePerfilamiento: true,
+};

@@ -109,6 +109,8 @@ const ES = {
   sinConsentimientoTexto: 'Sin esa autorización no es posible clasificar su riesgo.',
   motivoConsentimiento: (motivo: string) => `Motivo: ${motivo}.`,
   solicitarConsentimiento: 'Solicitar consentimiento',
+  revocadoDuranteTitulo: 'El consentimiento dejó de estar vigente mientras se consultaban las fuentes.',
+  revocadoDuranteTexto: 'Lo obtenido antes se conserva; ninguna consulta nueva usará este consentimiento.',
 
   perfilProvisional: 'Perfil provisional:',
   fuentesSinRespuesta: (n: number, nombres: string) =>
@@ -241,6 +243,8 @@ const EN: TextosPerfilamiento = {
   sinConsentimientoTexto: 'Without that authorization the customer risk cannot be classified.',
   motivoConsentimiento: (motivo: string) => `Reason: ${motivo}.`,
   solicitarConsentimiento: 'Request consent',
+  revocadoDuranteTitulo: 'Consent stopped being valid while the sources were being queried.',
+  revocadoDuranteTexto: 'What was obtained before is kept; no new query will use this consent.',
 
   perfilProvisional: 'Provisional profile:',
   fuentesSinRespuesta: (n: number, nombres: string) =>
@@ -347,6 +351,7 @@ const CATALOGO = {
     },
     causasConsentimiento: {
       REVOCADO: 'consentimiento revocado', VENCIDO: 'consentimiento vencido', SIN_CONSENTIMIENTO: 'sin consentimiento registrado',
+      PROPOSITO_NO_AUTORIZADO: 'el consentimiento no cubre el propósito de perfilamiento',
     },
     motivos: {
       NO_AUTORIZADO: 'No autorizado',
@@ -404,6 +409,7 @@ const CATALOGO = {
     },
     causasConsentimiento: {
       REVOCADO: 'consent revoked', VENCIDO: 'consent expired', SIN_CONSENTIMIENTO: 'no consent on record',
+      PROPOSITO_NO_AUTORIZADO: 'the consent does not cover the profiling purpose',
     },
     motivos: {
       NO_AUTORIZADO: 'Not authorized',

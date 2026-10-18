@@ -1,0 +1,41 @@
+/* Estilos comunes de las pantallas de consentimientos (HU-W31); los globales están en styles.scss. */
+:host { display: flex; flex-direction: column; gap: 12px; }
+
+h2 { margin: 0 0 4px; font-size: 22px; color: var(--sv-azul-oscuro); }
+h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
+h4 { margin: 16px 0 8px; font-size: 13.5px; color: var(--sv-azul-oscuro); }
+.sub { margin: 0; font-size: 13px; color: var(--sv-texto-secundario); }
+/* Contraste WCAG AA: --sv-texto-tenue no alcanza 4,5:1 en 12 px. */
+.crumb { color: var(--sv-texto-secundario); }
+.crumb a { color: var(--sv-azul); }
+.fld__ayuda { color: var(--sv-texto-secundario); }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+
+/* Los textos pseudo-localizados (+30 %) pueden partirse en varias líneas sin salirse de su caja. */
+.btn { height: auto; min-height: 40px; padding-top: 8px; padding-bottom: 8px; white-space: normal; text-align: center; }
+.kv dd { word-break: normal; overflow-wrap: anywhere; }
+
+.alerta__cuerpo { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.alerta p { margin: 0; }
+.seguimiento { font-variant-numeric: tabular-nums; }
+.resultado { display: flex; flex-direction: column; gap: 16px; }
+.resultado:focus { outline: none; }
+
+/* Estado: el color acompaña al texto, nunca lo sustituye. Contraste AA en 10,5 px negrita. */
+.tag--ok { color: #00663f; }
+.tag--alerta { color: #7a4a00; }
+.tag--error { color: #a51f1f; }
+.tag--no { background: var(--sv-fondo); color: var(--sv-texto-secundario); }
+
+/* Foco visible para teclado (WCAG 2.4.7). */
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 3px solid var(--sv-azul-medio);
+  outline-offset: 2px;
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}

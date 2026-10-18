@@ -72,7 +72,12 @@ export function sinConsentimiento(perfil: Pick<PerfilRespuesta, 'accionSugerida'
   return perfil.accionSugerida === 'COMPLETAR_CONSENTIMIENTO';
 }
 
-const CAUSAS: readonly CausaConsentimiento[] = ['REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO'];
+const CAUSAS: readonly CausaConsentimiento[] = ['REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', 'PROPOSITO_NO_AUTORIZADO'];
+
+/** HU-W31 (ADR 0004): el consentimiento dejó de estar vigente mientras se consultaban las fuentes. Sin el campo, falso. */
+export function revocadoDurante(perfil: Pick<PerfilRespuesta, 'revocadoDurantePerfilamiento'>): boolean {
+  return perfil.revocadoDurantePerfilamiento === true;
+}
 
 /** La causa del rechazo si tiene texto para el asesor (W10-P14); otra causa no se muestra. */
 export function motivoConsentimiento(causa: string | null | undefined): CausaConsentimiento | null {

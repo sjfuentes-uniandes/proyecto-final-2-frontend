@@ -3,7 +3,7 @@ import { Component, computed, inject } from '@angular/core';
 import { GrupoSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 import { TextosPerfilamientoService } from './perfilamiento.i18n';
 
-/** Menú de dos grupos de D02. Solo Nueva cotización y Perfilamiento existen en S1. */
+/** Menú de dos grupos de D02. Existen Nueva cotización, Perfilamiento y Consentimientos (HU-W31, solo lectura). */
 @Component({
   selector: 'app-perfilamiento-layout',
   imports: [SeccionLayoutComponent],
@@ -27,7 +27,7 @@ export class PerfilamientoLayoutComponent {
       {
         titulo: t.grupoClientes,
         items: [
-          { etiqueta: t.menuConsentimientos, icono: '👤', pendiente: t.proximamente },
+          { etiqueta: t.menuConsentimientos, icono: '👤', ruta: '/consentimientos' },
           { etiqueta: t.menuPerfilamiento, icono: '📊', ruta: 'nuevo' },
         ],
       },
