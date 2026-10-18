@@ -6,10 +6,25 @@ import { Router, provideRouter } from '@angular/router';
 import { ConfigService } from '../../../../core/config/app-config';
 import { Idioma, IdiomaService } from '../../../../core/i18n/idioma.service';
 import { violacionesA11y } from '../../../../testing';
-import { NuevoPerfilamientoComponent, PLAZOS, digitos, hoyIso } from './nuevo-perfilamiento.component';
+import { NuevoPerfilamientoComponent, PLAZOS, digitos, hoyIso, normalizarDocumento } from './nuevo-perfilamiento.component';
 
 const URL = 'https://api/web/v1/perfiles';
-const C01 = { clienteId: '00000000-0000-4000-8000-000000000001', fechaNacimiento: '1990-04-18', sumaAsegurada: '180000000' };
+const URL_CLIENTES = 'https://api/web/v1/clientes';
+const CLIENTE_ID = '00000000-0000-4000-8000-000000000001';
+const URL_VERIFICAR = `${URL_CLIENTES}/${CLIENTE_ID}/identidad/verificaciones`;
+const C01 = {
+  tipoDocumento: 'CC',
+  numeroDocumento: '1.020.456.789',
+  nombreCompleto: 'Natalia González Ruiz',
+  fechaNacimiento: '1990-04-18',
+  sumaAsegurada: '180000000',
+};
+const dto = (estado: string, extra: object = {}) => ({
+  clienteId: CLIENTE_ID, estado, verificadoEn: null, proveedor: null, referencia: null, ...extra,
+});
+const PENDIENTE = dto('PENDIENTE');
+const VERIFICADO = dto('VERIFICADO', { verificadoEn: '2026-10-17T15:00:00Z', proveedor: 'KYC', referencia: 'kyc-doc-ref-0001' });
+const RECHAZADO = dto('RECHAZADO', { proveedor: 'KYC' });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
@@ -37,8 +52,25 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
     fixture.detectChanges();
   }
 
-  function enviarC01(): TestRequest {
+  const botonIdentidad = () => html().querySelector<HTMLButtonElement>('button[type=button]')!;
+
+  function clicVerificar(): void {
+    botonIdentidad().click();
+    fixture.detectChanges();
+  }
+
+  /** Crea al cliente y lo verifica; deja la pantalla con el estado `identidad`. */
+  function verificarC01(identidad: object = VERIFICADO): void {
     c().formulario.patchValue(C01);
+    fixture.detectChanges();
+    clicVerificar();
+    http.expectOne(URL_CLIENTES).flush({ ...PENDIENTE });
+    http.expectOne(URL_VERIFICAR).flush(identidad);
+    fixture.detectChanges();
+  }
+
+  function enviarC01(): TestRequest {
+    verificarC01();
     enviar();
     return http.expectOne(URL);
   }
@@ -54,15 +86,28 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
   describe('WT-W11-01 · validadores', () => {
     beforeEach(() => montar());
 
-    it('el identificador es un UUID (sin importar mayúsculas)', () => {
-      const id = c().formulario.controls.clienteId;
-      for (const valido of [C01.clienteId, C01.clienteId.toUpperCase()]) {
-        id.setValue(valido);
-        expect(id.valid).withContext(valido).toBeTrue();
+    it('el documento admite separadores y exige de 3 a 20 letras o números', () => {
+      const doc = c().formulario.controls.numeroDocumento;
+      for (const valido of ['1.020.456.789', '1020456789', 'AB-1234', '123']) {
+        doc.setValue(valido);
+        expect(doc.valid).withContext(valido).toBeTrue();
       }
-      for (const invalido of ['', 'no-es-uuid', '00000000-0000-0000-8000-000000000001', '00000000-0000-4000-c000-000000000001']) {
-        id.setValue(invalido);
-        expect(id.valid).withContext(invalido).toBeFalse();
+      for (const invalido of ['', '12', '1 2 ', 'ñ12345', '1'.repeat(21)]) {
+        doc.setValue(invalido);
+        expect(doc.valid).withContext(invalido).toBeFalse();
+      }
+      expect(normalizarDocumento('1.020 456-789')).toBe('1020456789');
+    });
+
+    it('el nombre completo tiene de 3 a 200 caracteres sin contar espacios de los bordes', () => {
+      const nombre = c().formulario.controls.nombreCompleto;
+      for (const valido of ['  Ana ', 'a'.repeat(200)]) {
+        nombre.setValue(valido);
+        expect(nombre.valid).withContext(valido).toBeTrue();
+      }
+      for (const invalido of ['', '  ab ', 'a'.repeat(201)]) {
+        nombre.setValue(invalido);
+        expect(nombre.valid).withContext(invalido).toBeFalse();
       }
     });
 
@@ -105,15 +150,16 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
       expect(fijos.map((s) => s.selectedOptions[0].textContent?.trim())).toEqual(['Vida hipotecario', 'Colombia']);
     });
 
-    it('al enviar sin datos marca los errores, no llama a la API y lleva el foco al primer campo inválido', fakeAsync(() => {
-      enviar();
+    it('al verificar sin datos marca los errores, no llama a la API y lleva el foco al primer campo inválido', fakeAsync(() => {
+      clicVerificar();
       flush();
       fixture.detectChanges();
       expect(html().querySelectorAll('.fld__error').length).toBe(3);
-      const primero = html().querySelector('input[formControlName=clienteId]');
+      const primero = html().querySelector('input[formControlName=numeroDocumento]');
       expect(primero?.getAttribute('aria-invalid')).toBe('true');
-      expect(primero?.getAttribute('aria-describedby')).toBe('ayuda-cliente error-cliente');
+      expect(primero?.getAttribute('aria-describedby')).toBe('error-documento');
       expect(document.activeElement).toBe(primero);
+      http.expectNone(URL_CLIENTES);
       http.expectNone(URL);
     }));
 
@@ -133,13 +179,24 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
     beforeEach(() => montar());
 
     it('envía la solicitud C01 con una Idempotency-Key y navega al perfil', () => {
-      c().formulario.controls.clienteId.setValue(`  ${C01.clienteId.toUpperCase()} `);
-      c().formulario.patchValue({ fechaNacimiento: C01.fechaNacimiento, sumaAsegurada: '$ 180.000.000' });
+      c().formulario.patchValue({ ...C01, sumaAsegurada: '$ 180.000.000' });
+      clicVerificar();
+      const alta = http.expectOne(URL_CLIENTES);
+      expect(alta.request.method).toBe('POST');
+      expect(alta.request.body).toEqual({
+        tipoDocumento: 'CC',
+        numeroDocumento: '1020456789',
+        nombreCompleto: 'Natalia González Ruiz',
+        fechaNacimiento: '1990-04-18',
+      });
+      alta.flush({ ...PENDIENTE });
+      http.expectOne(URL_VERIFICAR).flush(VERIFICADO);
+      fixture.detectChanges();
       enviar();
       const solicitud = http.expectOne(URL);
       expect(solicitud.request.method).toBe('POST');
       expect(solicitud.request.body).toEqual({
-        clienteId: C01.clienteId,
+        clienteId: CLIENTE_ID,
         productoId: 'vida-hipotecario',
         datosDeclarados: { fechaNacimiento: '1990-04-18', plazoCreditoMeses: 180, sumaAsegurada: 180000000 },
       });
@@ -215,7 +272,7 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
       fixture.detectChanges();
       expect(cargando()).toBeNull();
       expect(formulario().hidden).toBeFalse();
-      expect(c().formulario.controls.clienteId.value).toBe(C01.clienteId);
+      expect(c().formulario.controls.numeroDocumento.value).toBe(C01.numeroDocumento);
       expect(html().querySelector('[role=alert]')).not.toBeNull();
     });
   });
@@ -248,14 +305,127 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
     });
   });
 
+  describe('HU-W30 · alta y verificación de identidad', () => {
+    beforeEach(() => montar());
+
+    const estado = () => html().querySelector('[role=status].identidad')?.textContent?.replace(/\s+/g, ' ').trim();
+    const continuar = () => html().querySelector<HTMLButtonElement>('button[type=submit]')!;
+
+    it('Continuar está bloqueado hasta verificar la identidad', () => {
+      expect(continuar().disabled).toBeTrue();
+      expect(estado()).toContain('Aún no se ha verificado');
+      c().enviar();
+      http.expectNone(URL);
+    });
+
+    it('verificado: muestra fecha, proveedor y referencia, habilita Continuar y bloquea el botón de verificar', () => {
+      verificarC01();
+      expect(estado()).toContain('Identidad verificada');
+      expect(html().textContent).toContain('Verificada el');
+      expect(html().textContent).toContain('Proveedor: KYC');
+      expect(html().textContent).toContain('Referencia: kyc-doc-ref-0001');
+      expect(continuar().disabled).toBeFalse();
+      expect(botonIdentidad().disabled).toBeTrue();
+    });
+
+    it('pendiente (503 DEPENDENCIA_NO_DISPONIBLE): no es un rechazo, sin alerta de error, y "Reintentar" verifica sin crear otro cliente', () => {
+      c().formulario.patchValue(C01);
+      fixture.detectChanges();
+      clicVerificar();
+      http.expectOne(URL_CLIENTES).flush(PENDIENTE);
+      fallar(http.expectOne(URL_VERIFICAR), 503, { codigo: 'DEPENDENCIA_NO_DISPONIBLE', detalles: { estado: 'PENDIENTE' } });
+      fixture.detectChanges();
+      expect(estado()).toContain('Verificación en curso');
+      expect(html().querySelector('.alerta--error')).toBeNull();
+      expect(continuar().disabled).toBeTrue();
+      expect(botonIdentidad().textContent?.trim()).toBe('Reintentar');
+      clicVerificar();
+      http.expectNone(URL_CLIENTES);
+      http.expectOne(URL_VERIFICAR).flush(VERIFICADO);
+      fixture.detectChanges();
+      expect(estado()).toContain('Identidad verificada');
+      expect(continuar().disabled).toBeFalse();
+    });
+
+    it('rechazado: mensaje genérico sin detalles y el perfilamiento sigue bloqueado', () => {
+      verificarC01(RECHAZADO);
+      expect(estado()).toContain('No pudimos verificar la identidad');
+      expect(html().querySelector('.alerta--error')).toBeNull();
+      expect(continuar().disabled).toBeTrue();
+      c().enviar();
+      http.expectNone(URL);
+    });
+
+    it('un cliente existente ya verificado (200 al crear) no se vuelve a verificar', () => {
+      c().formulario.patchValue(C01);
+      fixture.detectChanges();
+      clicVerificar();
+      http.expectOne(URL_CLIENTES).flush(VERIFICADO);
+      http.expectNone(URL_VERIFICAR);
+      fixture.detectChanges();
+      expect(continuar().disabled).toBeFalse();
+    });
+
+    it('si cambian los datos de identidad se descarta la verificación y se vuelve a crear', () => {
+      verificarC01();
+      c().formulario.controls.numeroDocumento.setValue('9999999');
+      fixture.detectChanges();
+      expect(continuar().disabled).toBeTrue();
+      expect(estado()).toContain('Aún no se ha verificado');
+      clicVerificar();
+      http.expectOne(URL_CLIENTES).flush(PENDIENTE);
+      http.expectOne(URL_VERIFICAR).flush(VERIFICADO);
+    });
+
+    it('cambiar la suma o el plazo no descarta la verificación', () => {
+      verificarC01();
+      c().formulario.patchValue({ plazoCreditoMeses: 240 });
+      expect(c().puedeContinuar()).toBeTrue();
+    });
+
+    it('503 SERVICIO_NO_DISPONIBLE al verificar: error genérico, el cliente se conserva y se reintenta sin crearlo', () => {
+      c().formulario.patchValue(C01);
+      clicVerificar();
+      http.expectOne(URL_CLIENTES).flush(PENDIENTE);
+      fallar(http.expectOne(URL_VERIFICAR), 503, { codigo: 'SERVICIO_NO_DISPONIBLE', correlationId: 'corr-503' });
+      fixture.detectChanges();
+      expect(html().querySelector('.alerta--error')?.textContent).toContain('no está disponible');
+      expect(html().querySelector('.seguimiento')?.textContent).toContain('corr-503');
+      clicVerificar();
+      http.expectNone(URL_CLIENTES);
+      http.expectOne(URL_VERIFICAR).flush(VERIFICADO);
+    });
+
+    it('un 403 de rol no autorizado al verificar se informa al asesor', () => {
+      c().formulario.patchValue(C01);
+      clicVerificar();
+      http.expectOne(URL_CLIENTES).flush(PENDIENTE);
+      fallar(http.expectOne(URL_VERIFICAR), 403, { codigo: 'ROL_NO_AUTORIZADO' });
+      fixture.detectChanges();
+      expect(html().querySelector('.alerta--error')?.textContent).toContain('no pertenece al grupo de asesores');
+    });
+
+    it('un 409 CLIENTE_SIN_DOCUMENTO se informa', () => {
+      c().formulario.patchValue(C01);
+      clicVerificar();
+      http.expectOne(URL_CLIENTES).flush(PENDIENTE);
+      fallar(http.expectOne(URL_VERIFICAR), 409, { codigo: 'CLIENTE_SIN_DOCUMENTO' });
+      fixture.detectChanges();
+      expect(html().querySelector('.alerta--error')?.textContent).toContain('no tiene documento registrado');
+    });
+  });
+
   describe('WT-W11-05 · accesibilidad e idioma', () => {
     for (const idioma of ['es-CO', 'en-US'] as Idioma[]) {
       it(`cumple axe-core vacío, con errores de campo y con la alerta (${idioma})`, async () => {
         montar(idioma);
         expect(await violacionesA11y(html())).toEqual([]);
-        enviar();
+        clicVerificar();
         await fixture.whenStable();
         expect(await violacionesA11y(html())).toEqual([]);
+        verificarC01();
+        expect(await violacionesA11y(html())).toEqual([]);
+        c().formulario.patchValue({ nombreCompleto: 'Otra Persona' });
         fallar(enviarC01(), 404, { codigo: 'CLIENTE_NO_ENCONTRADO', correlationId: 'corr-404' });
         fixture.detectChanges();
         expect(await violacionesA11y(html())).toEqual([]);

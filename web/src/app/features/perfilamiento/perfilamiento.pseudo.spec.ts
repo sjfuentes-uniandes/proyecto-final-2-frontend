@@ -12,6 +12,8 @@ import { PerfilamientoLayoutComponent } from './perfilamiento-layout.component';
 import { PerfilRespuesta } from './perfilamiento.modelo';
 import { BASE_PERFILES, PERFIL_C01, PERFIL_C03, PERFIL_C06, PERFIL_C08 } from './perfilamiento.testing';
 
+const BASE_CLIENTES = BASE_PERFILES.replace('/perfiles', '/clientes');
+
 /** Datos y signos que no se traducen: números, horas, versiones, flechas de las migas, etc. */
 const DATO = /^[\d\s.,:·—›⚠%+\-]*$/;
 
@@ -88,12 +90,21 @@ describe('Pseudo-localización de perfilamiento (sin textos literales)', () => {
     const fixture = montar(NuevoPerfilamientoComponent);
     const html = fixture.nativeElement as HTMLElement;
     revisar(html);
-    html.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    html.querySelector<HTMLButtonElement>('button[type=button]')!.click();
     fixture.detectChanges();
     revisar(html);
     fixture.componentInstance.formulario.patchValue({
-      clienteId: PERFIL_C01.clienteId, fechaNacimiento: '1990-04-18', sumaAsegurada: '180000000',
+      numeroDocumento: '1020456789', nombreCompleto: 'Natalia González Ruiz', fechaNacimiento: '1990-04-18', sumaAsegurada: '180000000',
     });
+    html.querySelector<HTMLButtonElement>('button[type=button]')!.click();
+    fixture.detectChanges();
+    revisar(html);
+    http.expectOne(BASE_CLIENTES).flush({ clienteId: PERFIL_C01.clienteId, estado: 'PENDIENTE', verificadoEn: null, proveedor: null, referencia: null });
+    http.expectOne(`${BASE_CLIENTES}/${PERFIL_C01.clienteId}/identidad/verificaciones`).flush({
+      clienteId: PERFIL_C01.clienteId, estado: 'VERIFICADO', verificadoEn: '2026-10-17T15:00:00Z', proveedor: 'KYC', referencia: 'ref-1',
+    });
+    fixture.detectChanges();
+    revisar(html);
     html.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
     fixture.detectChanges();
     revisar(html);
