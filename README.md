@@ -12,8 +12,14 @@
 | `/operacion/trazas` | `operacion` | Traza de un recorrido por correlationId (HU-W27). |
 | `/operacion/alertas` | `operacion` | Alertas abiertas, umbrales configurados y resumen del mes (HU-W28). Los umbrales se cambian en `infra/envs/<env>/apps.tfvars` del repo back. |
 | `/administracion/usuarios` | `administradores` | Alta de usuarios del back-office: Cognito les envía la contraseña temporal. |
+| `/perfilamiento/nuevo` | `asesores` | Nueva cotización, paso 1: datos del cliente y **verificación de identidad** (HU-W30). El asesor crea el cliente (`POST /v1/clientes`) y lo verifica (`POST /v1/clientes/{id}/identidad/verificaciones`); "Continuar al perfilamiento" solo se habilita con identidad `VERIFICADO`. Si el proveedor no responde (503 `DEPENDENCIA_NO_DISPONIBLE`) queda `PENDIENTE` con "Reintentar"; `RECHAZADO` muestra un mensaje genérico. Tras el ingreso, el grupo `asesores` aterriza aquí. |
+| `/perfilamiento/:id` | `asesores` | Perfil de riesgo, recálculo y comparación (HU-W11, HU-W12). |
 
 Los grupos solo deciden qué se muestra; API Gateway valida el token y el BFF vuelve a exigir el grupo. El ID token se guarda en `sessionStorage` (la sesión termina al cerrar el navegador).
+
+### Verificación de identidad: datos de prueba (backend local)
+
+El proveedor KYC simulado decide por el número de documento (tipo `CC`): `1020456789` → `VERIFICADO` (referencia `kyc-doc-ref-0001`); `1000000002` → `RECHAZADO`; `1000000003`, `1000000004`, `1000000005` y cualquier otro → 503 y `PENDIENTE`.
 
 ## Correr en local
 
@@ -26,6 +32,8 @@ make test                      # Jasmine/Karma en Chrome headless
 ```
 
 `public/config.json` define `apiBaseUrl`, `dashboardUrl` y `cognito.backoffice` (`userPoolId`, `clientId`). Son valores públicos. CORS de `bff-web` admite `http://localhost:4200`.
+
+El front llama a `<apiBaseUrl>/web/...` (API Gateway quita `/web` y pone los encabezados de identidad a partir del token). El `bff-web` del docker compose del repo back (`http://localhost:8080`) atiende `/v1/...` sin ese prefijo y espera `X-Authenticated-Groups`/`X-Authenticated-Sub`, así que para usarlo directo desde el portal hace falta un proxy de desarrollo que quite `/web` e inyecte esos encabezados.
 
 ## Desplegar en AWS
 
