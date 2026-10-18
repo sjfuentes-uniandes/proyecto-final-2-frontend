@@ -12,10 +12,14 @@ import com.solventa.core.auth.ResultadoConfirmacion
 import com.solventa.core.auth.ResultadoRegistroCuenta
 import com.solventa.core.auth.ResultadoReenvioCodigo
 import com.solventa.core.network.BffMovilCliente
+import com.solventa.core.network.ConsentimientosCliente
 import com.solventa.core.network.RedModule
 import com.solventa.core.network.RegistroCliente
 import com.solventa.core.security.AlmacenSesionSeguraKeystore
 import com.solventa.core.security.GestorBiometria
+import com.solventa.feature.privacidad.biometria.VerificadorBiometricoPrompt
+import com.solventa.feature.privacidad.datos.RepositorioConsentimientosRed
+import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
 import com.solventa.feature.onboardingidentidad.verificacion.CrearCuenta
 import com.solventa.feature.onboardingidentidad.verificacion.SesionRegistro
 import com.solventa.feature.onboardingidentidad.verificacion.VerificarIdentidad
@@ -30,6 +34,11 @@ class SolventaApp : Application() {
     lateinit var gestorBiometria: GestorBiometria
         private set
     lateinit var bffMovilCliente: BffMovilCliente
+        private set
+    lateinit var repositorioConsentimientos: RepositorioConsentimientos
+        private set
+    /** Uno por proceso: la actividad en pantalla se adjunta al crearse y se suelta al destruirse. */
+    lateinit var verificadorBiometrico: VerificadorBiometricoPrompt
         private set
     lateinit var verificarIdentidad: VerificarIdentidad
         private set
@@ -51,6 +60,8 @@ class SolventaApp : Application() {
         val subLocal = BuildConfig.SUB_LOCAL.takeIf { BuildConfig.DEBUG && it.isNotBlank() }
         val api = RedModule.crearApi(BuildConfig.BFF_MOVIL_BASE_URL, subLocal = subLocal, proveedorAccessToken = gestorSesion)
         bffMovilCliente = BffMovilCliente(api)
+        repositorioConsentimientos = RepositorioConsentimientosRed(ConsentimientosCliente(api))
+        verificadorBiometrico = VerificadorBiometricoPrompt(gestorBiometria)
         verificarIdentidad = VerificarIdentidad(
             cliente = RegistroCliente(api),
             sesion = sesionRegistro,

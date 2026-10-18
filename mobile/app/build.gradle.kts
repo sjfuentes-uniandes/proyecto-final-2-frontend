@@ -50,6 +50,11 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    testOptions {
+        // Robolectric necesita los recursos fusionados para resolver las cadenas de las pantallas.
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -58,6 +63,7 @@ dependencies {
     implementation(project(":core:security"))
     implementation(project(":core:designsystem"))
     implementation(project(":feature:login"))
+    implementation(project(":feature:privacidad"))
     implementation(project(":feature:onboarding-identidad"))
 
     implementation(libs.androidx.core.ktx)
@@ -72,6 +78,13 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    // Navegación de la app en la JVM: Robolectric + semántica de Compose, con dobles de red y sesión.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.compose.ui.test.manifest)
+    testImplementation(libs.mockk)
+    // Las respuestas falsas de BffMovilApi son `retrofit2.Response` (core:network no lo expone).
+    testImplementation(libs.retrofit.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }

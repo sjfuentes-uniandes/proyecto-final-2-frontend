@@ -20,7 +20,11 @@ kotlinTest = "2.1.0"
 androidxTestExtJunit = "1.2.1"
 espressoCore = "3.6.1"
 mockk = "1.14.3"
+# Andamiaje de pruebas de :feature:privacidad (PR 1.7).
+junit5 = "5.11.4"
 turbine = "1.2.1"
+robolectric = "4.14.1"
+kover = "0.9.1"
 
 [libraries]
 # Usados por build-logic/convention para aplicar los plugins por versión (no por id) en los script plugins precompilados.
@@ -65,7 +69,13 @@ kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.re
 kotlin-test-junit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlinTest" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
+junit5-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit5" }
+junit5-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
+# Motor de JUnit 4 sobre la plataforma de JUnit 5: Robolectric y Compose UI Test son de JUnit 4.
+junit5-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine" }
+junit5-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -73,3 +83,4 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
