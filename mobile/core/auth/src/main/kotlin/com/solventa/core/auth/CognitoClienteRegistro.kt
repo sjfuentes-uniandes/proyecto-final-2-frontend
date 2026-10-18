@@ -10,6 +10,7 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHan
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.VerificationHandler
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.cognitoidentityprovider.model.SignUpResult
+import com.solventa.core.network.Diag
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -40,10 +41,12 @@ class CognitoClienteRegistro(
             mapOf(CLAVE_TOKEN_REGISTRO to tokenRegistro),
             object : SignUpHandler {
                 override fun onSuccess(user: CognitoUser?, signUpResult: SignUpResult?) {
+                    Diag.i("cognito.signUp ok confirmado=${signUpResult?.userConfirmed}")
                     continuacion.resume(ResultadoRegistroCuenta.Creada(signUpResult?.userConfirmed == true))
                 }
 
                 override fun onFailure(exception: Exception) {
+                    Diag.e("cognito.signUp fallo=${exception.javaClass.simpleName}: ${exception.message}")
                     continuacion.resume(mapearErrorRegistro(exception))
                 }
             },
@@ -56,10 +59,15 @@ class CognitoClienteRegistro(
                 codigo,
                 false,
                 object : GenericHandler {
-                    override fun onSuccess() = continuacion.resume(ResultadoConfirmacion.Confirmada)
+                    override fun onSuccess() {
+                        Diag.i("cognito.confirmSignUp ok")
+                        continuacion.resume(ResultadoConfirmacion.Confirmada)
+                    }
 
-                    override fun onFailure(exception: Exception) =
+                    override fun onFailure(exception: Exception) {
+                        Diag.e("cognito.confirmSignUp fallo=${exception.javaClass.simpleName}: ${exception.message}")
                         continuacion.resume(mapearErrorConfirmacion(exception))
+                    }
                 },
             )
         }
@@ -68,11 +76,15 @@ class CognitoClienteRegistro(
         suspendCancellableCoroutine { continuacion ->
             userPool.getUser(correo).resendConfirmationCodeInBackground(
                 object : VerificationHandler {
-                    override fun onSuccess(verificationCodeDeliveryMedium: CognitoUserCodeDeliveryDetails?) =
+                    override fun onSuccess(verificationCodeDeliveryMedium: CognitoUserCodeDeliveryDetails?) {
+                        Diag.i("cognito.resendCode ok")
                         continuacion.resume(ResultadoReenvioCodigo.Enviado)
+                    }
 
-                    override fun onFailure(exception: Exception) =
+                    override fun onFailure(exception: Exception) {
+                        Diag.e("cognito.resendCode fallo=${exception.javaClass.simpleName}: ${exception.message}")
                         continuacion.resume(mapearErrorReenvio(exception))
+                    }
                 },
             )
         }

@@ -32,6 +32,7 @@ object RedModule {
             .build()
 
         val base = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+        Diag.i("bff base=$base subLocal=${!subLocal.isNullOrBlank()}")
         return Retrofit.Builder()
             .baseUrl(base)
             .client(cliente)

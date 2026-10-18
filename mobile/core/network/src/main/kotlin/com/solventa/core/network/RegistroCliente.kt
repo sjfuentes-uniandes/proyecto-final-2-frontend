@@ -5,6 +5,7 @@ import com.solventa.core.network.modelo.PruebaDeVidaDto
 import com.solventa.core.network.modelo.RegistroVerificacionDto
 import com.solventa.core.network.modelo.RegistroVerificacionSolicitud
 import com.solventa.core.network.modelo.ValidacionRegistroSolicitud
+import com.solventa.core.network.modelo.VinculacionDto
 import com.solventa.core.network.modelo.VinculacionSolicitud
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -34,21 +35,30 @@ class RegistroCliente(
         val respuesta = try {
             api.verificarRegistro(solicitud)
         } catch (e: IOException) {
+            Diag.e("registro.verificar sin conexion: ${e.javaClass.simpleName}")
             return ResultadoVerificacionRegistro.SinConexion
         } catch (e: SerializationException) {
+            Diag.e("registro.verificar respuesta ilegible: ${e.javaClass.simpleName}")
             return ResultadoVerificacionRegistro.ErrorDesconocido(null)
         }
-        return if (respuesta.isSuccessful) interpretarVerificacion(respuesta) else interpretarErrorVerificacion(respuesta)
+        return (if (respuesta.isSuccessful) interpretarVerificacion(respuesta) else interpretarErrorVerificacion(respuesta))
+            .also { Diag.i("registro.verificar -> ${it.javaClass.simpleName}") }
     }
 
     suspend fun vincular(registroId: String, tokenRegistro: String): ResultadoVinculacion {
         val respuesta = try {
             api.vincularRegistro(VinculacionSolicitud(registroId, tokenRegistro))
         } catch (e: IOException) {
+            Diag.e("registro.vincular sin conexion: ${e.javaClass.simpleName}")
             return ResultadoVinculacion.SinConexion
         } catch (e: SerializationException) {
+            Diag.e("registro.vincular respuesta ilegible: ${e.javaClass.simpleName}")
             return ResultadoVinculacion.ErrorDesconocido(null)
         }
+        return interpretarVinculacion(respuesta).also { Diag.i("registro.vincular -> ${it.javaClass.simpleName}") }
+    }
+
+    private fun interpretarVinculacion(respuesta: Response<VinculacionDto>): ResultadoVinculacion {
         if (respuesta.isSuccessful) {
             val cuerpo = respuesta.body()
                 ?: return ResultadoVinculacion.ErrorDesconocido(respuesta.headers()[ENCABEZADO_CORRELACION])
@@ -71,11 +81,14 @@ class RegistroCliente(
         val respuesta = try {
             api.validarRegistroLocal(ValidacionRegistroSolicitud(tokenRegistro, correo))
         } catch (e: IOException) {
+            Diag.e("registro.validarLocal sin conexion: ${e.javaClass.simpleName}")
             return false
         } catch (e: SerializationException) {
+            Diag.e("registro.validarLocal respuesta ilegible: ${e.javaClass.simpleName}")
             return false
         }
-        return respuesta.isSuccessful && respuesta.body()?.valido == true
+        return (respuesta.isSuccessful && respuesta.body()?.valido == true)
+            .also { Diag.i("registro.validarLocal -> valido=$it") }
     }
 
     private fun interpretarVerificacion(respuesta: Response<RegistroVerificacionDto>): ResultadoVerificacionRegistro {

@@ -27,6 +27,8 @@ fun LoginRoute(
     val uiState by viewModel.uiState.collectAsState()
     val alcance = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) { viewModel.alMostrarse() }
+
     LaunchedEffect(uiState.ingresoCompleto) {
         if (uiState.ingresoCompleto) onIngresoExitoso()
     }

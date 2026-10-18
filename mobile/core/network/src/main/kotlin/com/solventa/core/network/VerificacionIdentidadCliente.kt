@@ -22,11 +22,14 @@ class VerificacionIdentidadCliente(
         val respuesta = try {
             api.verificarIdentidad(solicitud)
         } catch (e: IOException) {
+            Diag.e("identidad.verificar sin conexion: ${e.javaClass.simpleName}")
             return ResultadoVerificacion.SinConexion
         } catch (e: SerializationException) {
+            Diag.e("identidad.verificar respuesta ilegible: ${e.javaClass.simpleName}")
             return ResultadoVerificacion.ErrorDesconocido(correlationId = null)
         }
-        return if (respuesta.isSuccessful) interpretarExito(respuesta) else interpretarError(respuesta)
+        return (if (respuesta.isSuccessful) interpretarExito(respuesta) else interpretarError(respuesta))
+            .also { Diag.i("identidad.verificar -> ${it.javaClass.simpleName}") }
     }
 
     private fun interpretarExito(respuesta: Response<VerificacionIdentidadDto>): ResultadoVerificacion {

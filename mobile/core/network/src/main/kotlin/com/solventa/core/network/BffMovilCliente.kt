@@ -1,7 +1,6 @@
 package com.solventa.core.network
 
 import com.solventa.core.network.modelo.ErrorDto
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import retrofit2.Response
 import java.io.IOException
@@ -45,12 +44,5 @@ class BffMovilCliente(
         }
     }
 
-    private fun leerError(respuesta: Response<*>): ErrorDto? {
-        val cuerpo = respuesta.errorBody()?.string() ?: return null
-        return try {
-            json.decodeFromString(ErrorDto.serializer(), cuerpo)
-        } catch (e: SerializationException) {
-            null
-        }
-    }
+    private fun leerError(respuesta: Response<*>): ErrorDto? = leerErrorDto(respuesta, json)
 }
