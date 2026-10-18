@@ -1,7 +1,7 @@
 package com.solventa.core.network
 
 /**
- * Resultado tipado de las rutas `/v1/consentimientos` (HU-M08), traducido por `ErrorDto.codigo`
+ * Resultado tipado de las rutas `/v1/consentimientos` (HU-M08 y HU-M09), traducido por `ErrorDto.codigo`
  * (contracts/codigos-error.md), nunca por `mensaje`: la app muestra su propio texto por código.
  */
 sealed class ResultadoConsentimiento<out T> {

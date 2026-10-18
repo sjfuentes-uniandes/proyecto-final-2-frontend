@@ -2,6 +2,7 @@ package com.solventa.core.network
 
 import com.solventa.core.network.modelo.ConsentimientoDto
 import com.solventa.core.network.modelo.ErrorDto
+import com.solventa.core.network.modelo.HistorialDto
 import com.solventa.core.network.modelo.SolicitudOtorgarDto
 import com.solventa.core.network.modelo.TextoVigenteDto
 import kotlinx.serialization.SerializationException
@@ -13,9 +14,10 @@ import retrofit2.Response
 import java.io.IOException
 
 /**
- * Cliente de las rutas de consentimiento de bff-movil (HU-M08). Traduce la respuesta por
+ * Cliente de las rutas de consentimiento de bff-movil (HU-M08 y HU-M09). Traduce la respuesta por
  * `ErrorDto.codigo` (contracts/codigos-error.md) y nunca reintenta: al otorgar, el reintento lo
- * decide quien llama, con la misma `Idempotency-Key`. No registra cuerpos ni claves.
+ * decide quien llama, con la misma `Idempotency-Key`; al revocar no hay clave, porque el servidor es
+ * idempotente por estado. No registra cuerpos ni claves.
  */
 class ConsentimientosCliente(
     private val api: BffMovilApi,
@@ -36,6 +38,16 @@ class ConsentimientosCliente(
         solicitud: SolicitudOtorgarDto,
     ): ResultadoConsentimiento<ConsentimientoDto> =
         llamar { api.otorgarConsentimiento(claveIdempotencia, solicitud) }
+
+    /**
+     * 200 con el estado resultante, también al repetir: `REVOCADO`, o `VENCIDO` con `revocadoEn` nulo
+     * si ya había vencido. La app no lo reinterpreta.
+     */
+    suspend fun revocar(consentimientoId: String): ResultadoConsentimiento<ConsentimientoDto> =
+        llamar { api.revocarConsentimiento(consentimientoId) }
+
+    suspend fun historial(consentimientoId: String): ResultadoConsentimiento<HistorialDto> =
+        llamar { api.historialConsentimiento(consentimientoId) }
 
     private suspend fun <T> llamar(peticion: suspend () -> Response<T>): ResultadoConsentimiento<T> {
         val respuesta = try {

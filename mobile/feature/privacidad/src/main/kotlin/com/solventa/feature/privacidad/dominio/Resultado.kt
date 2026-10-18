@@ -58,7 +58,7 @@ sealed interface FalloConsentimiento {
     /** ADR 0001: permiso que esta versión no puede otorgar. No se llamó al servidor. */
     data object PermisoNoDisponible : FalloConsentimiento
 
-    /** ADR 0007: sin confirmación biométrica no se otorga. No se llamó al servidor (AC2). */
+    /** ADR 0007: sin confirmación biométrica no se otorga ni se revoca. No se llamó al servidor. */
     data class BiometriaNoConfirmada(val motivo: ConfirmacionBiometrica) : FalloConsentimiento {
         // La clave nunca se envió: conservarla no tiene riesgo y evita una nueva al reintentar.
         override val reintentable = true

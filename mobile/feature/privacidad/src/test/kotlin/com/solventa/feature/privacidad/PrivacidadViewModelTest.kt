@@ -4,7 +4,9 @@ import app.cash.turbine.test
 import com.solventa.feature.privacidad.casos.ListarConsentimientos
 import com.solventa.feature.privacidad.casos.ObtenerTextoVigente
 import com.solventa.feature.privacidad.casos.OtorgarConsentimiento
+import com.solventa.feature.privacidad.casos.RevocarConsentimiento
 import com.solventa.feature.privacidad.casos.VerDetalleConsentimiento
+import com.solventa.feature.privacidad.casos.VerHistorialConsentimiento
 import com.solventa.feature.privacidad.dominio.Alcance
 import com.solventa.feature.privacidad.dominio.ConfirmacionBiometrica
 import com.solventa.feature.privacidad.dominio.Consentimiento
@@ -68,7 +70,7 @@ class PrivacidadViewModelTest {
     @BeforeEach
     fun preparar() {
         Dispatchers.setMain(despachador)
-        coEvery { verificador.confirmar() } returns ConfirmacionBiometrica.CONFIRMADA
+        coEvery { verificador.confirmar(any()) } returns ConfirmacionBiometrica.CONFIRMADA
         coEvery { repositorio.listar() } returns Resultado.Exito(listOf(consentimiento))
     }
 
@@ -82,6 +84,8 @@ class PrivacidadViewModelTest {
         VerDetalleConsentimiento(repositorio),
         ObtenerTextoVigente(repositorio),
         OtorgarConsentimiento(repositorio, verificador),
+        RevocarConsentimiento(repositorio, verificador),
+        VerHistorialConsentimiento(repositorio),
         generador,
     )
 
@@ -243,7 +247,7 @@ class PrivacidadViewModelTest {
 
     @Test
     fun `cancelar la biometria no llama al servidor y conserva el intento (AC2)`() = runTest(despachador) {
-        coEvery { verificador.confirmar() } returnsMany listOf(
+        coEvery { verificador.confirmar(any()) } returnsMany listOf(
             ConfirmacionBiometrica.CANCELADA,
             ConfirmacionBiometrica.CONFIRMADA,
         )
@@ -283,7 +287,7 @@ class PrivacidadViewModelTest {
         advanceUntilIdle()
 
         assertEquals(EstadoOtorgamiento.Inactivo, vm.uiState.value.otorgamiento)
-        coVerify(exactly = 0) { verificador.confirmar() }
+        coVerify(exactly = 0) { verificador.confirmar(any()) }
         coVerify(exactly = 0) { repositorio.otorgar(any(), any()) }
     }
 

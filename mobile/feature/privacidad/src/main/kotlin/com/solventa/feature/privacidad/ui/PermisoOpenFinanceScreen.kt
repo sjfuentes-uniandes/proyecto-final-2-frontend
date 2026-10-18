@@ -31,11 +31,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.solventa.core.designsystem.SolventaTema
+import com.solventa.feature.privacidad.Carga
 import com.solventa.feature.privacidad.EtiquetasPrueba
 import com.solventa.feature.privacidad.R
 import com.solventa.feature.privacidad.dominio.Alcance
 import com.solventa.feature.privacidad.dominio.Consentimiento
+import com.solventa.feature.privacidad.dominio.EstadoConsentimiento
 import com.solventa.feature.privacidad.dominio.FalloConsentimiento
+import com.solventa.feature.privacidad.dominio.Historial
 import com.solventa.feature.privacidad.dominio.Permiso
 import com.solventa.feature.privacidad.dominio.SolicitudOtorgamiento
 import com.solventa.feature.privacidad.dominio.TextoVigente
@@ -45,6 +48,16 @@ enum class AvisoPermiso(val textoRes: Int) {
     OTORGADA(R.string.privacidad_otorgada),
     YA_OTORGADA(R.string.privacidad_ya_otorgada),
     BIOMETRIA_CANCELADA(R.string.privacidad_biometria_cancelada),
+
+    /** HU-M09: el servidor respondió `REVOCADO`. */
+    REVOCADA(R.string.privacidad_revocada),
+
+    /** HU-M09: el servidor respondió `VENCIDO` con `revocadoEn` nulo; no es una revocación. */
+    YA_NO_VIGENTE(R.string.privacidad_ya_no_vigente),
+
+    /** HU-M09: otro estado (por ejemplo, uno que esta versión no conoce): se informa sin interpretarlo. */
+    ESTADO_ACTUALIZADO(R.string.privacidad_estado_actualizado),
+    BIOMETRIA_CANCELADA_REVOCAR(R.string.privacidad_revocar_biometria_cancelada),
 }
 
 /** Lo que muestra la pantalla del permiso: la arma [PermisoOpenFinanceRoute] desde el ViewModel. */
@@ -53,16 +66,32 @@ sealed interface VistaPermiso {
 
     data class ErrorCarga(val onReintentar: () -> Unit) : VistaPermiso
 
-    /** Texto vigente visible antes de confirmar (AC1). */
-    data class Formulario(val texto: TextoVigente, val enCurso: Boolean) : VistaPermiso
+    /**
+     * Texto vigente visible antes de confirmar (AC1). `anteriores`: autorizaciones revocadas o
+     * vencidas del titular, para consultar su historial (HU-M09 AC4).
+     */
+    data class Formulario(
+        val texto: TextoVigente,
+        val enCurso: Boolean,
+        val anteriores: List<Consentimiento> = emptyList(),
+    ) : VistaPermiso
 
-    /** Comprobante consultable (AC1). */
-    data class Comprobante(val consentimiento: Consentimiento) : VistaPermiso
+    /**
+     * Comprobante consultable (AC1) con su historial (HU-M09 AC4). Si está `ACTIVO`, ofrece revocar;
+     * `revocando` deshabilita el botón mientras la petición va en curso.
+     */
+    data class Comprobante(
+        val consentimiento: Consentimiento,
+        val historial: Carga<Historial> = Carga.Inactiva,
+        val revocando: Boolean = false,
+    ) : VistaPermiso
 }
 
 /**
  * Detalle y otorgamiento de Open Finance y Open Data (AC6, mockup_1_HUM08.png): secciones
- * PROPÓSITO, DATOS SOLICITADOS y VIGENCIA. El botón de revocar llega con HU-M09.
+ * PROPÓSITO, DATOS SOLICITADOS y VIGENCIA. Con un consentimiento `ACTIVO`, el botón rojo
+ * "REVOCAR AUTORIZACIÓN" (HU-M09, mockup_1_HUM09.png) pide una confirmación explícita antes de
+ * revocar; el comprobante muestra además el historial.
  */
 @Composable
 fun PermisoOpenFinanceScreen(
@@ -73,7 +102,15 @@ fun PermisoOpenFinanceScreen(
     onOtorgar: (SolicitudOtorgamiento) -> Unit,
     onReintentarOtorgar: () -> Unit,
     onCerrarError: () -> Unit,
+    falloRevocar: FalloConsentimiento? = null,
+    onRevocar: (String) -> Unit = {},
+    onReintentarRevocar: () -> Unit = {},
+    onCerrarErrorRevocar: () -> Unit = {},
+    onReintentarHistorial: () -> Unit = {},
+    onVerHistorialAnterior: (String) -> Unit = {},
 ) {
+    // La confirmación sobrevive a rotaciones: guarda el consentimiento que se va a revocar.
+    var confirmarRevocacion by rememberSaveable { mutableStateOf<String?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
         BarraPrivacidad(stringResource(R.string.privacidad_detalle_titulo), onVolver = onVolver)
         Column(
@@ -87,12 +124,47 @@ fun PermisoOpenFinanceScreen(
             when (vista) {
                 VistaPermiso.Cargando -> CargandoPrivacidad()
                 is VistaPermiso.ErrorCarga -> ErrorCargaPrivacidad(vista.onReintentar)
-                is VistaPermiso.Formulario -> FormularioOtorgar(vista.texto, vista.enCurso, onOtorgar)
-                is VistaPermiso.Comprobante -> ComprobanteConsentimiento(vista.consentimiento)
+                is VistaPermiso.Formulario -> {
+                    FormularioOtorgar(vista.texto, vista.enCurso, onOtorgar)
+                    if (vista.anteriores.isNotEmpty()) SeccionAnteriores(vista.anteriores, onVerHistorialAnterior)
+                }
+                is VistaPermiso.Comprobante -> {
+                    ComprobanteConsentimiento(vista.consentimiento)
+                    if (vista.historial != Carga.Inactiva) SeccionHistorial(vista.historial, onReintentarHistorial)
+                    if (vista.consentimiento.estado == EstadoConsentimiento.ACTIVO) {
+                        BotonPrincipal(
+                            texto = stringResource(
+                                if (vista.revocando) R.string.privacidad_boton_revocando else R.string.privacidad_boton_revocar,
+                            ),
+                            habilitado = !vista.revocando,
+                            onClick = { confirmarRevocacion = vista.consentimiento.id },
+                            peligro = true,
+                            modifier = Modifier.testTag(EtiquetasPrueba.BOTON_REVOCAR),
+                        )
+                    }
+                }
             }
         }
     }
     falloOtorgar?.let { DialogoErrorOtorgar(it, onReintentarOtorgar, onCerrarError) }
+    confirmarRevocacion?.let { id ->
+        DialogoConfirmarRevocacion(
+            onConfirmar = {
+                confirmarRevocacion = null
+                onRevocar(id)
+            },
+            onCancelar = { confirmarRevocacion = null },
+        )
+    }
+    falloRevocar?.let {
+        DialogoErrorOtorgar(
+            fallo = it,
+            onReintentar = onReintentarRevocar,
+            onCerrar = onCerrarErrorRevocar,
+            titulo = stringResource(R.string.privacidad_revocar_error_titulo),
+            mensaje = stringResource(it.mensajeRevocarRes()),
+        )
+    }
 }
 
 @Composable

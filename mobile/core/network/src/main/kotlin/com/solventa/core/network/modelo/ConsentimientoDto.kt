@@ -44,3 +44,22 @@ data class TextoVigenteDto(
     val vigenciasMeses: List<Int>,
     val vigenciaDefectoMeses: Int,
 )
+
+/**
+ * `HistorialDto` del contrato (HU-M09): cuándo se otorgó y, si aplica, cuándo se revocó o venció.
+ * `estado` y `tipo` son texto por la misma razón que en [ConsentimientoDto]: un valor nuevo del
+ * backend no rompe la lectura.
+ */
+@Serializable
+data class HistorialDto(
+    val consentimientoId: String,
+    val estado: String,
+    val hitos: List<HitoDto>,
+)
+
+/** Un hito del historial: `tipo` (OTORGADO, REVOCADO o VENCIDO) y su instante ISO-8601 en UTC. */
+@Serializable
+data class HitoDto(
+    val tipo: String,
+    val ocurridoEn: String,
+)

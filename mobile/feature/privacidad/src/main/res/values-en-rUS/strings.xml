@@ -77,4 +77,29 @@
     <string name="privacidad_error_permiso">This permission is not available in this version.</string>
     <string name="privacidad_error_biometria_fallida">Your identity could not be confirmed. Try again.</string>
     <string name="privacidad_error_biometria_no_disponible">To grant the authorization, set up your fingerprint or face on your device.</string>
+
+    <string name="privacidad_boton_revocar">REVOKE AUTHORIZATION</string>
+    <string name="privacidad_boton_revocando">REVOKING…</string>
+    <string name="privacidad_revocar_confirmar_titulo">Revoke the authorization?</string>
+    <string name="privacidad_revocar_confirmar_cuerpo">Solventa will stop querying your financial data with this authorization. This cannot be undone: to authorize again you will need to grant a new one.</string>
+    <string name="privacidad_revocar_confirmar_si">REVOKE</string>
+    <string name="privacidad_revocar_confirmar_no">Cancel</string>
+    <string name="privacidad_revocada">Authorization revoked. Solventa will no longer query your data with it.</string>
+    <string name="privacidad_ya_no_vigente">This authorization was no longer valid: it expired before you revoked it, so revoking it was not necessary.</string>
+    <string name="privacidad_estado_actualizado">The authorization status changed. Review the details.</string>
+    <string name="privacidad_revocar_biometria_cancelada">You canceled the confirmation. The authorization was not revoked.</string>
+    <string name="privacidad_biometria_revocar_titulo">Confirm the revocation</string>
+    <string name="privacidad_biometria_revocar_subtitulo">Use your fingerprint or face to revoke the authorization</string>
+    <string name="privacidad_revocar_error_titulo">The authorization could not be revoked</string>
+    <string name="privacidad_revocar_error_no_autorizado">Your account cannot revoke this authorization.</string>
+    <string name="privacidad_revocar_error_biometria_no_disponible">To revoke the authorization, set up your fingerprint or face on your device.</string>
+    <string name="privacidad_seccion_historial">HISTORY</string>
+    <string name="privacidad_hito_otorgado">Granted: %1$s</string>
+    <string name="privacidad_hito_revocado">Revoked: %1$s</string>
+    <string name="privacidad_hito_vencido">Expired: %1$s</string>
+    <string name="privacidad_hito_desconocido">Other change: %1$s</string>
+    <string name="privacidad_historial_vacio">There is no recorded activity.</string>
+    <string name="privacidad_historial_error">The history could not be loaded.</string>
+    <string name="privacidad_seccion_anteriores">PREVIOUS AUTHORIZATIONS</string>
+    <string name="privacidad_accion_ver_historial">View history</string>
 </resources>

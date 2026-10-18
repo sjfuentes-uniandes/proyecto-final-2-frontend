@@ -84,4 +84,30 @@
     <string name="privacidad_error_permiso">Este permiso no está disponible en esta versión.</string>
     <string name="privacidad_error_biometria_fallida">No fue posible confirmar su identidad. Intente de nuevo.</string>
     <string name="privacidad_error_biometria_no_disponible">Para otorgar la autorización debe configurar la huella o el rostro en su dispositivo.</string>
+
+    <!-- Revocación (mockup_1_HUM09.png) e historial (HU-M09) -->
+    <string name="privacidad_boton_revocar">REVOCAR AUTORIZACIÓN</string>
+    <string name="privacidad_boton_revocando">REVOCANDO…</string>
+    <string name="privacidad_revocar_confirmar_titulo">¿Revocar la autorización?</string>
+    <string name="privacidad_revocar_confirmar_cuerpo">Solventa dejará de consultar sus datos financieros con esta autorización. No se puede deshacer: para volver a autorizar deberá otorgar una nueva.</string>
+    <string name="privacidad_revocar_confirmar_si">REVOCAR</string>
+    <string name="privacidad_revocar_confirmar_no">Cancelar</string>
+    <string name="privacidad_revocada">Autorización revocada. Solventa ya no consultará sus datos con ella.</string>
+    <string name="privacidad_ya_no_vigente">Esta autorización ya no estaba vigente: venció antes de revocarla, así que no fue necesario revocarla.</string>
+    <string name="privacidad_estado_actualizado">El estado de la autorización cambió. Revise el detalle.</string>
+    <string name="privacidad_revocar_biometria_cancelada">Canceló la confirmación. No se revocó la autorización.</string>
+    <string name="privacidad_biometria_revocar_titulo">Confirme la revocación</string>
+    <string name="privacidad_biometria_revocar_subtitulo">Use su huella o su rostro para revocar la autorización</string>
+    <string name="privacidad_revocar_error_titulo">No fue posible revocar la autorización</string>
+    <string name="privacidad_revocar_error_no_autorizado">Su cuenta no puede revocar esta autorización.</string>
+    <string name="privacidad_revocar_error_biometria_no_disponible">Para revocar la autorización debe configurar la huella o el rostro en su dispositivo.</string>
+    <string name="privacidad_seccion_historial">HISTORIAL</string>
+    <string name="privacidad_hito_otorgado">Otorgada: %1$s</string>
+    <string name="privacidad_hito_revocado">Revocada: %1$s</string>
+    <string name="privacidad_hito_vencido">Venció: %1$s</string>
+    <string name="privacidad_hito_desconocido">Otro cambio: %1$s</string>
+    <string name="privacidad_historial_vacio">No hay movimientos registrados.</string>
+    <string name="privacidad_historial_error">No fue posible cargar el historial.</string>
+    <string name="privacidad_seccion_anteriores">AUTORIZACIONES ANTERIORES</string>
+    <string name="privacidad_accion_ver_historial">Ver historial</string>
 </resources>

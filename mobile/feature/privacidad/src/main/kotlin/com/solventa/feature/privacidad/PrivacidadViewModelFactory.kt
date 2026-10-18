@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import com.solventa.feature.privacidad.casos.ListarConsentimientos
 import com.solventa.feature.privacidad.casos.ObtenerTextoVigente
 import com.solventa.feature.privacidad.casos.OtorgarConsentimiento
+import com.solventa.feature.privacidad.casos.RevocarConsentimiento
 import com.solventa.feature.privacidad.casos.VerDetalleConsentimiento
+import com.solventa.feature.privacidad.casos.VerHistorialConsentimiento
 import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
 import com.solventa.feature.privacidad.dominio.VerificadorBiometrico
 
@@ -21,6 +23,8 @@ class PrivacidadViewModelFactory(
             VerDetalleConsentimiento(repositorio),
             ObtenerTextoVigente(repositorio),
             OtorgarConsentimiento(repositorio, verificador),
+            RevocarConsentimiento(repositorio, verificador),
+            VerHistorialConsentimiento(repositorio),
         ) as T
     }
 }

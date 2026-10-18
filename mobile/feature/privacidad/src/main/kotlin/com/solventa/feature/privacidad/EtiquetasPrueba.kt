@@ -11,10 +11,15 @@ object EtiquetasPrueba {
     const val COMPROBANTE = "privacidad.comprobante"
     const val DIALOGO_ERROR = "privacidad.dialogo_error"
     const val AVISO = "privacidad.aviso"
+    const val BOTON_REVOCAR = "privacidad.boton_revocar"
+    const val DIALOGO_CONFIRMAR_REVOCAR = "privacidad.dialogo_confirmar_revocar"
+    const val HISTORIAL = "privacidad.historial"
 
     fun permiso(nombre: String) = "privacidad.permiso.$nombre"
 
     fun alcance(nombre: String) = "privacidad.alcance.$nombre"
 
     fun vigencia(meses: Int) = "privacidad.vigencia.$meses"
+
+    fun anterior(id: String) = "privacidad.anterior.$id"
 }

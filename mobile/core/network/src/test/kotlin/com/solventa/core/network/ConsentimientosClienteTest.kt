@@ -19,7 +19,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Rutas `/v1/consentimientos` de bff-movil contra un simulador local (HU-M08). */
+/** Rutas `/v1/consentimientos` de bff-movil contra un simulador local (HU-M08 y HU-M09). */
 class ConsentimientosClienteTest {
     private lateinit var servidor: MockWebServer
     private lateinit var cliente: ConsentimientosCliente
@@ -269,7 +269,95 @@ class ConsentimientosClienteTest {
         )
     }
 
+    // --- Revocar e historial (HU-M09) -----------------------------------------------------
+
+    @Test
+    fun `revocar envia un POST sin cuerpo ni clave de idempotencia`() = runTest {
+        responder(200, REVOCADO)
+
+        val resultado = cliente.revocar("00000000-0000-4000-9000-000000000001")
+
+        assertIs<ResultadoConsentimiento.Exito<*>>(resultado)
+        assertFalse(resultado.repeticion)
+        val consentimiento = resultado.valor as com.solventa.core.network.modelo.ConsentimientoDto
+        assertEquals("REVOCADO", consentimiento.estado)
+        assertEquals("2026-11-02T08:15:00Z", consentimiento.revocadoEn)
+        val recibida = servidor.takeRequest()
+        assertEquals("POST", recibida.method)
+        assertEquals("/v1/consentimientos/00000000-0000-4000-9000-000000000001/revocacion", recibida.path)
+        assertNull(recibida.getHeader("Idempotency-Key"))
+        assertEquals(0L, recibida.bodySize)
+        assertEquals("Bearer token-de-prueba", recibida.getHeader("Authorization"))
+    }
+
+    @Test
+    fun `revocar un vencido devuelve el estado tal como llega`() = runTest {
+        responder(200, CONSENTIMIENTO.replace("\"ACTIVO\"", "\"VENCIDO\""))
+
+        val resultado = cliente.revocar("00000000-0000-4000-9000-000000000001")
+
+        assertIs<ResultadoConsentimiento.Exito<*>>(resultado)
+        val consentimiento = resultado.valor as com.solventa.core.network.modelo.ConsentimientoDto
+        assertEquals("VENCIDO", consentimiento.estado)
+        assertNull(consentimiento.revocadoEn)
+    }
+
+    @Test
+    fun `revocar traduce 404, 503 y la falta de red por codigo`() = runTest {
+        responder(404, error("CONSENTIMIENTO_NO_ENCONTRADO"))
+        responder(503, error("SERVICIO_NO_DISPONIBLE"))
+
+        assertEquals(
+            ResultadoConsentimiento.Fallo(ErrorConsentimiento.ConsentimientoNoEncontrado),
+            cliente.revocar("ajeno"),
+        )
+        assertEquals(
+            ResultadoConsentimiento.Fallo(ErrorConsentimiento.ServicioNoDisponible),
+            cliente.revocar("00000000-0000-4000-9000-000000000001"),
+        )
+        servidor.shutdown()
+        assertEquals(
+            ResultadoConsentimiento.Fallo(ErrorConsentimiento.SinConexion),
+            cliente.revocar("00000000-0000-4000-9000-000000000001"),
+        )
+    }
+
+    @Test
+    fun `historial lee los hitos y tolera tipos y campos nuevos`() = runTest {
+        responder(200, HISTORIAL)
+
+        val resultado = cliente.historial("00000000-0000-4000-9000-000000000001")
+
+        assertIs<ResultadoConsentimiento.Exito<*>>(resultado)
+        val historial = resultado.valor as com.solventa.core.network.modelo.HistorialDto
+        assertEquals("REVOCADO", historial.estado)
+        assertEquals(listOf("OTORGADO", "REVOCADO", "SUSPENDIDO"), historial.hitos.map { it.tipo })
+        assertEquals("2026-11-02T08:15:00Z", historial.hitos[1].ocurridoEn)
+        val recibida = servidor.takeRequest()
+        assertEquals("GET", recibida.method)
+        assertEquals("/v1/consentimientos/00000000-0000-4000-9000-000000000001/historial", recibida.path)
+    }
+
+    @Test
+    fun `historial ajeno o inexistente es ConsentimientoNoEncontrado`() = runTest {
+        responder(404, error("CONSENTIMIENTO_NO_ENCONTRADO"))
+
+        assertEquals(
+            ResultadoConsentimiento.Fallo(ErrorConsentimiento.ConsentimientoNoEncontrado),
+            cliente.historial("otro"),
+        )
+    }
+
+    @Test
+    fun `un historial fuera del contrato es Desconocido`() = runTest {
+        responder(200, """{"consentimientoId":"x","estado":"ACTIVO"}""")
+
+        assertEquals(ResultadoConsentimiento.Fallo(ErrorConsentimiento.Desconocido(null)), cliente.historial("x"))
+    }
+
     private companion object {
+        const val REVOCADO = """{"consentimientoId":"00000000-0000-4000-9000-000000000001","estado":"REVOCADO","proposito":"PERFILAMIENTO_PRECIO","alcances":["FA_PRODUCTOS_VIGENTES"],"versionTexto":"2026-10-17.1","idioma":"es-CO","otorgadoEn":"2026-10-17T15:00:00Z","vigenteHasta":"2027-10-17T23:59:59Z","revocadoEn":"2026-11-02T08:15:00Z"}"""
+        const val HISTORIAL = """{"consentimientoId":"00000000-0000-4000-9000-000000000001","estado":"REVOCADO","hitos":[{"tipo":"OTORGADO","ocurridoEn":"2026-10-17T15:00:00Z"},{"tipo":"REVOCADO","ocurridoEn":"2026-11-02T08:15:00Z","nuevo":1},{"tipo":"SUSPENDIDO","ocurridoEn":"2026-11-03T00:00:00Z"}],"otroCampo":true}"""
         const val CONSENTIMIENTO = """{"consentimientoId":"00000000-0000-4000-9000-000000000001","estado":"ACTIVO","proposito":"PERFILAMIENTO_PRECIO","alcances":["FA_PRODUCTOS_VIGENTES"],"versionTexto":"2026-10-17.1","idioma":"es-CO","otorgadoEn":"2026-10-17T15:00:00Z","vigenteHasta":"2027-10-17T23:59:59Z","revocadoEn":null}"""
         const val TEXTO = """{"proposito":"PERFILAMIENTO_PRECIO","idioma":"en-US","versionTexto":"2026-10-17.1","titulo":"Sample authorization","cuerpo":"Illustrative text.","aviso":"No legal validity","vigenciasMeses":[6,12],"vigenciaDefectoMeses":12}"""
     }

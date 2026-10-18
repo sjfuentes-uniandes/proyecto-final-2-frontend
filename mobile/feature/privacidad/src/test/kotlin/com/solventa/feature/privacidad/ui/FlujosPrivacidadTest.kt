@@ -13,17 +13,22 @@ import com.solventa.feature.privacidad.PrivacidadViewModel
 import com.solventa.feature.privacidad.casos.ListarConsentimientos
 import com.solventa.feature.privacidad.casos.ObtenerTextoVigente
 import com.solventa.feature.privacidad.casos.OtorgarConsentimiento
+import com.solventa.feature.privacidad.casos.RevocarConsentimiento
 import com.solventa.feature.privacidad.casos.VerDetalleConsentimiento
+import com.solventa.feature.privacidad.casos.VerHistorialConsentimiento
 import com.solventa.feature.privacidad.dominio.Alcance
 import com.solventa.feature.privacidad.dominio.ConfirmacionBiometrica
 import com.solventa.feature.privacidad.dominio.Consentimiento
 import com.solventa.feature.privacidad.dominio.EstadoConsentimiento
 import com.solventa.feature.privacidad.dominio.FalloConsentimiento
+import com.solventa.feature.privacidad.dominio.Historial
+import com.solventa.feature.privacidad.dominio.Hito
 import com.solventa.feature.privacidad.dominio.Otorgamiento
 import com.solventa.feature.privacidad.dominio.Permiso
 import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
 import com.solventa.feature.privacidad.dominio.Resultado
 import com.solventa.feature.privacidad.dominio.TextoVigente
+import com.solventa.feature.privacidad.dominio.TipoHito
 import com.solventa.feature.privacidad.dominio.VerificadorBiometrico
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -70,11 +75,17 @@ class FlujosPrivacidadTest {
     fun preparar() {
         coEvery { repositorio.listar() } returns Resultado.Exito(emptyList())
         coEvery { repositorio.textoVigente(any(), any()) } returns Resultado.Exito(texto)
+        // El comprobante pide su historial (HU-M09).
+        coEvery { repositorio.historial(any()) } answers {
+            Resultado.Exito(Historial(firstArg(), EstadoConsentimiento.ACTIVO, listOf(Hito(TipoHito.OTORGADO, consentimiento.otorgadoEn))))
+        }
         viewModel = PrivacidadViewModel(
             ListarConsentimientos(repositorio),
             VerDetalleConsentimiento(repositorio),
             ObtenerTextoVigente(repositorio),
             OtorgarConsentimiento(repositorio, verificador),
+            RevocarConsentimiento(repositorio, verificador),
+            VerHistorialConsentimiento(repositorio),
         )
     }
 

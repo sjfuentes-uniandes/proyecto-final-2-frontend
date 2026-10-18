@@ -2,7 +2,10 @@ package com.solventa.feature.privacidad.ui
 
 import com.solventa.feature.privacidad.dominio.Consentimiento
 import com.solventa.feature.privacidad.dominio.EstadoConsentimiento
+import com.solventa.feature.privacidad.dominio.Historial
+import com.solventa.feature.privacidad.dominio.Hito
 import com.solventa.feature.privacidad.dominio.TextoVigente
+import com.solventa.feature.privacidad.dominio.TipoHito
 import java.time.Instant
 
 /**
@@ -26,6 +29,33 @@ internal object MuestrasPreview {
         id = "00000000-0000-4000-9000-000000000002",
         estado = EstadoConsentimiento.REVOCADO,
         revocadoEn = Instant.parse("2026-11-01T10:00:00Z"),
+    )
+
+    /** HU-M09: el servidor respondió `VENCIDO` al revocar (sin `revocadoEn`). */
+    val vencido = activo.copy(
+        id = "00000000-0000-4000-9000-000000000003",
+        estado = EstadoConsentimiento.VENCIDO,
+        otorgadoEn = Instant.parse("2025-10-17T15:00:00Z"),
+        vigenteHasta = Instant.parse("2026-04-17T15:00:00Z"),
+    )
+
+    val historialActivo = Historial(activo.id, EstadoConsentimiento.ACTIVO, listOf(Hito(TipoHito.OTORGADO, activo.otorgadoEn)))
+
+    val historialRevocado = Historial(
+        revocado.id,
+        EstadoConsentimiento.REVOCADO,
+        listOf(Hito(TipoHito.OTORGADO, revocado.otorgadoEn), Hito(TipoHito.REVOCADO, Instant.parse("2026-11-01T10:00:00Z"))),
+    )
+
+    val historialVencido = Historial(
+        vencido.id,
+        EstadoConsentimiento.VENCIDO,
+        listOf(Hito(TipoHito.OTORGADO, vencido.otorgadoEn), Hito(TipoHito.VENCIDO, vencido.vigenteHasta)),
+    )
+
+    /** Un tipo de hito que esta versión no conoce (backend más nuevo): se muestra genérico. */
+    val historialConDesconocido = historialActivo.copy(
+        hitos = historialActivo.hitos + Hito(TipoHito.DESCONOCIDO, Instant.parse("2026-11-03T15:00:00Z")),
     )
 
     val textoEsCo = TextoVigente(

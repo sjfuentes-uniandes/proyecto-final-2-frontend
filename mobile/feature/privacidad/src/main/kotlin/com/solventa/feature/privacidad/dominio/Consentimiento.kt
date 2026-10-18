@@ -74,3 +74,24 @@ data class SolicitudOtorgamiento(
 
 /** `repeticion`: el servidor devolvió el consentimiento ya creado con la misma clave (AC4). */
 data class Otorgamiento(val consentimiento: Consentimiento, val repeticion: Boolean)
+
+/** `DESCONOCIDO`: un tipo de hito que esta versión de la app no conoce (backend más nuevo). */
+enum class TipoHito {
+    OTORGADO,
+    REVOCADO,
+    VENCIDO,
+    DESCONOCIDO,
+}
+
+/** Un momento del historial, como instante UTC. */
+data class Hito(val tipo: TipoHito, val ocurridoEn: Instant)
+
+/**
+ * Historial de un consentimiento (HU-M09 AC4): lo deriva el servidor de un registro que no se puede
+ * modificar; la app solo lo muestra.
+ */
+data class Historial(
+    val consentimientoId: String,
+    val estado: EstadoConsentimiento,
+    val hitos: List<Hito>,
+)

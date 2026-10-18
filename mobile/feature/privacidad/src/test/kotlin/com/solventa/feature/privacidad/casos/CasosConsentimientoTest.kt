@@ -53,14 +53,14 @@ class CasosConsentimientoTest {
         val resultado = otorgar(solicitud(permiso), "clave")
 
         assertEquals(Resultado.Fallo(FalloConsentimiento.PermisoNoDisponible), resultado)
-        coVerify(exactly = 0) { verificador.confirmar() }
+        coVerify(exactly = 0) { verificador.confirmar(any()) }
         coVerify(exactly = 0) { repositorio.otorgar(any(), any()) }
     }
 
     @ParameterizedTest
     @EnumSource(value = ConfirmacionBiometrica::class, names = ["CANCELADA", "NO_DISPONIBLE", "FALLIDA"])
     fun `sin confirmacion biometrica no se otorga nada (ADR 0007, AC2)`(confirmacion: ConfirmacionBiometrica) = runTest {
-        coEvery { verificador.confirmar() } returns confirmacion
+        coEvery { verificador.confirmar(any()) } returns confirmacion
 
         val resultado = otorgar(solicitud(), "clave")
 
@@ -71,7 +71,7 @@ class CasosConsentimientoTest {
     @Test
     fun `con biometria confirmada otorga con la clave del intento`() = runTest {
         val esperado = Resultado.Fallo(FalloConsentimiento.ServicioNoDisponible)
-        coEvery { verificador.confirmar() } returns ConfirmacionBiometrica.CONFIRMADA
+        coEvery { verificador.confirmar(any()) } returns ConfirmacionBiometrica.CONFIRMADA
         coEvery { repositorio.otorgar(any(), any()) } returns esperado
 
         val resultado = otorgar(solicitud(), "clave-7")

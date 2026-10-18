@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.solventa.feature.privacidad.casos.ListarConsentimientos
 import com.solventa.feature.privacidad.casos.ObtenerTextoVigente
 import com.solventa.feature.privacidad.casos.OtorgarConsentimiento
+import com.solventa.feature.privacidad.casos.RevocarConsentimiento
 import com.solventa.feature.privacidad.casos.VerDetalleConsentimiento
+import com.solventa.feature.privacidad.casos.VerHistorialConsentimiento
 import com.solventa.feature.privacidad.dominio.GeneradorClave
 import com.solventa.feature.privacidad.dominio.Resultado
 import com.solventa.feature.privacidad.dominio.SolicitudOtorgamiento
@@ -17,7 +19,8 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 /**
- * Orquesta el panel de Privacidad: lista, detalle, texto vigente y otorgamiento (HU-M08).
+ * Orquesta el panel de Privacidad: lista, detalle, texto vigente y otorgamiento (HU-M08); revocación
+ * e historial (HU-M09).
  *
  * Idempotencia (AC4): cada intento de otorgar tiene una `Idempotency-Key` propia, que se genera
  * al confirmar y se reutiliza mientras el cliente reintente la misma solicitud tras un fallo
@@ -25,12 +28,17 @@ import java.util.UUID
  * si la primera respuesta se perdió, el servidor devuelve el mismo consentimiento. Tras un
  * éxito o un rechazo definitivo, el siguiente intento lleva una clave nueva; una solicitud
  * distinta también.
+ *
+ * Revocar no lleva clave: el servidor es idempotente por estado, así que reintentar tras un fallo
+ * reintentable repite la misma petición sin riesgo.
  */
 class PrivacidadViewModel(
     private val listarConsentimientos: ListarConsentimientos,
     private val verDetalle: VerDetalleConsentimiento,
     private val obtenerTextoVigente: ObtenerTextoVigente,
     private val otorgarConsentimiento: OtorgarConsentimiento,
+    private val revocarConsentimiento: RevocarConsentimiento,
+    private val verHistorial: VerHistorialConsentimiento,
     private val generadorClave: GeneradorClave = GeneradorClave { UUID.randomUUID().toString() },
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PrivacidadUiState())
@@ -39,6 +47,9 @@ class PrivacidadViewModel(
     private data class Intento(val solicitud: SolicitudOtorgamiento, val clave: String)
 
     private var intento: Intento? = null
+
+    /** Consentimiento de la última revocación fallida, para reintentarla. */
+    private var revocacionPendiente: String? = null
 
     fun cargarConsentimientos() {
         _uiState.update { it.copy(consentimientos = Carga.Cargando) }
@@ -102,6 +113,56 @@ class PrivacidadViewModel(
     /** Cierra el resultado (comprobante o modal de error). El intento pendiente se conserva. */
     fun descartarOtorgamiento() {
         _uiState.update { it.copy(otorgamiento = EstadoOtorgamiento.Inactivo) }
+    }
+
+    fun cargarHistorial(id: String) {
+        _uiState.update { it.copy(historial = Carga.Cargando) }
+        viewModelScope.launch {
+            val carga = aCarga(verHistorial(id))
+            _uiState.update { it.copy(historial = carga) }
+        }
+    }
+
+    /**
+     * El cliente confirmó explícitamente la revocación (AC1). Un toque repetido mientras va en curso
+     * no hace nada. Con éxito, el detalle pasa a ser el consentimiento que devolvió el servidor y se
+     * recargan la lista (etiqueta del panel) y el historial.
+     */
+    fun revocar(id: String) {
+        if (_uiState.value.revocacion == EstadoRevocacion.EnCurso) return
+        revocacionPendiente = id
+        _uiState.update { it.copy(revocacion = EstadoRevocacion.EnCurso) }
+        viewModelScope.launch {
+            when (val resultado = revocarConsentimiento(id)) {
+                is Resultado.Exito -> {
+                    revocacionPendiente = null
+                    _uiState.update {
+                        it.copy(
+                            revocacion = EstadoRevocacion.Resuelto(resultado.valor),
+                            detalle = Carga.Lista(resultado.valor),
+                            // El comprobante que se muestra es el del detalle, ya actualizado.
+                            otorgamiento = EstadoOtorgamiento.Inactivo,
+                        )
+                    }
+                    cargarConsentimientos()
+                    cargarHistorial(id)
+                }
+                is Resultado.Fallo -> {
+                    if (!resultado.fallo.reintentable) revocacionPendiente = null
+                    _uiState.update { it.copy(revocacion = EstadoRevocacion.Fallido(resultado.fallo)) }
+                }
+            }
+        }
+    }
+
+    /** Repite la última revocación fallida; sin una pendiente no hace nada. */
+    fun reintentarRevocacion() {
+        revocacionPendiente?.let(::revocar)
+    }
+
+    /** Cierra el resultado de revocar (aviso o modal de error). */
+    fun descartarRevocacion() {
+        _uiState.update { it.copy(revocacion = EstadoRevocacion.Inactivo) }
     }
 
     private fun <T> aCarga(resultado: Resultado<T>): Carga<T> = when (resultado) {

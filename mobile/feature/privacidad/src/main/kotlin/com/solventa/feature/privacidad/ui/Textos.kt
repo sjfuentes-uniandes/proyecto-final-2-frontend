@@ -7,6 +7,7 @@ import com.solventa.feature.privacidad.dominio.ConfirmacionBiometrica
 import com.solventa.feature.privacidad.dominio.EstadoConsentimiento
 import com.solventa.feature.privacidad.dominio.FalloConsentimiento
 import com.solventa.feature.privacidad.dominio.Permiso
+import com.solventa.feature.privacidad.dominio.TipoHito
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -82,6 +83,29 @@ internal fun FalloConsentimiento.mensajeRes(): Int = when (this) {
     }
 }
 
+/**
+ * Cuerpo del modal de error al revocar (HU-M09). Solo cambian los textos que hablan de otorgar; el
+ * resto (sin conexión, servicio caído, no encontrada, sesión) es el mismo que al otorgar.
+ */
+@StringRes
+internal fun FalloConsentimiento.mensajeRevocarRes(): Int = when {
+    this == FalloConsentimiento.NoAutorizado -> R.string.privacidad_revocar_error_no_autorizado
+    this is FalloConsentimiento.BiometriaNoConfirmada && motivo == ConfirmacionBiometrica.NO_DISPONIBLE ->
+        R.string.privacidad_revocar_error_biometria_no_disponible
+    this is FalloConsentimiento.BiometriaNoConfirmada && motivo == ConfirmacionBiometrica.CANCELADA ->
+        R.string.privacidad_revocar_biometria_cancelada
+    else -> mensajeRes()
+}
+
+/** Texto de cada hito del historial, con su fecha. Un tipo desconocido se muestra genérico (N-1). */
+@StringRes
+internal fun TipoHito.textoRes(): Int = when (this) {
+    TipoHito.OTORGADO -> R.string.privacidad_hito_otorgado
+    TipoHito.REVOCADO -> R.string.privacidad_hito_revocado
+    TipoHito.VENCIDO -> R.string.privacidad_hito_vencido
+    TipoHito.DESCONOCIDO -> R.string.privacidad_hito_desconocido
+}
+
 /** AC3: nombre legible de cada campo que el servidor informa como faltante o inválido. */
 @StringRes
 internal fun campoRes(campo: String): Int? = when (campo) {
@@ -95,6 +119,13 @@ internal fun campoRes(campo: String): Int? = when (campo) {
 /** Fecha guardada en UTC, mostrada en la zona y el idioma del dispositivo. */
 internal fun formatearFecha(instante: Instant, idioma: Locale, zona: ZoneId = ZoneId.systemDefault()): String =
     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(idioma).withZone(zona).format(instante)
+
+/** Fecha y hora guardadas en UTC, mostradas en la zona y el idioma del dispositivo (historial). */
+internal fun formatearFechaHora(instante: Instant, idioma: Locale, zona: ZoneId = ZoneId.systemDefault()): String =
+    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
+        .withLocale(idioma)
+        .withZone(zona)
+        .format(instante)
 
 /** Idioma del texto legal (ADR 0005): en-US si la app está en inglés; es-CO en cualquier otro caso. */
 internal fun idiomaTexto(idioma: Locale): String = if (idioma.language == Locale.ENGLISH.language) "en-US" else "es-CO"

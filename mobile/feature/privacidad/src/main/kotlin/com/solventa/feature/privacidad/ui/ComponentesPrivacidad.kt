@@ -2,6 +2,7 @@ package com.solventa.feature.privacidad.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,9 +27,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -38,13 +41,17 @@ import androidx.compose.ui.unit.dp
 import com.solventa.core.designsystem.SolventaTema
 import com.solventa.feature.privacidad.EtiquetasPrueba
 import com.solventa.feature.privacidad.R
+import com.solventa.feature.privacidad.Carga
+import com.solventa.feature.privacidad.dominio.Consentimiento
 import com.solventa.feature.privacidad.dominio.FalloConsentimiento
+import com.solventa.feature.privacidad.dominio.Historial
 
 /** Área táctil mínima de las guías de Android. */
 internal val AREA_TACTIL_MINIMA = 48.dp
 
 private val azulBarra = Color(0xFF0F2A55)
 private val verdeAccion = Color(0xFF136B63)
+private val rojoRevocar = Color(0xFFD7261E)
 
 /** Barra superior: con [onVolver] muestra la flecha atrás (con descripción para el lector). */
 @Composable
@@ -173,14 +180,25 @@ internal fun AvisoPrivacidad(texto: String) {
     )
 }
 
-/** Botón principal verde del mockup ("OTORGAR AUTORIZACIÓN"). */
+/**
+ * Botón principal del mockup: verde para "OTORGAR AUTORIZACIÓN" y rojo para "REVOCAR AUTORIZACIÓN"
+ * ([peligro], mockup_1_HUM09.png). El texto dice siempre la acción: el color solo refuerza.
+ */
 @Composable
-internal fun BotonPrincipal(texto: String, habilitado: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun BotonPrincipal(
+    texto: String,
+    habilitado: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    peligro: Boolean = false,
+) {
     Button(
         onClick = onClick,
         enabled = habilitado,
         shape = RoundedCornerShape(12.dp),
-        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = verdeAccion),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = if (peligro) rojoRevocar else verdeAccion,
+        ),
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = AREA_TACTIL_MINIMA),
@@ -191,19 +209,22 @@ internal fun BotonPrincipal(texto: String, habilitado: Boolean, onClick: () -> U
 
 /**
  * Modal "No fue posible otorgar autorización" (AC6): el cuerpo depende del código; si el fallo
- * es reintentable, ofrece reintentar (con la misma clave de idempotencia).
+ * es reintentable, ofrece reintentar (con la misma clave de idempotencia). Al revocar (HU-M09) se
+ * usa con su propio título y mensaje; reintentar es seguro porque el servidor es idempotente.
  */
 @Composable
 internal fun DialogoErrorOtorgar(
     fallo: FalloConsentimiento,
     onReintentar: () -> Unit,
     onCerrar: () -> Unit,
+    titulo: String = stringResource(R.string.privacidad_error_titulo),
+    mensaje: String = mensajeFallo(fallo),
 ) {
     AlertDialog(
         onDismissRequest = onCerrar,
         modifier = Modifier.testTag(EtiquetasPrueba.DIALOGO_ERROR),
-        title = { Text(stringResource(R.string.privacidad_error_titulo)) },
-        text = { Text(mensajeFallo(fallo)) },
+        title = { Text(titulo) },
+        text = { Text(mensaje) },
         confirmButton = {
             if (fallo.reintentable) {
                 TextButton(onClick = onReintentar, modifier = Modifier.heightIn(min = AREA_TACTIL_MINIMA)) {
@@ -227,4 +248,95 @@ internal fun mensajeFallo(fallo: FalloConsentimiento): String {
         if (campos.isNotEmpty()) return stringResource(R.string.privacidad_error_solicitud, campos.joinToString(", "))
     }
     return stringResource(fallo.mensajeRes())
+}
+
+/**
+ * Confirmación explícita antes de revocar (AC1). Cancelar no llama a nada; confirmar pasa a la
+ * biometría (ADR 0007) y después al servidor.
+ */
+@Composable
+internal fun DialogoConfirmarRevocacion(onConfirmar: () -> Unit, onCancelar: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        modifier = Modifier.testTag(EtiquetasPrueba.DIALOGO_CONFIRMAR_REVOCAR),
+        title = {
+            Text(
+                stringResource(R.string.privacidad_revocar_confirmar_titulo),
+                modifier = Modifier.semantics { heading() },
+            )
+        },
+        text = { Text(stringResource(R.string.privacidad_revocar_confirmar_cuerpo)) },
+        confirmButton = {
+            TextButton(onClick = onConfirmar, modifier = Modifier.heightIn(min = AREA_TACTIL_MINIMA)) {
+                Text(stringResource(R.string.privacidad_revocar_confirmar_si), color = rojoRevocar, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancelar, modifier = Modifier.heightIn(min = AREA_TACTIL_MINIMA)) {
+                Text(stringResource(R.string.privacidad_revocar_confirmar_no))
+            }
+        },
+    )
+}
+
+/**
+ * HISTORIAL (HU-M09 AC4): cuándo se otorgó y, si aplica, cuándo se revocó o venció, en la zona del
+ * dispositivo. Es de solo lectura: no hay acción que lo modifique.
+ */
+@Composable
+internal fun SeccionHistorial(historial: Carga<Historial>, onReintentar: () -> Unit) {
+    val idioma = LocalConfiguration.current.locales[0]
+    Column(modifier = Modifier.testTag(EtiquetasPrueba.HISTORIAL)) {
+        SeccionPrivacidad(stringResource(R.string.privacidad_seccion_historial)) {
+            when (historial) {
+                Carga.Inactiva, Carga.Cargando -> CargandoPrivacidad()
+                is Carga.Error -> {
+                    Text(
+                        stringResource(R.string.privacidad_historial_error),
+                        color = SolventaTema.colores.advertencia,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
+                    OutlinedButton(onClick = onReintentar, modifier = Modifier.heightIn(min = AREA_TACTIL_MINIMA)) {
+                        Text(stringResource(R.string.privacidad_reintentar))
+                    }
+                }
+                is Carga.Lista -> if (historial.valor.hitos.isEmpty()) {
+                    Text(stringResource(R.string.privacidad_historial_vacio))
+                } else {
+                    historial.valor.hitos.forEach { hito ->
+                        Text(stringResource(hito.tipo.textoRes(), formatearFechaHora(hito.ocurridoEn, idioma)))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Autorizaciones anteriores (revocadas o vencidas) cuando no hay una vigente: cada fila abre su
+ * comprobante con el historial (AC4). La etiqueta de estado tiene texto, no solo color.
+ */
+@Composable
+internal fun SeccionAnteriores(anteriores: List<Consentimiento>, onVerHistorial: (String) -> Unit) {
+    val idioma = LocalConfiguration.current.locales[0]
+    val accion = stringResource(R.string.privacidad_accion_ver_historial)
+    SeccionPrivacidad(stringResource(R.string.privacidad_seccion_anteriores)) {
+        anteriores.forEach { consentimiento ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = AREA_TACTIL_MINIMA)
+                    .clickable(onClickLabel = accion, role = Role.Button) { onVerHistorial(consentimiento.id) }
+                    .testTag(EtiquetasPrueba.anterior(consentimiento.id)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    stringResource(R.string.privacidad_otorgado_en, formatearFecha(consentimiento.otorgadoEn, idioma)),
+                    modifier = Modifier.weight(1f),
+                )
+                EtiquetaEstadoPermiso(consentimiento.estado.etiqueta())
+            }
+        }
+    }
 }

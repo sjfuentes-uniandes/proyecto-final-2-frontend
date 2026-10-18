@@ -4,17 +4,21 @@ import com.solventa.core.network.ConsentimientosCliente
 import com.solventa.core.network.ErrorConsentimiento
 import com.solventa.core.network.ResultadoConsentimiento
 import com.solventa.core.network.modelo.ConsentimientoDto
+import com.solventa.core.network.modelo.HistorialDto
 import com.solventa.core.network.modelo.SolicitudOtorgarDto
 import com.solventa.core.network.modelo.TextoVigenteDto
 import com.solventa.feature.privacidad.dominio.Consentimiento
 import com.solventa.feature.privacidad.dominio.EstadoConsentimiento
 import com.solventa.feature.privacidad.dominio.FalloConsentimiento
+import com.solventa.feature.privacidad.dominio.Historial
+import com.solventa.feature.privacidad.dominio.Hito
 import com.solventa.feature.privacidad.dominio.Otorgamiento
 import com.solventa.feature.privacidad.dominio.PROPOSITO_PERFILAMIENTO
 import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
 import com.solventa.feature.privacidad.dominio.Resultado
 import com.solventa.feature.privacidad.dominio.SolicitudOtorgamiento
 import com.solventa.feature.privacidad.dominio.TextoVigente
+import com.solventa.feature.privacidad.dominio.TipoHito
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeParseException
@@ -47,6 +51,12 @@ class RepositorioConsentimientosRed(private val cliente: ConsentimientosCliente)
         }
     }
 
+    override suspend fun revocar(id: String): Resultado<Consentimiento> =
+        traducir(cliente.revocar(id), ::aDominio)
+
+    override suspend fun historial(id: String): Resultado<Historial> =
+        traducir(cliente.historial(id), ::aDominio)
+
     private fun <D, T> traducir(resultado: ResultadoConsentimiento<D>, mapear: (D) -> T): Resultado<T> =
         when (resultado) {
             is ResultadoConsentimiento.Exito -> convertir { mapear(resultado.valor) }
@@ -62,7 +72,7 @@ class RepositorioConsentimientosRed(private val cliente: ConsentimientosCliente)
 
     private fun aDominio(dto: ConsentimientoDto) = Consentimiento(
         id = dto.consentimientoId,
-        estado = EstadoConsentimiento.entries.firstOrNull { it.name == dto.estado } ?: EstadoConsentimiento.DESCONOCIDO,
+        estado = estado(dto.estado),
         proposito = dto.proposito,
         alcances = dto.alcances,
         versionTexto = dto.versionTexto,
@@ -82,6 +92,21 @@ class RepositorioConsentimientosRed(private val cliente: ConsentimientosCliente)
         vigenciasMeses = dto.vigenciasMeses,
         vigenciaDefectoMeses = dto.vigenciaDefectoMeses,
     )
+
+    /** Un tipo de hito o un estado que esta versión no conoce no se pierde: queda `DESCONOCIDO`. */
+    private fun aDominio(dto: HistorialDto) = Historial(
+        consentimientoId = dto.consentimientoId,
+        estado = estado(dto.estado),
+        hitos = dto.hitos.map { hito ->
+            Hito(
+                tipo = TipoHito.entries.firstOrNull { it.name == hito.tipo } ?: TipoHito.DESCONOCIDO,
+                ocurridoEn = instante(hito.ocurridoEn),
+            )
+        },
+    )
+
+    private fun estado(texto: String): EstadoConsentimiento =
+        EstadoConsentimiento.entries.firstOrNull { it.name == texto } ?: EstadoConsentimiento.DESCONOCIDO
 
     /** Acepta `Z` y `+00:00`; el resultado es siempre un instante UTC. */
     private fun instante(texto: String): Instant = OffsetDateTime.parse(texto).toInstant()

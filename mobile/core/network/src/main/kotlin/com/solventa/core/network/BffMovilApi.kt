@@ -1,6 +1,7 @@
 package com.solventa.core.network
 
 import com.solventa.core.network.modelo.ConsentimientoDto
+import com.solventa.core.network.modelo.HistorialDto
 import com.solventa.core.network.modelo.SesionDto
 import com.solventa.core.network.modelo.SolicitudOtorgarDto
 import com.solventa.core.network.modelo.TextoVigenteDto
@@ -32,6 +33,13 @@ interface BffMovilApi {
 
     @GET("v1/consentimientos/{consentimientoId}")
     suspend fun consentimiento(@Path("consentimientoId") consentimientoId: String): Response<ConsentimientoDto>
+
+    /** HU-M09: sin cuerpo ni `Idempotency-Key`; el servidor es idempotente por estado. */
+    @POST("v1/consentimientos/{consentimientoId}/revocacion")
+    suspend fun revocarConsentimiento(@Path("consentimientoId") consentimientoId: String): Response<ConsentimientoDto>
+
+    @GET("v1/consentimientos/{consentimientoId}/historial")
+    suspend fun historialConsentimiento(@Path("consentimientoId") consentimientoId: String): Response<HistorialDto>
 
     @GET("v1/consentimientos/texto-vigente")
     suspend fun textoVigente(

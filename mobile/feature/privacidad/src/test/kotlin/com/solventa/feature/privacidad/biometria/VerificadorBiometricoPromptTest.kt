@@ -5,6 +5,7 @@ import com.solventa.core.security.Disponibilidad
 import com.solventa.core.security.GestorBiometria
 import com.solventa.core.security.ResultadoBiometria
 import com.solventa.feature.privacidad.R
+import com.solventa.feature.privacidad.dominio.AccionBiometrica
 import com.solventa.feature.privacidad.dominio.ConfirmacionBiometrica
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -30,6 +31,17 @@ class VerificadorBiometricoPromptTest {
         every { actividad.getString(R.string.privacidad_biometria_titulo) } returns "titulo"
         every { actividad.getString(R.string.privacidad_biometria_subtitulo) } returns "subtitulo"
         every { actividad.getString(R.string.privacidad_biometria_negativo) } returns "negativo"
+        every { actividad.getString(R.string.privacidad_biometria_revocar_titulo) } returns "titulo-revocar"
+        every { actividad.getString(R.string.privacidad_biometria_revocar_subtitulo) } returns "subtitulo-revocar"
+    }
+
+    @Test
+    fun `al revocar el dialogo dice revocar (ADR 0007)`() = runTest {
+        coEvery { gestor.autenticar(any(), any(), any(), any()) } returns ResultadoBiometria.Exito
+        verificador.adjuntar(actividad)
+
+        assertEquals(ConfirmacionBiometrica.CONFIRMADA, verificador.confirmar(AccionBiometrica.REVOCAR))
+        coVerify { gestor.autenticar(actividad, "titulo-revocar", "subtitulo-revocar", "negativo") }
     }
 
     @ParameterizedTest
@@ -38,7 +50,7 @@ class VerificadorBiometricoPromptTest {
         coEvery { gestor.autenticar(any(), any(), any(), any()) } returns resultado
         verificador.adjuntar(actividad)
 
-        assertEquals(esperado, verificador.confirmar())
+        assertEquals(esperado, verificador.confirmar(AccionBiometrica.OTORGAR))
         coVerify { gestor.autenticar(actividad, "titulo", "subtitulo", "negativo") }
     }
 
@@ -47,17 +59,17 @@ class VerificadorBiometricoPromptTest {
         every { gestor.disponibilidad() } returns Disponibilidad.SIN_HUELLAS_REGISTRADAS
         verificador.adjuntar(actividad)
 
-        assertEquals(ConfirmacionBiometrica.NO_DISPONIBLE, verificador.confirmar())
+        assertEquals(ConfirmacionBiometrica.NO_DISPONIBLE, verificador.confirmar(AccionBiometrica.OTORGAR))
         coVerify(exactly = 0) { gestor.autenticar(any(), any(), any(), any()) }
     }
 
     @Test
     fun `sin actividad en pantalla no se puede confirmar`() = runTest {
-        assertEquals(ConfirmacionBiometrica.NO_DISPONIBLE, verificador.confirmar())
+        assertEquals(ConfirmacionBiometrica.NO_DISPONIBLE, verificador.confirmar(AccionBiometrica.OTORGAR))
 
         verificador.adjuntar(actividad)
         verificador.soltar(actividad)
-        assertEquals(ConfirmacionBiometrica.NO_DISPONIBLE, verificador.confirmar())
+        assertEquals(ConfirmacionBiometrica.NO_DISPONIBLE, verificador.confirmar(AccionBiometrica.OTORGAR))
         coVerify(exactly = 0) { gestor.autenticar(any(), any(), any(), any()) }
     }
 
@@ -70,7 +82,7 @@ class VerificadorBiometricoPromptTest {
 
         verificador.soltar(vieja)
 
-        assertEquals(ConfirmacionBiometrica.CONFIRMADA, verificador.confirmar())
+        assertEquals(ConfirmacionBiometrica.CONFIRMADA, verificador.confirmar(AccionBiometrica.OTORGAR))
         coVerify { gestor.autenticar(actividad, any(), any(), any()) }
     }
 

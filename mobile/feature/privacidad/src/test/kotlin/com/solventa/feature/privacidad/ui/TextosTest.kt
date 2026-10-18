@@ -4,12 +4,14 @@ import com.solventa.feature.privacidad.R
 import com.solventa.feature.privacidad.dominio.ConfirmacionBiometrica
 import com.solventa.feature.privacidad.dominio.EstadoConsentimiento
 import com.solventa.feature.privacidad.dominio.FalloConsentimiento
+import com.solventa.feature.privacidad.dominio.TipoHito
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TextosTest {
     private val vencimiento = Instant.parse("2027-10-17T23:59:59Z")
@@ -56,6 +58,46 @@ class TextosTest {
             FalloConsentimiento.BiometriaNoConfirmada(ConfirmacionBiometrica.CONFIRMADA) to R.string.privacidad_error_biometria_fallida,
         )
         esperados.forEach { (fallo, recurso) -> assertEquals(recurso, fallo.mensajeRes(), fallo.toString()) }
+    }
+
+    @Test
+    fun `al revocar solo cambian los mensajes que hablan de otorgar`() {
+        assertEquals(R.string.privacidad_revocar_error_no_autorizado, FalloConsentimiento.NoAutorizado.mensajeRevocarRes())
+        assertEquals(
+            R.string.privacidad_revocar_error_biometria_no_disponible,
+            FalloConsentimiento.BiometriaNoConfirmada(ConfirmacionBiometrica.NO_DISPONIBLE).mensajeRevocarRes(),
+        )
+        assertEquals(
+            R.string.privacidad_revocar_biometria_cancelada,
+            FalloConsentimiento.BiometriaNoConfirmada(ConfirmacionBiometrica.CANCELADA).mensajeRevocarRes(),
+        )
+        assertEquals(
+            R.string.privacidad_error_biometria_fallida,
+            FalloConsentimiento.BiometriaNoConfirmada(ConfirmacionBiometrica.FALLIDA).mensajeRevocarRes(),
+        )
+        assertEquals(R.string.privacidad_error_no_encontrado, FalloConsentimiento.NoEncontrado.mensajeRevocarRes())
+        assertEquals(R.string.privacidad_error_servicio, FalloConsentimiento.ServicioNoDisponible.mensajeRevocarRes())
+        assertEquals(R.string.privacidad_error_sin_conexion, FalloConsentimiento.SinConexion.mensajeRevocarRes())
+    }
+
+    @Test
+    fun `cada hito tiene su texto y uno desconocido se muestra generico`() {
+        assertEquals(R.string.privacidad_hito_otorgado, TipoHito.OTORGADO.textoRes())
+        assertEquals(R.string.privacidad_hito_revocado, TipoHito.REVOCADO.textoRes())
+        assertEquals(R.string.privacidad_hito_vencido, TipoHito.VENCIDO.textoRes())
+        assertEquals(R.string.privacidad_hito_desconocido, TipoHito.DESCONOCIDO.textoRes())
+    }
+
+    @Test
+    fun `la fecha y hora del historial se muestran en la zona del dispositivo`() {
+        val revocado = Instant.parse("2026-11-02T03:15:00Z")
+        // 03:15 UTC del 2 es el 1 por la noche en Bogotá (UTC-5) y el 2 al mediodía en Tokio (UTC+9).
+        val bogota = formatearFechaHora(revocado, Locale.forLanguageTag("es-CO"), ZoneId.of("America/Bogota"))
+        val tokio = formatearFechaHora(revocado, Locale.US, ZoneId.of("Asia/Tokyo"))
+        assertTrue(bogota.startsWith("1 de noviembre de 2026"), bogota)
+        assertTrue(bogota.contains("10:15"), bogota)
+        assertTrue(tokio.startsWith("November 2, 2026"), tokio)
+        assertTrue(tokio.contains("12:15"), tokio)
     }
 
     @Test

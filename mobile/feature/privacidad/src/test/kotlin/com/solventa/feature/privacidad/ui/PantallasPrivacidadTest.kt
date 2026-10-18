@@ -264,8 +264,8 @@ class PantallasPrivacidadTest {
         compose.onNodeWithText("FA_NUEVO_DE_N_MAS_1").assertExists()
         compose.onNodeWithText("Vencimiento:", substring = true).assertExists()
         compose.onNodeWithText("Versión del texto: 2026-10-17.1").assertExists()
-        // Sin REVOCAR AUTORIZACIÓN en la Parte 1 (HU-M09).
-        compose.onNodeWithText("REVOCAR", substring = true).assertDoesNotExist()
+        // HU-M09: un consentimiento ACTIVO ofrece revocar (mockup_1_HUM09.png).
+        compose.onNodeWithTag(EtiquetasPrueba.BOTON_REVOCAR).performScrollTo().assertIsDisplayed()
     }
 
     @Test
