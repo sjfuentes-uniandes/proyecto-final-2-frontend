@@ -29,9 +29,19 @@ android {
         buildConfigField("String", "COGNITO_POOL_ID", "\"${propiedadLocal("cognitoPoolId", "")}\"")
         buildConfigField("String", "COGNITO_CLIENT_ID", "\"${propiedadLocal("cognitoClientId", "")}\"")
         buildConfigField("String", "COGNITO_REGION", "\"${propiedadLocal("cognitoRegion", "us-east-1")}\"")
+
+        // Solo desarrollo contra el backend local; en release quedan vacíos (ver buildTypes.debug).
+        buildConfigField("String", "SUB_LOCAL", "\"\"")
+        buildConfigField("String", "SELFIE_DE_PRUEBA_LOCAL", "\"\"")
     }
 
     buildTypes {
+        debug {
+            // El backend local (ENVIRONMENT=local) no usa Cognito: identifica al titular por
+            // X-Authenticated-Sub, y su simulador de KYC decide por el texto de la selfie.
+            buildConfigField("String", "SUB_LOCAL", "\"${propiedadLocal("subLocal", "persona-de-prueba-1")}\"")
+            buildConfigField("String", "SELFIE_DE_PRUEBA_LOCAL", "\"${propiedadLocal("selfieDePruebaLocal", "selfie-sintetica-aprobada")}\"")
+        }
         release {
             isMinifyEnabled = false
         }
@@ -49,6 +59,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":feature:login"))
     implementation(project(":feature:privacidad"))
+    implementation(project(":feature:onboarding-identidad"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

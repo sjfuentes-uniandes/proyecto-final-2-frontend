@@ -25,7 +25,7 @@ class GestorSesionTest {
 
         assertIs<ResultadoAutenticacion.Exito>(resultado)
         assertEquals("ana", almacen.usuarioActivo())
-        assertEquals("access-1", gestor.actual())
+        assertEquals("id-1", gestor.actual())
         assertIs<EstadoSesion.Autenticada>(gestor.estado.value)
     }
 
@@ -57,7 +57,7 @@ class GestorSesionTest {
 
         assertIs<ResultadoAutenticacion.Exito>(resultado)
         assertEquals("ana", almacen.usuarioActivo())
-        assertEquals("access-1", gestor.actual())
+        assertEquals("id-1", gestor.actual())
     }
 
     @Test
@@ -80,7 +80,7 @@ class GestorSesionTest {
         val restaurada = gestor.restaurarSesion()
 
         assertTrue(restaurada)
-        assertEquals("access-1", gestor.actual())
+        assertEquals("id-1", gestor.actual())
     }
 
     @Test

@@ -37,7 +37,16 @@ class LoginViewModel(
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     private var intentosBiometricosFallidos = 0
+    private var limiteBiometricoSuperado = false
 
+    /**
+     * La pantalla se vuelve a mostrar con el mismo ViewModel (p. ej. al volver del registro, que
+     * guarda la sesión del usuario nuevo): se recalcula si ya corresponde ofrecer biometría.
+     */
+    fun alMostrarse() {
+        if (limiteBiometricoSuperado) return
+        _uiState.update { it.copy(mostrarBiometria = biometriaOfrecible()) }
+    }
     fun onCorreoCambiado(valor: String) {
         _uiState.update { it.copy(correo = valor, errorCredenciales = null) }
     }
@@ -67,12 +76,12 @@ class LoginViewModel(
     fun onResultadoBiometria(resultado: ResultadoBiometria) {
         when (resultado) {
             ResultadoBiometria.Exito -> restaurarSesionTrasBiometria()
+            ResultadoBiometria.Bloqueado -> bloquearPorLimite()
             ResultadoBiometria.Cancelado -> Unit
-            ResultadoBiometria.Bloqueado -> bloquearBiometria(MensajeLogin.LimiteBiometriaSuperado)
             is ResultadoBiometria.Error -> {
                 intentosBiometricosFallidos++
                 if (intentosBiometricosFallidos >= LIMITE_INTENTOS_BIOMETRICOS) {
-                    bloquearBiometria(MensajeLogin.LimiteBiometriaSuperado)
+                    bloquearPorLimite()
                 } else {
                     _uiState.update { it.copy(mensaje = MensajeLogin.ReintentarBiometria) }
                 }
@@ -113,6 +122,11 @@ class LoginViewModel(
                 _uiState.update { it.copy(cargando = false, mensaje = MensajeLogin.ErrorVerificacion) }
             }
         }
+    }
+
+    private fun bloquearPorLimite() {
+        limiteBiometricoSuperado = true
+        bloquearBiometria(MensajeLogin.LimiteBiometriaSuperado)
     }
 
     private fun bloquearBiometria(mensaje: MensajeLogin) {

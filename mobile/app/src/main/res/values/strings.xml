@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Solventa</string>
+    <string name="cuenta_creada_titulo">Cuenta creada</string>
+    <string name="cuenta_creada_mensaje">Su identidad fue verificada y su cuenta se creó correctamente. Ya puede iniciar sesión.</string>
+    <string name="cuenta_creada_aceptar">Aceptar</string>
+    <string name="cuenta_existente_titulo">Ya tiene una cuenta</string>
+    <string name="cuenta_existente_mensaje">Este registro ya tiene una cuenta asociada. Inicie sesión para continuar.</string>
+    <string name="cuenta_ingreso_pendiente_mensaje">Su cuenta se creó, pero no pudimos iniciar la sesión. Inicie sesión para continuar.</string>
 </resources>

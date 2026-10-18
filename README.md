@@ -47,11 +47,12 @@ Android (Kotlin + Jetpack Compose), multi-módulo:
 
 | Módulo | Qué hace |
 | --- | --- |
-| `core:network` | Cliente del BFF móvil (Retrofit/OkHttp): `GET /v1/sesion`, mapeo de errores del contrato `bff-movil.yaml`. |
+| `core:network` | Cliente del BFF móvil (Retrofit/OkHttp): `GET /v1/sesion` y `POST /v1/identidad/verificaciones`, con el mapeo de errores del contrato `bff-movil.yaml`. |
 | `core:auth` | Sesión del cliente: ingreso SRP contra el pool `clientes` de Cognito (app client `mobile`), MFA TOTP opcional y restauración silenciosa de sesión (`GestorSesion`). |
 | `core:security` | Desbloqueo biométrico (`BiometricPrompt`) y almacenamiento cifrado con Android Keystore de qué usuario puede restaurar sesión sin contraseña (HU-M07). |
-| `core:designsystem` | Paleta y tema de Compose compartidos. |
+| `core:designsystem` | Paleta, tema y componentes de Compose compartidos (logotipo, campo etiquetado, texto de advertencia). |
 | `feature:login` | Pantalla de ingreso (credenciales + biometría), fiel a los mockups de HU-M07. |
+| `feature:onboarding-identidad` | Registro y verificación de identidad (HU-M06): selfie y prueba de vida con CameraX + ML Kit, envío a `bff-movil` y resultados. La selfie vive solo en memoria. |
 | `app` | Composición manual (sin Hilt) y punto de entrada. |
 
 ### Correr en local
@@ -68,3 +69,20 @@ Android (Kotlin + Jetpack Compose), multi-módulo:
    Lo mismo corre `.github/workflows/ci-mobile.yml` en cada PR que toque `mobile/`. Toda cadena va en `values/strings.xml` (es-CO) y en `values-en-rUS/strings.xml` (en-US); una traducción faltante rompe el lint. `HardcodedText` solo revisa recursos XML: los literales dentro de Compose no los detecta.
 3. El ingreso biométrico necesita un dispositivo/emulador con huella o rostro registrado en el sistema operativo y una sesión guardada (un ingreso previo con usuario/contraseña); si no hay ninguno, la app lo detecta y solo ofrece usuario/contraseña.
 4. Tras el desbloqueo biométrico o el ingreso con credenciales, la app confirma la sesión contra `bff-movil` (`GET /v1/sesion`); sin el backend corriendo en local, verá el mensaje "No fue posible confirmar su sesión".
+
+### Verificación de identidad contra el backend local (HU-M06)
+
+Con el docker compose del repo back arriba (`bff-movil` en el puerto 8081), el flujo es: login → **Registrarme** → **Registrar mi biometría** → permiso de cámara → reto de vida → resultado. Solo en builds `debug`, `local.properties` permite ajustar dos valores; sin ellos la app usa por defecto `persona-de-prueba-1` y `selfie-sintetica-aprobada`, y funciona contra el backend local sin configurar nada:
+
+- `subLocal`: el backend local identifica al titular por el encabezado `X-Authenticated-Sub` (cualquier texto único por persona de prueba). Admite una sola cuenta por titular: para repetir el registro use un valor nuevo. En AWS ese encabezado lo pone API Gateway a partir del token, y la app nunca lo envía.
+- `selfieDePruebaLocal`: el simulador de KYC decide por el **texto** de la selfie y responde 503 ante una imagen real. Con este valor la app envía ese texto en lugar de la foto. Casos: `selfie-sintetica-aprobada` (200 `VERIFICADO`), `selfie-sintetica-captura-invalida` (200 `PENDIENTE`), `selfie-sintetica-rechazada` (200 `RECHAZADO`), `selfie-sintetica-caida` y `selfie-sintetica-lenta` (503). Cambie el valor y vuelva a compilar para probar cada caso.
+
+Mientras se muestra la verificación la pantalla está protegida con `FLAG_SECURE`: las capturas de pantalla (incluida `adb screencap`) salen en negro.
+
+### Creación de la cuenta (HU-M06)
+
+Tras verificar la identidad, **Registrarme** hace SignUp en Cognito con el `tokenRegistro` en `ClientMetadata` (el Lambda pre sign-up lo valida contra el correo), pide el código enviado al correo, inicia sesión y vincula la cuenta con `POST /v1/registro/vinculacion`. Si el token falta, venció o es de otro correo, la app pide repetir la captura; si el correo ya tiene cuenta, lleva al ingreso. La contraseña solo se conserva en memoria hasta terminar.
+
+Con `subLocal` (debug contra el backend local) no hay Cognito: la app valida el token con `POST /v1/registro/validaciones` (simula el pre sign-up) y vincula con el `sub` local. Contra AWS hace falta `cognitoPoolId`/`cognitoClientId` y que el pool tenga configurado el Lambda pre sign-up.
+
+Para compilar con JDK 25 instalado, apunte `JAVA_HOME` a un JDK 17–21 (por ejemplo el JBR de Android Studio): Gradle 8.10 no soporta JDK 25.

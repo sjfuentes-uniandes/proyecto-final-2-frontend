@@ -4,7 +4,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 
 /**
- * Agrega `Authorization: Bearer <accessToken>` a las llamadas protegidas.
+ * Agrega `Authorization: Bearer <token>` a las llamadas protegidas.
  * Nunca agrega `x-authenticated-sub` ni `x-authenticated-issuer`: esos los inyecta el gateway.
  */
 class AuthInterceptor(private val proveedorAccessToken: ProveedorAccessToken) : Interceptor {

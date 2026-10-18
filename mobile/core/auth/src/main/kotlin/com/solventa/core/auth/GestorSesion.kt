@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.asStateFlow
  * Orquesta el ciclo de vida de la sesión del cliente: ingreso con credenciales, confirmación de
  * MFA, restauración en silencio (p. ej. tras un desbloqueo biométrico exitoso en `core:security`)
  * y cierre de sesión. Es el único punto de la app que conoce tanto a Cognito
- * ([ClienteIdentidad]) como al almacenamiento seguro ([AlmacenSesionSegura]); expone el access
- * token vigente a `core:network` mediante [ProveedorAccessToken].
+ * ([ClienteIdentidad]) como al almacenamiento seguro ([AlmacenSesionSegura]); expone el token
+ * vigente a `core:network` mediante [ProveedorAccessToken].
  */
 class GestorSesion(
     private val clienteIdentidad: ClienteIdentidad,
@@ -20,7 +20,8 @@ class GestorSesion(
     private val _estado = MutableStateFlow<EstadoSesion>(EstadoSesion.NoAutenticada)
     val estado: StateFlow<EstadoSesion> = _estado.asStateFlow()
 
-    override fun actual(): String? = (_estado.value as? EstadoSesion.Autenticada)?.sesion?.accessToken
+    // API Gateway (authorizer de Cognito sin scopes OAuth) y el BFF validan el ID token.
+    override fun actual(): String? = (_estado.value as? EstadoSesion.Autenticada)?.sesion?.idToken
 
     /** Si hay un usuario guardado que se pueda intentar restaurar (ver [restaurarSesion]). */
     fun haySesionGuardada(): Boolean = almacenSesionSegura.usuarioActivo() != null

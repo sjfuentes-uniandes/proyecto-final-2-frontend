@@ -1,42 +1,31 @@
 package com.solventa.feature.login
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.solventa.core.designsystem.CampoEtiquetado
+import com.solventa.core.designsystem.LogotipoSolventa
 import com.solventa.core.designsystem.SolventaColores
 import com.solventa.core.designsystem.SolventaTema
+import com.solventa.core.designsystem.TextoAdvertencia
 
 /**
  * Pantalla de ingreso: credenciales + (si el dispositivo lo permite) ingreso biométrico. Replica
@@ -98,14 +87,7 @@ fun LoginScreen(
 @Composable
 private fun EncabezadoSolventa() {
     val colores = SolventaTema.colores
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        shadowElevation = 4.dp,
-        color = colores.campoFondo,
-        modifier = Modifier.size(96.dp),
-    ) {
-        LogotipoAbstracto()
-    }
+    LogotipoSolventa(tamano = 96.dp)
     Spacer(Modifier.height(16.dp))
     Text(
         stringResource(R.string.login_marca),
@@ -123,37 +105,13 @@ private fun EncabezadoSolventa() {
     )
 }
 
-/** Aproximación del isotipo (triángulo, engranaje, cuadrado) del mockup; no hay asset vectorial. */
-@Composable
-private fun LogotipoAbstracto() {
-    val colores = SolventaTema.colores
-    Box(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-        Surface(shape = RoundedCornerShape(50), color = colores.panel, modifier = Modifier.size(28.dp)) {}
-        Surface(
-            shape = CircleShape,
-            color = colores.textoSecundario.copy(alpha = 0.35f),
-            modifier = Modifier.size(24.dp).padding(start = 24.dp),
-        ) {}
-    }
-}
-
 @Composable
 private fun MensajeAdvertencia(mensaje: MensajeLogin, modifier: Modifier = Modifier) {
-    val colores = SolventaTema.colores
-    Column(modifier = modifier) {
-        Text(
-            stringResource(mensaje.tituloRes),
-            color = colores.advertencia,
-            fontWeight = FontWeight.SemiBold,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Text(
-            stringResource(mensaje.subtituloRes),
-            color = colores.advertencia,
-            style = MaterialTheme.typography.bodySmall,
-            textDecoration = TextDecoration.Underline,
-        )
-    }
+    TextoAdvertencia(
+        titulo = stringResource(mensaje.tituloRes),
+        subtitulo = stringResource(mensaje.subtituloRes),
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -173,7 +131,6 @@ private fun PanelCredenciales(
                 etiqueta = stringResource(R.string.login_etiqueta_correo),
                 valor = uiState.correo,
                 onValorCambiado = onCorreoCambiado,
-                colores = colores,
                 placeholder = stringResource(R.string.login_placeholder_correo),
             )
             Spacer(Modifier.height(12.dp))
@@ -181,10 +138,11 @@ private fun PanelCredenciales(
                 etiqueta = stringResource(R.string.login_etiqueta_contrasena),
                 valor = uiState.contrasena,
                 onValorCambiado = onContrasenaCambiada,
-                colores = colores,
                 esContrasena = true,
                 contrasenaVisible = uiState.contrasenaVisible,
                 onCambiarVisibilidad = onCambiarVisibilidadContrasena,
+                descripcionMostrar = stringResource(R.string.login_mostrar_contrasena),
+                descripcionOcultar = stringResource(R.string.login_ocultar_contrasena),
             )
 
             uiState.errorCredenciales?.let { error ->
@@ -253,49 +211,3 @@ private fun PanelBiometrico(
         }
     }
 }
-
-@Composable
-private fun CampoEtiquetado(
-    etiqueta: String,
-    valor: String,
-    onValorCambiado: (String) -> Unit,
-    colores: SolventaColores,
-    placeholder: String? = null,
-    esContrasena: Boolean = false,
-    contrasenaVisible: Boolean = false,
-    onCambiarVisibilidad: (() -> Unit)? = null,
-) {
-    Text(etiqueta, color = colores.textoPrimario, style = MaterialTheme.typography.labelLarge)
-    Spacer(Modifier.height(4.dp))
-    OutlinedTextField(
-        value = valor,
-        onValueChange = onValorCambiado,
-        placeholder = placeholder?.let { texto -> { Text(texto, color = colores.textoSecundario) } },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        visualTransformation = if (esContrasena && !contrasenaVisible) PasswordVisualTransformation() else VisualTransformation.None,
-        trailingIcon = if (esContrasena && onCambiarVisibilidad != null) {
-            {
-                IconButton(onClick = onCambiarVisibilidad) {
-                    Icon(
-                        imageVector = iconoVisibilidad(contrasenaVisible),
-                        contentDescription = stringResource(
-                            if (contrasenaVisible) R.string.login_ocultar_contrasena else R.string.login_mostrar_contrasena,
-                        ),
-                    )
-                }
-            }
-        } else {
-            null
-        },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = colores.campoFondo,
-            unfocusedContainerColor = colores.campoFondo,
-            focusedBorderColor = colores.acento,
-            unfocusedBorderColor = colores.campoBorde,
-        ),
-        modifier = Modifier.fillMaxWidth(),
-    )
-}
-
-private fun iconoVisibilidad(visible: Boolean): ImageVector = if (visible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
