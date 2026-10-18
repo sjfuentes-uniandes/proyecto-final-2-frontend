@@ -29,9 +29,19 @@ android {
         buildConfigField("String", "COGNITO_POOL_ID", "\"${propiedadLocal("cognitoPoolId", "")}\"")
         buildConfigField("String", "COGNITO_CLIENT_ID", "\"${propiedadLocal("cognitoClientId", "")}\"")
         buildConfigField("String", "COGNITO_REGION", "\"${propiedadLocal("cognitoRegion", "us-east-1")}\"")
+
+        // Solo desarrollo contra el backend local; en release quedan vacíos (ver buildTypes.debug).
+        buildConfigField("String", "SUB_LOCAL", "\"\"")
+        buildConfigField("String", "SELFIE_DE_PRUEBA_LOCAL", "\"\"")
     }
 
     buildTypes {
+        debug {
+            // El backend local (ENVIRONMENT=local) no usa Cognito: identifica al titular por
+            // X-Authenticated-Sub, y su simulador de KYC decide por el texto de la selfie.
+            buildConfigField("String", "SUB_LOCAL", "\"${propiedadLocal("subLocal", "persona-de-prueba-1")}\"")
+            buildConfigField("String", "SELFIE_DE_PRUEBA_LOCAL", "\"${propiedadLocal("selfieDePruebaLocal", "selfie-sintetica-aprobada")}\"")
+        }
         release {
             isMinifyEnabled = false
         }
@@ -39,6 +49,11 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    testOptions {
+        // Robolectric necesita los recursos fusionados para resolver las cadenas de las pantallas.
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -48,6 +63,8 @@ dependencies {
     implementation(project(":core:security"))
     implementation(project(":core:designsystem"))
     implementation(project(":feature:login"))
+    implementation(project(":feature:privacidad"))
+    implementation(project(":feature:onboarding-identidad"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -61,6 +78,13 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    // Navegación de la app en la JVM: Robolectric + semántica de Compose, con dobles de red y sesión.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.compose.ui.test.manifest)
+    testImplementation(libs.mockk)
+    // Las respuestas falsas de BffMovilApi son `retrofit2.Response` (core:network no lo expone).
+    testImplementation(libs.retrofit.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }

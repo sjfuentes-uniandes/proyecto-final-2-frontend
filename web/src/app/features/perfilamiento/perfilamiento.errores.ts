@@ -23,6 +23,7 @@ const POR_CODIGO: Record<string, ClaveError> = {
   IDENTIDAD_NO_VERIFICADA: 'errorIdentidadNoVerificada',
   IDENTIDAD_PENDIENTE: 'errorIdentidadPendiente',
   CLIENTE_NO_ENCONTRADO: 'errorClienteNoEncontrado',
+  CLIENTE_SIN_DOCUMENTO: 'errorClienteSinDocumento',
   IDEMPOTENCIA_CONFLICTO: 'errorIdempotenciaConflicto',
   PRODUCTO_NO_DISPONIBLE: 'errorProductoNoDisponible',
   DEPENDENCIA_NO_DISPONIBLE: 'errorDependenciaNoDisponible',

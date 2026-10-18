@@ -15,6 +15,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
             extensions.configure<ApplicationExtension> {
                 configureKotlinAndroid(this)
+                configureAndroidLint(this)
                 defaultConfig.targetSdk = 35
             }
         }

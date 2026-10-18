@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Registration -->
+    <string name="onboarding_marca">Solventa</string>
+    <string name="onboarding_registro_titulo">Sign up</string>
+    <string name="onboarding_registro_subtitulo">Please enter your details to continue</string>
+    <string name="onboarding_etiqueta_correo">Email</string>
+    <string name="onboarding_placeholder_correo">user@domain.com</string>
+    <string name="onboarding_etiqueta_contrasena">Password</string>
+    <string name="onboarding_etiqueta_confirmar_contrasena">Confirm password</string>
+    <string name="onboarding_mostrar_contrasena">Show password</string>
+    <string name="onboarding_ocultar_contrasena">Hide password</string>
+    <string name="onboarding_contrasenas_no_coinciden">Passwords do not match</string>
+    <string name="onboarding_correo_invalido">Enter a valid email</string>
+    <string name="onboarding_contrasena_politica">At least 10 characters, with an uppercase letter, a lowercase letter and a number</string>
+    <string name="onboarding_etiqueta_biometria">Register biometric verification</string>
+    <string name="onboarding_boton_registrar_biometria">Register my biometrics</string>
+    <string name="onboarding_biometria_verificada">Identity verified</string>
+    <string name="onboarding_advertencia_titulo">Repeat biometric check</string>
+    <string name="onboarding_advertencia_subtitulo">Avoid wearing glasses or a face covering during capture</string>
+    <string name="onboarding_advertencia_iluminacion">Find a place with more light and repeat the capture</string>
+    <string name="onboarding_boton_registrarme">Sign up</string>
+
+    <!-- Capture -->
+    <string name="onboarding_captura_titulo">Identity verification</string>
+    <string name="onboarding_camara_descripcion">Front camera preview</string>
+    <string name="onboarding_guia_inicial">Look at the camera</string>
+    <string name="onboarding_guia_iluminacion">Find a place with more light</string>
+    <string name="onboarding_guia_sin_rostro">Show your face to the camera</string>
+    <string name="onboarding_guia_varios_rostros">Only one person should appear</string>
+    <string name="onboarding_guia_acercar">Move your face a little closer</string>
+    <string name="onboarding_guia_alejar">Move your face a little farther away</string>
+    <string name="onboarding_guia_centrar">Center your face in the frame</string>
+    <string name="onboarding_guia_frente">Look straight at the camera</string>
+    <string name="onboarding_guia_ojos">Keep your eyes open</string>
+    <string name="onboarding_reto_parpadeo">Blink once</string>
+    <string name="onboarding_reto_giro">Turn your head to one side and look straight ahead again</string>
+    <string name="onboarding_reto_expirado">Time ran out. Try again</string>
+    <string name="onboarding_guia_capturando">Perfect, hold still</string>
+    <string name="onboarding_enviando">Verifying your identity…</string>
+    <string name="onboarding_boton_cancelar">Cancel</string>
+
+    <!-- Camera permission -->
+    <string name="onboarding_permiso_titulo">We need to use your camera</string>
+    <string name="onboarding_permiso_mensaje">We use the camera only to take your selfie and verify your identity. The image is not saved on your device.</string>
+    <string name="onboarding_permiso_boton_permitir">Allow camera</string>
+    <string name="onboarding_permiso_boton_ajustes">Open settings</string>
+
+    <!-- Results -->
+    <string name="onboarding_aprobada_titulo">Identity verified</string>
+    <string name="onboarding_aprobada_mensaje">Your identity was verified successfully.</string>
+    <string name="onboarding_rechazada_titulo">We couldn\'t verify your identity</string>
+    <string name="onboarding_rechazada_rostro">Your face did not match the registered information.</string>
+    <string name="onboarding_rechazada_generico">The verification could not be completed.</string>
+    <string name="onboarding_interrumpida_titulo">The verification did not finish</string>
+    <string name="onboarding_interrumpida_mensaje">There was a communication problem. You can retry: a second record will not be created.</string>
+    <string name="onboarding_correo_distinto_titulo">Verify your identity again</string>
+    <string name="onboarding_correo_distinto_mensaje">The email changed since the last verification. Repeat the capture with the current email.</string>
+    <string name="onboarding_cuenta_existente_titulo">You already have an account</string>
+    <string name="onboarding_cuenta_existente_mensaje">This email is already registered. Sign in to continue.</string>
+    <string name="onboarding_error_titulo">Something went wrong</string>
+    <string name="onboarding_error_mensaje">We couldn\'t complete the verification.</string>
+    <string name="onboarding_codigo_soporte">Support code: %1$s</string>
+    <string name="onboarding_boton_continuar">Continue</string>
+    <string name="onboarding_boton_reintentar">Retry</string>
+    <string name="onboarding_boton_intentar_de_nuevo">Try again</string>
+    <string name="onboarding_boton_ir_a_ingreso">Sign in</string>
+
+    <!-- Account creation -->
+    <string name="onboarding_creando_cuenta">Creating your account…</string>
+    <string name="onboarding_codigo_titulo">Confirm your email</string>
+    <string name="onboarding_codigo_mensaje">We sent a verification code to %1$s.</string>
+    <string name="onboarding_codigo_etiqueta">Verification code</string>
+    <string name="onboarding_codigo_confirmar">Confirm</string>
+    <string name="onboarding_codigo_reenviar">Resend code</string>
+    <string name="onboarding_codigo_reenviado">We sent you a new code.</string>
+    <string name="onboarding_codigo_incorrecto">The code is not correct.</string>
+    <string name="onboarding_codigo_vencido">The code expired. Request a new one.</string>
+    <string name="onboarding_cuenta_requiere_verificar">Your verification expired or does not match this email. Repeat the capture.</string>
+    <string name="onboarding_cuenta_contrasena_invalida">The password does not meet the policy: at least 10 characters with uppercase, lowercase and a number.</string>
+    <string name="onboarding_cuenta_intentos">Too many attempts. Wait a few minutes and try again.</string>
+    <string name="onboarding_cuenta_sin_conexion">No connection. Check your network and retry.</string>
+    <string name="onboarding_cuenta_error">We could not create your account. Try again.</string>
+    <string name="onboarding_cuenta_vinculacion_pendiente">Your account was created, but we could not finish the registration. Retry.</string>
+    <string name="onboarding_cuenta_ingreso_pendiente">Your account was created. Sign in to continue.</string>
+</resources>

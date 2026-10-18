@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="es">
+    <!-- Lista de permisos (mockup_pantalla_movil_permisos.png) -->
+    <string name="privacidad_barra_titulo">Consentimientos y Privacidad</string>
+    <string name="privacidad_lista_titulo">Permisos para el uso de datos personales</string>
+    <string name="privacidad_lista_subtitulo">Listado de permisos otorgados por el usuario. Validación biométrica será necesaria para cualquier cambio</string>
+    <string name="privacidad_cargando">Cargando…</string>
+    <string name="privacidad_reintentar">Reintentar</string>
+    <string name="privacidad_volver">Volver</string>
+
+    <string name="privacidad_permiso_personales">Datos personales y financieros</string>
+    <string name="privacidad_permiso_personales_descripcion">Consultar uso de datos personales y financieros</string>
+    <string name="privacidad_permiso_open_finance">Datos Open Finance y Open Data</string>
+    <string name="privacidad_permiso_open_finance_descripcion">Consultar datos otorgados en Open Finance y Open Data</string>
+    <string name="privacidad_permiso_biometricos">Datos biométricos y de identidad</string>
+    <string name="privacidad_permiso_biometricos_descripcion">Consultar uso de información biométrica y de identidad</string>
+    <!-- ADR 0001: los permisos sin soporte se muestran deshabilitados con este texto. -->
+    <string name="privacidad_no_disponible">No disponible en esta versión</string>
+    <string name="privacidad_accion_abrir_permiso">Ver detalle</string>
+
+    <!-- Etiquetas de estado: siempre con texto, nunca solo color. -->
+    <string name="privacidad_estado_activa">ACTIVA</string>
+    <string name="privacidad_estado_revocada">REVOCADA</string>
+    <string name="privacidad_estado_vencida">VENCIDA</string>
+    <string name="privacidad_estado_sin_otorgar">SIN OTORGAR</string>
+    <string name="privacidad_estado_desconocido">ESTADO DESCONOCIDO</string>
+    <string name="privacidad_estado_no_disponible">NO DISPONIBLE</string>
+    <string name="privacidad_estado_descripcion">Estado: %1$s</string>
+
+    <!-- Detalle y otorgamiento (mockup_1_HUM08.png) -->
+    <string name="privacidad_detalle_titulo">Acceso a datos Open Finance y Open Data</string>
+    <string name="privacidad_seccion_proposito">PROPÓSITO</string>
+    <string name="privacidad_seccion_datos">DATOS SOLICITADOS</string>
+    <string name="privacidad_seccion_vigencia">VIGENCIA</string>
+    <string name="privacidad_seccion_texto">TEXTO DE LA AUTORIZACIÓN</string>
+    <string name="privacidad_proposito_perfilamiento">Perfilamiento y cálculo de precio</string>
+    <string name="privacidad_proposito_perfilamiento_descripcion">Solventa consulta estos datos financieros para calcular su perfil de riesgo y el precio de su oferta.</string>
+    <string name="privacidad_alcance_productos">Productos financieros vigentes</string>
+    <string name="privacidad_alcance_historial">Historial de pagos de 12 meses</string>
+    <string name="privacidad_alcance_ingresos">Ingresos agregados</string>
+    <string name="privacidad_alcance_registros">Registros públicos</string>
+    <string name="privacidad_datos_instruccion">Seleccione al menos un dato.</string>
+    <plurals name="privacidad_vigencia_opcion">
+        <item quantity="one">%1$d mes</item>
+        <item quantity="many">%1$d meses</item>
+        <item quantity="other">%1$d meses</item>
+    </plurals>
+    <string name="privacidad_vencimiento">Vencimiento: %1$s</string>
+    <string name="privacidad_otorgado_en">Otorgado: %1$s</string>
+    <string name="privacidad_revocado_en">Revocado: %1$s</string>
+    <string name="privacidad_version_texto">Versión del texto: %1$s</string>
+    <string name="privacidad_boton_otorgar">OTORGAR AUTORIZACIÓN</string>
+    <string name="privacidad_boton_otorgando">OTORGANDO…</string>
+    <string name="privacidad_otorgada">Autorización otorgada. Este es su comprobante.</string>
+    <string name="privacidad_ya_otorgada">Esta autorización ya está otorgada.</string>
+    <string name="privacidad_biometria_cancelada">Canceló la confirmación. No se otorgó la autorización.</string>
+
+    <!-- Confirmación biométrica (ADR 0007) -->
+    <string name="privacidad_biometria_titulo">Confirme la autorización</string>
+    <string name="privacidad_biometria_subtitulo">Use su huella o su rostro para otorgar la autorización</string>
+    <string name="privacidad_biometria_negativo">Cancelar</string>
+
+    <!-- Modal de error: el título es el del mockup; el cuerpo depende del código. -->
+    <string name="privacidad_error_titulo">No fue posible otorgar autorización</string>
+    <string name="privacidad_error_cerrar">Cerrar</string>
+    <string name="privacidad_error_carga">No fue posible cargar la información.</string>
+    <string name="privacidad_error_sin_conexion">No hay conexión. Revise su red e intente de nuevo.</string>
+    <string name="privacidad_error_servicio">El servicio no está disponible en este momento. Intente de nuevo.</string>
+    <string name="privacidad_error_inesperado">Ocurrió un error inesperado. Intente de nuevo.</string>
+    <string name="privacidad_error_sesion">Su sesión venció. Ingrese de nuevo.</string>
+    <string name="privacidad_error_no_autorizado">Su cuenta no puede otorgar esta autorización.</string>
+    <string name="privacidad_error_identidad">Debe verificar su identidad antes de otorgar la autorización.</string>
+    <string name="privacidad_error_cliente">Debe completar su registro antes de otorgar la autorización.</string>
+    <string name="privacidad_error_no_encontrado">No encontramos esta autorización.</string>
+    <string name="privacidad_error_solicitud">Complete la información solicitada: %1$s.</string>
+    <string name="privacidad_error_solicitud_generica">Complete la información solicitada.</string>
+    <string name="privacidad_campo_proposito">propósito</string>
+    <string name="privacidad_campo_datos">datos solicitados</string>
+    <string name="privacidad_campo_vigencia">vigencia</string>
+    <string name="privacidad_campo_texto">texto de la autorización</string>
+    <string name="privacidad_error_vigencia">No es posible otorgar autorización sin una vigencia válida.</string>
+    <string name="privacidad_error_texto">El texto de la autorización cambió. Revise el texto actualizado antes de confirmar.</string>
+    <string name="privacidad_error_conflicto">La solicitud cambió mientras se procesaba. Intente de nuevo.</string>
+    <string name="privacidad_error_permiso">Este permiso no está disponible en esta versión.</string>
+    <string name="privacidad_error_biometria_fallida">No fue posible confirmar su identidad. Intente de nuevo.</string>
+    <string name="privacidad_error_biometria_no_disponible">Para otorgar la autorización debe configurar la huella o el rostro en su dispositivo.</string>
+
+    <!-- Revocación (mockup_1_HUM09.png) e historial (HU-M09) -->
+    <string name="privacidad_boton_revocar">REVOCAR AUTORIZACIÓN</string>
+    <string name="privacidad_boton_revocando">REVOCANDO…</string>
+    <string name="privacidad_revocar_confirmar_titulo">¿Revocar la autorización?</string>
+    <string name="privacidad_revocar_confirmar_cuerpo">Solventa dejará de consultar sus datos financieros con esta autorización. No se puede deshacer: para volver a autorizar deberá otorgar una nueva.</string>
+    <string name="privacidad_revocar_confirmar_si">REVOCAR</string>
+    <string name="privacidad_revocar_confirmar_no">Cancelar</string>
+    <string name="privacidad_revocada">Autorización revocada. Solventa ya no consultará sus datos con ella.</string>
+    <string name="privacidad_ya_no_vigente">Esta autorización ya no estaba vigente: venció antes de revocarla, así que no fue necesario revocarla.</string>
+    <string name="privacidad_estado_actualizado">El estado de la autorización cambió. Revise el detalle.</string>
+    <string name="privacidad_revocar_biometria_cancelada">Canceló la confirmación. No se revocó la autorización.</string>
+    <string name="privacidad_biometria_revocar_titulo">Confirme la revocación</string>
+    <string name="privacidad_biometria_revocar_subtitulo">Use su huella o su rostro para revocar la autorización</string>
+    <string name="privacidad_revocar_error_titulo">No fue posible revocar la autorización</string>
+    <string name="privacidad_revocar_error_no_autorizado">Su cuenta no puede revocar esta autorización.</string>
+    <string name="privacidad_revocar_error_biometria_no_disponible">Para revocar la autorización debe configurar la huella o el rostro en su dispositivo.</string>
+    <string name="privacidad_seccion_historial">HISTORIAL</string>
+    <string name="privacidad_hito_otorgado">Otorgada: %1$s</string>
+    <string name="privacidad_hito_revocado">Revocada: %1$s</string>
+    <string name="privacidad_hito_vencido">Venció: %1$s</string>
+    <string name="privacidad_hito_desconocido">Otro cambio: %1$s</string>
+    <string name="privacidad_historial_vacio">No hay movimientos registrados.</string>
+    <string name="privacidad_historial_error">No fue posible cargar el historial.</string>
+    <string name="privacidad_seccion_anteriores">AUTORIZACIONES ANTERIORES</string>
+    <string name="privacidad_accion_ver_historial">Ver historial</string>
+</resources>

@@ -12,3 +12,16 @@ bffMovilBaseUrl=http://10.0.2.2:8081/
 cognitoPoolId=
 cognitoClientId=
 cognitoRegion=us-east-1
+
+# --- Solo builds debug contra el backend local (docker compose); ignorados en release ---
+# El backend local no usa Cognito: identifica al titular por X-Authenticated-Sub. Use un texto
+# distinto por cada persona de prueba. Déjelo vacío al apuntar a AWS.
+subLocal=persona-de-prueba-1
+# Con subLocal el registro omite Cognito: valida el tokenRegistro con /v1/registro/validaciones y
+# vincula con ese sub. Para probar SignUp real contra AWS, deje subLocal vacío y complete cognito*.
+# El simulador de KYC local decide el resultado por el TEXTO de la selfie y no reconoce una imagen
+# real (devolvería 503). Si se indica, la app envía este texto en lugar de la foto. Valores:
+#   selfie-sintetica-aprobada | selfie-sintetica-captura-invalida | selfie-sintetica-rechazada
+#   selfie-sintetica-caida    | selfie-sintetica-lenta
+# Déjelo vacío para enviar la imagen real (p. ej. contra AWS).
+selfieDePruebaLocal=selfie-sintetica-aprobada

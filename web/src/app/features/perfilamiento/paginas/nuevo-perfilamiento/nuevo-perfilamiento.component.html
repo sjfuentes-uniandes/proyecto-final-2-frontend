@@ -52,14 +52,30 @@
       <section class="card" aria-labelledby="titulo-cliente">
         <h3 id="titulo-cliente">{{ t.datosCliente }}</h3>
         <div class="fila">
-          <label class="fld fld--completo">
-            <span>{{ t.identificadorCliente }}</span>
-            <input class="inp mono" formControlName="clienteId" autocomplete="off" spellcheck="false" maxlength="36"
-                   [attr.aria-invalid]="invalido('clienteId')"
-                   [attr.aria-describedby]="invalido('clienteId') ? 'ayuda-cliente error-cliente' : 'ayuda-cliente'" />
-            <small class="fld__ayuda" id="ayuda-cliente">{{ t.identificadorAyuda }}</small>
-            @if (invalido('clienteId')) {
-              <small class="fld__error" id="error-cliente">{{ t.identificadorError }}</small>
+          <label class="fld">
+            <span>{{ t.tipoDocumento }}</span>
+            <select class="inp" formControlName="tipoDocumento">
+              @for (tipo of tiposDocumento; track tipo) {
+                <option [value]="tipo">{{ t.tipoDocumentoNombre(tipo) }}</option>
+              }
+            </select>
+          </label>
+          <label class="fld">
+            <span>{{ t.numeroDocumento }}</span>
+            <input class="inp" formControlName="numeroDocumento" autocomplete="off" spellcheck="false" maxlength="24"
+                   [attr.aria-invalid]="invalido('numeroDocumento')"
+                   [attr.aria-describedby]="invalido('numeroDocumento') ? 'error-documento' : null" />
+            @if (invalido('numeroDocumento')) {
+              <small class="fld__error" id="error-documento">{{ t.numeroDocumentoError }}</small>
+            }
+          </label>
+          <label class="fld">
+            <span>{{ t.nombreCompleto }}</span>
+            <input class="inp" formControlName="nombreCompleto" autocomplete="name" [attr.maxlength]="nombreMaximo"
+                   [attr.aria-invalid]="invalido('nombreCompleto')"
+                   [attr.aria-describedby]="invalido('nombreCompleto') ? 'error-nombre' : null" />
+            @if (invalido('nombreCompleto')) {
+              <small class="fld__error" id="error-nombre">{{ t.nombreCompletoError }}</small>
             }
           </label>
           <label class="fld">
@@ -94,7 +110,36 @@
     </div>
 
     <div class="lateral">
-      <button class="btn btn--primario" type="submit" [disabled]="enviando()">{{ t.continuar }}</button>
+      <section class="card" aria-labelledby="titulo-identidad">
+        <h3 id="titulo-identidad">{{ t.identidadTitulo }}</h3>
+        <div role="status" class="identidad" [class.identidad--ok]="estadoIdentidad() === 'VERIFICADO'">
+          @if (verificando()) {
+            {{ t.verificandoIdentidad }}
+          } @else {
+            @switch (estadoIdentidad()) {
+              @case ('VERIFICADO') { <span aria-hidden="true">✓</span> {{ t.identidadVerificada }} }
+              @case ('PENDIENTE') { {{ t.identidadPendiente }} }
+              @case ('RECHAZADO') { {{ t.identidadRechazada }} }
+              @default { {{ t.identidadSinVerificar }} }
+            }
+          }
+        </div>
+        @if (identidad(); as i) {
+          @if (i.verificadoEn) {
+            <p class="sub">{{ t.identidadFecha(textos.fechaHora(i.verificadoEn)) }}</p>
+          }
+          @if (i.proveedor) {
+            <p class="sub">{{ t.identidadProveedor(i.proveedor) }}</p>
+          }
+          @if (i.referencia) {
+            <p class="sub">{{ t.identidadReferencia(i.referencia) }}</p>
+          }
+        }
+        <button class="btn btn--secundario" type="button" (click)="verificarIdentidad()" [disabled]="verificando() || estadoIdentidad() === 'VERIFICADO'">
+          {{ estadoIdentidad() === 'PENDIENTE' ? t.reintentar : t.verificarIdentidad }}
+        </button>
+      </section>
+      <button class="btn btn--primario" type="submit" [disabled]="enviando() || verificando() || !puedeContinuar()">{{ t.continuar }}</button>
     </div>
   </div>
 </form>

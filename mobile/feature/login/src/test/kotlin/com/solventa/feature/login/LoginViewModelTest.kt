@@ -53,6 +53,29 @@ class LoginViewModelTest {
     private fun crearViewModel() = LoginViewModel(gestorSesion, gestorBiometria, bffMovilCliente)
 
     @Test
+    fun `al volver al ingreso tras registrarse se ofrece la biometria con la sesion recien guardada`() {
+        every { gestorSesion.haySesionGuardada() } returns false
+        val viewModel = crearViewModel()
+        assertFalse(viewModel.uiState.value.mostrarBiometria)
+
+        every { gestorSesion.haySesionGuardada() } returns true
+        viewModel.alMostrarse()
+
+        assertTrue(viewModel.uiState.value.mostrarBiometria)
+    }
+
+    @Test
+    fun `alMostrarse no reactiva la biometria tras superar el limite de intentos`() {
+        val viewModel = crearViewModel()
+        repeat(3) { viewModel.onResultadoBiometria(ResultadoBiometria.Error("no reconocido")) }
+        assertFalse(viewModel.uiState.value.mostrarBiometria)
+
+        viewModel.alMostrarse()
+
+        assertFalse(viewModel.uiState.value.mostrarBiometria)
+    }
+
+    @Test
     fun `el panel biometrico exige hardware disponible Y una sesion guardada (AC3)`() {
         every { gestorBiometria.disponibilidad() } returns Disponibilidad.SIN_HUELLAS_REGISTRADAS
         every { gestorSesion.haySesionGuardada() } returns true
