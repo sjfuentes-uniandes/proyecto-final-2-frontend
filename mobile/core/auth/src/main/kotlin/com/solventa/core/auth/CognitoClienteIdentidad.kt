@@ -15,6 +15,7 @@ import com.amazonaws.services.cognitoidentityprovider.model.NotAuthorizedExcepti
 import com.amazonaws.services.cognitoidentityprovider.model.TooManyRequestsException
 import com.amazonaws.services.cognitoidentityprovider.model.UserNotConfirmedException
 import com.amazonaws.services.cognitoidentityprovider.model.UserNotFoundException
+import com.solventa.core.network.Diag
 import java.io.IOException
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -47,6 +48,7 @@ class CognitoClienteIdentidad(
 
     private val manejador = object : AuthenticationHandler {
         override fun onSuccess(userSession: CognitoUserSession, newDevice: CognitoDevice?) {
+            Diag.i("cognito.auth ok")
             resolver(ResultadoAutenticacion.Exito(userSession.aSesionAuth()))
         }
 
@@ -58,6 +60,7 @@ class CognitoClienteIdentidad(
             if (contrasena == null) {
                 // Flujo de restauración silenciosa (restaurarSesion): sin contraseña no hay
                 // forma de continuar, significa que no quedó una sesión válida en caché.
+                Diag.w("cognito.auth sin sesion en cache")
                 resolver(ResultadoAutenticacion.SesionNoDisponible)
             } else {
                 authenticationContinuation.setAuthenticationDetails(AuthenticationDetails(userId, contrasena, null))
@@ -66,15 +69,18 @@ class CognitoClienteIdentidad(
         }
 
         override fun getMFACode(continuation: MultiFactorAuthenticationContinuation) {
+            Diag.i("cognito.auth requiere MFA")
             continuacionMfa = continuation
             resolver(ResultadoAutenticacion.CodigoMfaRequerido)
         }
 
         override fun authenticationChallenge(continuation: ChallengeContinuation) {
+            Diag.w("cognito.auth reto no soportado=${continuation.challengeName}")
             resolver(ResultadoAutenticacion.ErrorDesconocido("Reto de autenticación no soportado"))
         }
 
         override fun onFailure(exception: Exception) {
+            Diag.e("cognito.auth fallo=${exception.javaClass.simpleName}: ${exception.message}")
             resolver(mapearError(exception))
         }
     }
