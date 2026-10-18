@@ -35,13 +35,11 @@ class SolventaApp : Application() {
         private set
     lateinit var bffMovilCliente: BffMovilCliente
         private set
-<<<<<<< HEAD
     lateinit var repositorioConsentimientos: RepositorioConsentimientos
         private set
     /** Uno por proceso: la actividad en pantalla se adjunta al crearse y se suelta al destruirse. */
     lateinit var verificadorBiometrico: VerificadorBiometricoPrompt
         private set
-=======
     lateinit var verificarIdentidad: VerificarIdentidad
         private set
     lateinit var crearCuenta: CrearCuenta
@@ -49,7 +47,6 @@ class SolventaApp : Application() {
 
     /** Estado del registro en curso; vive aquí para sobrevivir a las pantallas del registro. */
     val sesionRegistro = SesionRegistro()
->>>>>>> 0399b984d7e4b0519054ba6b85b68d3e2a98b19b
 
     override fun onCreate() {
         super.onCreate()
@@ -63,10 +60,8 @@ class SolventaApp : Application() {
         val subLocal = BuildConfig.SUB_LOCAL.takeIf { BuildConfig.DEBUG && it.isNotBlank() }
         val api = RedModule.crearApi(BuildConfig.BFF_MOVIL_BASE_URL, subLocal = subLocal, proveedorAccessToken = gestorSesion)
         bffMovilCliente = BffMovilCliente(api)
-<<<<<<< HEAD
         repositorioConsentimientos = RepositorioConsentimientosRed(ConsentimientosCliente(api))
         verificadorBiometrico = VerificadorBiometricoPrompt(gestorBiometria)
-=======
         verificarIdentidad = VerificarIdentidad(
             cliente = RegistroCliente(api),
             sesion = sesionRegistro,
@@ -90,7 +85,6 @@ class SolventaApp : Application() {
         )
         if (configuracion.poolId.isBlank() || configuracion.clientId.isBlank()) return ClienteRegistroSinConfigurar
         return CognitoClienteRegistro(this, configuracion)
->>>>>>> 0399b984d7e4b0519054ba6b85b68d3e2a98b19b
     }
 
     private fun crearClienteIdentidad(): ClienteIdentidad {

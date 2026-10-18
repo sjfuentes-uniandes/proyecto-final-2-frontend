@@ -14,7 +14,6 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import com.solventa.core.network.modelo.RegistroVerificacionDto
 import com.solventa.core.network.modelo.RegistroVerificacionSolicitud
-import com.solventa.core.network.modelo.SesionDto
 import com.solventa.core.network.modelo.ValidacionRegistroDto
 import com.solventa.core.network.modelo.ValidacionRegistroSolicitud
 import com.solventa.core.network.modelo.VerificacionIdentidadDto
