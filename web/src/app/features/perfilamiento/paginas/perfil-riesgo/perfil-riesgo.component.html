@@ -40,12 +40,10 @@
     </header>
     <div class="acciones">
       <div class="botones">
-        <button class="btn btn--secundario" type="button" disabled aria-describedby="ayuda-consentimiento">
-          {{ t.revisarConsentimiento }}
-        </button>
+        <!-- HU-W31: vista de solo lectura del consentimiento del cliente (ADR 0002). -->
+        <a class="btn btn--secundario" [routerLink]="['/consentimientos/clientes', p.clienteId]">{{ t.revisarConsentimiento }}</a>
         <button class="btn btn--secundario" type="button" (click)="verFactores()">{{ t.verFactores }}</button>
       </div>
-      <p class="ayuda" id="ayuda-consentimiento">{{ t.disponibleConConsentimientos }}</p>
     </div>
   </div>
 
@@ -72,6 +70,13 @@
       <p class="nota nota--alerta" role="status"><strong>{{ t.perfilProvisional }}</strong> {{ avisoProvisional(p) }}</p>
       <button class="btn btn--secundario" type="button" (click)="recalcular(p)">{{ t.recalcularPerfil }}</button>
     </div>
+  }
+
+  @if (revocadoDurante(p)) {
+    <!-- HU-W31 (ADR 0004): lo obtenido antes de la revocación se conserva; el perfil queda marcado. -->
+    <p class="nota nota--alerta revocado-durante" role="status">
+      <strong>{{ t.revocadoDuranteTitulo }}</strong> {{ motivoRevocadoDurante(p) }} {{ t.revocadoDuranteTexto }}
+    </p>
   }
 
   @if (sinConsentimiento(p)) {

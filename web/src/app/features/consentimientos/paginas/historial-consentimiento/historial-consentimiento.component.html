@@ -1,0 +1,48 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.inicio }} › {{ t.grupoClientes }} › <a [routerLink]="['/consentimientos/clientes', clienteId()]">{{ t.consentimientoMiga }}</a> › <strong>{{ t.historialMiga }}</strong>
+</nav>
+<header>
+  <h2>{{ t.historialTitulo }}</h2>
+  <p class="sub">{{ t.historialSubtitulo }}</p>
+</header>
+
+<p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
+
+<div class="resultado" tabindex="-1" #resultado [attr.aria-busy]="cargando() || null">
+  @if (cargando()) {
+    <p class="sub cargando">{{ t.cargandoHistorial }}</p>
+  }
+
+  @if (error(); as e) {
+    <div class="alerta alerta--error" role="alert">
+      <span aria-hidden="true">⚠</span>
+      <div class="alerta__cuerpo">
+        <p class="mensaje">{{ e.mensaje }}</p>
+        @if (e.correlationId) {
+          <p class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</p>
+        }
+        @if (e.reintentable) {
+          <button class="btn btn--secundario reintentar" type="button" (click)="reintentar()">{{ t.reintentar }}</button>
+        }
+      </div>
+    </div>
+  }
+
+  @if (historial(); as h) {
+    <section class="card" aria-labelledby="titulo-hitos">
+      <p class="estado-fila">{{ t.estadoActual }} <span class="tag estado" [class]="tono(h.estado)">{{ textos.estado(h.estado) }}</span></p>
+      <h3 id="titulo-hitos">{{ t.hitosTitulo }}</h3>
+      <ol class="hitos">
+        @for (hito of h.hitos; track $index) {
+          <li>
+            <strong class="hito__tipo">{{ textos.tipoHito(hito.tipo) }}</strong>
+            <time [attr.datetime]="hito.ocurridoEn">{{ textos.fechaHora(hito.ocurridoEn) }}</time>
+          </li>
+        }
+      </ol>
+    </section>
+  }
+</div>
+
+<a class="btn btn--secundario volver" [routerLink]="['/consentimientos/clientes', clienteId()]">{{ t.volver }}</a>

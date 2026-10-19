@@ -15,19 +15,20 @@ describe('PerfilamientoLayoutComponent', () => {
     return { fixture, html: fixture.nativeElement as HTMLElement };
   };
 
-  it('muestra los dos grupos de D02; solo Nueva cotización y Perfilamiento son enlaces', async () => {
+  it('muestra los dos grupos de D02; Nueva cotización, Consentimientos (HU-W31) y Perfilamiento son enlaces', async () => {
     const { html } = crear();
     expect(Array.from(html.querySelectorAll('h5')).map((h) => h.textContent)).toEqual(['Contratación', 'Clientes']);
     expect(Array.from(html.querySelectorAll('a.side__item')).map((a) => a.textContent?.trim())).toEqual([
       '$Nueva cotización',
+      '👤Consentimientos',
       '📊Perfilamiento',
     ]);
+    expect(html.querySelector('a[href="/consentimientos"]')).not.toBeNull();
     const pendientes = Array.from(html.querySelectorAll('.side__item--off'));
     expect(pendientes.map((p) => p.textContent?.trim())).toEqual([
       '📄Cotizaciones abiertas',
       '⚖Suscripción',
       '✎Emisión',
-      '👤Consentimientos',
     ]);
     expect(pendientes.every((p) => p.getAttribute('title') === 'Disponible en una próxima versión')).toBeTrue();
     expect(await violacionesA11y(html)).toEqual([]);

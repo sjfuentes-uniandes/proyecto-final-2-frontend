@@ -1,0 +1,13 @@
+/* HU-W31: solo lo propio del historial; lo común está en consentimientos.scss. */
+.estado-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 13px; color: var(--sv-texto-secundario); }
+
+.hitos { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.hitos li {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px;
+  padding: 10px 0 10px 16px; border-left: 3px solid var(--sv-azul-medio);
+}
+.hitos li + li { border-top: 1px solid var(--sv-borde); }
+.hito__tipo { color: var(--sv-texto); }
+.hitos time { color: var(--sv-texto-secundario); font-variant-numeric: tabular-nums; }
+
+.volver { align-self: flex-start; }

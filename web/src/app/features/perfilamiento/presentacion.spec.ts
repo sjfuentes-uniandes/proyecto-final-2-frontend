@@ -14,6 +14,7 @@ import {
   lineaTiempo,
   nivelMostrado,
   motivoConsentimiento,
+  revocadoDurante,
   porcentajeBarra,
   sinConsentimiento,
   textoFuentes,
@@ -94,10 +95,15 @@ describe('Presentación de la variante sin consentimiento y del linaje (W10-P13,
     expect(sinConsentimiento({ accionSugerida: null })).toBeFalse();
   });
 
-  it('motivoConsentimiento', () => {
-    expect(['REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', 'PROPOSITO_NO_AUTORIZADO', null, undefined].map(motivoConsentimiento)).toEqual([
-      'REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', null, null, null,
-    ]);
+  it('motivoConsentimiento: las cuatro causas de rechazo de clientes (HU-W31); otra causa no se muestra', () => {
+    expect(['REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', 'PROPOSITO_NO_AUTORIZADO', 'OTRA', null, undefined].map(motivoConsentimiento))
+      .toEqual(['REVOCADO', 'VENCIDO', 'SIN_CONSENTIMIENTO', 'PROPOSITO_NO_AUTORIZADO', null, null, null]);
+  });
+
+  it('revocadoDurante: solo con la marca del perfil; sin el campo (backend anterior) es falso (HU-W31)', () => {
+    expect(revocadoDurante({ revocadoDurantePerfilamiento: true })).toBeTrue();
+    expect(revocadoDurante({ revocadoDurantePerfilamiento: false })).toBeFalse();
+    expect(revocadoDurante({})).toBeFalse();
   });
 
   it('fuentesSinRespuesta: solo las consultadas sin datos, en el orden del perfil (W12-P10)', () => {

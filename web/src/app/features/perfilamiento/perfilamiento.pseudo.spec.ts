@@ -10,7 +10,7 @@ import { NuevoPerfilamientoComponent } from './paginas/nuevo-perfilamiento/nuevo
 import { PerfilRiesgoComponent } from './paginas/perfil-riesgo/perfil-riesgo.component';
 import { PerfilamientoLayoutComponent } from './perfilamiento-layout.component';
 import { PerfilRespuesta } from './perfilamiento.modelo';
-import { BASE_PERFILES, PERFIL_C01, PERFIL_C03, PERFIL_C06, PERFIL_C08 } from './perfilamiento.testing';
+import { BASE_PERFILES, PERFIL_C01, PERFIL_C01_REVOCADO_DURANTE, PERFIL_C03, PERFIL_C06, PERFIL_C08 } from './perfilamiento.testing';
 
 const BASE_CLIENTES = BASE_PERFILES.replace('/perfiles', '/clientes');
 
@@ -113,7 +113,7 @@ describe('Pseudo-localización de perfilamiento (sin textos literales)', () => {
     revisar(html);
   });
 
-  for (const [caso, perfil] of [['C01', PERFIL_C01], ['C03', PERFIL_C03], ['C06', PERFIL_C06], ['C08', PERFIL_C08]] as [
+  for (const [caso, perfil] of [['C01', PERFIL_C01], ['C03', PERFIL_C03], ['C06', PERFIL_C06], ['C08', PERFIL_C08], ['C01 revocado durante', PERFIL_C01_REVOCADO_DURANTE]] as [
     string,
     PerfilRespuesta,
   ][]) {

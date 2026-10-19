@@ -1,0 +1,28 @@
+/* HU-W31: solo lo propio de la vista de estado; lo común está en consentimientos.scss. */
+.solo-lectura {
+  margin: 0; padding: 11px 15px 12px; border-left: 4px solid var(--sv-azul-medio); border-radius: var(--sv-radio);
+  background: var(--sv-seleccion); font-size: 13px; color: var(--sv-azul-oscuro);
+}
+
+.buscar h3 { margin-bottom: 10px; }
+.buscar__fila { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px 16px; }
+.buscar .fld { flex: 1 1 280px; min-width: 0; }
+.buscar .inp { width: 100%; box-sizing: border-box; }
+.buscar .btn { margin-top: 22px; }
+
+.encabezado { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.encabezado h3 { margin: 0; }
+.estado-fila { margin: 0; }
+
+.alcances { display: flex; flex-direction: column; margin: 0 0 16px; padding: 0; list-style: none; font-size: 13px; }
+.alcances li {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--sv-borde);
+}
+.alcances li:last-child { border-bottom: 0; }
+.alcance__nombre { flex: 1 1 200px; min-width: 0; }
+
+.tabla { overflow-x: auto; }
+.tabla td { white-space: nowrap; }
+.tabla a { color: var(--sv-azul); }
+.vacio p { margin: 0; font-size: 13px; color: var(--sv-texto-secundario); }

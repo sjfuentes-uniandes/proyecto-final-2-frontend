@@ -20,8 +20,8 @@ export type EstadoFuente =
   | 'RESPUESTA_INVALIDA';
 export type AccionSugerida = 'COMPLETAR_CONSENTIMIENTO' | 'RECALCULAR';
 export type DecisionConsentimiento = 'PERMITIDO' | 'PERMITIDO_PARCIAL' | 'RECHAZADO';
-/** Causas con texto para el asesor (contrato propuesto de clientes, 01 §3.4.1); `causa` llega como string. */
-export type CausaConsentimiento = 'REVOCADO' | 'VENCIDO' | 'SIN_CONSENTIMIENTO';
+/** Causas de rechazo de clientes con texto para el asesor (clientes.yaml, HU-W31); `causa` llega como string. */
+export type CausaConsentimiento = 'REVOCADO' | 'VENCIDO' | 'SIN_CONSENTIMIENTO' | 'PROPOSITO_NO_AUTORIZADO';
 
 /** Único producto en S1 (DT-09). */
 export const PRODUCTO_VIDA_HIPOTECARIO = 'vida-hipotecario';
@@ -100,6 +100,10 @@ export interface PerfilRespuesta {
   duracionMs: number;
   presupuestoMs: number;
   perfilAnteriorId: string | null;
+  /** HU-W31 (PR 3.4): comprobación del consentimiento al terminar las fuentes; opcional (un bff-web anterior no lo envía). */
+  comprobacionFinal?: Consentimiento | null;
+  /** HU-W31 (ADR 0004): el consentimiento dejó de estar vigente durante la consulta; la causa va en comprobacionFinal.causa. */
+  revocadoDurantePerfilamiento?: boolean;
 }
 
 export interface ResumenPerfil {

@@ -7,7 +7,17 @@ import { ConfigService } from '../../../../core/config/app-config';
 import { Idioma, IdiomaService } from '../../../../core/i18n/idioma.service';
 import { violacionesA11y } from '../../../../testing';
 import { PerfilRespuesta } from '../../perfilamiento.modelo';
-import { BASE_PERFILES, PERFIL_C01, PERFIL_C03, PERFIL_C06, PERFIL_C08, PERFIL_C13, PERFIL_C16, PERFIL_ID } from '../../perfilamiento.testing';
+import {
+  BASE_PERFILES,
+  PERFIL_C01,
+  PERFIL_C01_REVOCADO_DURANTE,
+  PERFIL_C03,
+  PERFIL_C06,
+  PERFIL_C08,
+  PERFIL_C13,
+  PERFIL_C16,
+  PERFIL_ID,
+} from '../../perfilamiento.testing';
 import { PerfilRiesgoComponent } from './perfil-riesgo.component';
 
 describe('PerfilRiesgoComponent (D02)', () => {
@@ -86,10 +96,9 @@ describe('PerfilRiesgoComponent (D02)', () => {
     });
 
     it('los botones aún no disponibles están deshabilitados y explican por qué', () => {
-      const [consentimiento, factores] = Array.from(html().querySelectorAll<HTMLButtonElement>('.botones button'));
-      expect(consentimiento.disabled).toBeTrue();
-      expect(html().querySelector(`#${consentimiento.getAttribute('aria-describedby')}`)?.textContent)
-        .toBe('Disponible cuando exista la gestión de consentimientos');
+      // HU-W31: "Revisar consentimiento" ya es un enlace a la vista de solo lectura (ver "consentimiento en el perfil").
+      const [factores] = Array.from(html().querySelectorAll<HTMLButtonElement>('.botones button'));
+      expect(factores.textContent?.trim()).toBe('Ver factores');
       expect(factores.disabled).toBeFalse();
       const oferta = Array.from(html().querySelectorAll<HTMLButtonElement>('.lateral > button')).pop()!;
       expect(oferta.textContent?.trim()).toBe('Generar la oferta');
@@ -100,7 +109,7 @@ describe('PerfilRiesgoComponent (D02)', () => {
     });
 
     it('"Ver factores" lleva el foco al encabezado del panel de factores', () => {
-      html().querySelectorAll<HTMLButtonElement>('.botones button')[1].click();
+      html().querySelector<HTMLButtonElement>('.botones button')!.click();
       expect(document.activeElement?.id).toBe('titulo-factores');
     });
 
@@ -129,7 +138,7 @@ describe('PerfilRiesgoComponent (D02)', () => {
     });
 
     it('"Ver factores" lleva el foco a los datos requeridos', () => {
-      html().querySelectorAll<HTMLButtonElement>('.botones button')[1].click();
+      html().querySelector<HTMLButtonElement>('.botones button')!.click();
       expect(document.activeElement?.id).toBe('titulo-requeridos');
     });
   });
@@ -240,7 +249,7 @@ describe('PerfilRiesgoComponent (D02)', () => {
       const casos: [string | null, string][] = [
         ['VENCIDO', 'Motivo: consentimiento vencido.'],
         ['SIN_CONSENTIMIENTO', 'Motivo: sin consentimiento registrado.'],
-        ['PROPOSITO_NO_AUTORIZADO', ''],
+        ['PROPOSITO_NO_AUTORIZADO', 'Motivo: el consentimiento no cubre el propósito de perfilamiento.'],
         [null, ''],
       ];
       montar('es-CO', PERFIL_C08.id);
@@ -428,6 +437,71 @@ describe('PerfilRiesgoComponent (D02)', () => {
         fixture.detectChanges();
         responder(PERFIL_C13, PERFIL_C13.id);
         expect(html().querySelector('[role=alert]')).withContext('el error era del perfil anterior').toBeNull();
+        expect(await violacionesA11y(html())).toEqual([]);
+      });
+    }
+  });
+
+  describe('HU-W31 · consentimiento en el perfil', () => {
+    const aviso = () => html().querySelector('.revocado-durante');
+
+    it('"Revisar consentimiento" lleva a la vista de solo lectura del cliente', () => {
+      montar();
+      responder(PERFIL_C01);
+      const enlace = Array.from(html().querySelectorAll<HTMLAnchorElement>('a.btn')).find(
+        (a) => a.textContent?.trim() === 'Revisar consentimiento',
+      );
+      expect(enlace?.getAttribute('href')).toBe(`/consentimientos/clientes/${PERFIL_C01.clienteId}`);
+      expect(html().querySelector('#ayuda-consentimiento')).toBeNull();
+    });
+
+    it('revocado durante el perfilamiento: aviso estable con la causa; se conservan los datos (ADR 0004)', () => {
+      montar('es-CO', PERFIL_C01_REVOCADO_DURANTE.id);
+      responder(PERFIL_C01_REVOCADO_DURANTE, PERFIL_C01_REVOCADO_DURANTE.id);
+      expect(aviso()?.getAttribute('role')).toBe('status');
+      expect(aviso()?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'El consentimiento dejó de estar vigente mientras se consultaban las fuentes. Motivo: consentimiento revocado. ' +
+          'Lo obtenido antes se conserva; ninguna consulta nueva usará este consentimiento.',
+      );
+      expect(textos('app-tarjeta-metrica .valor')[0]).toBe('Bajo');
+    });
+
+    it('la causa sale de la comprobación final; sin causa con texto no agrega motivo', () => {
+      montar('es-CO', PERFIL_C01_REVOCADO_DURANTE.id);
+      responder(PERFIL_C01_REVOCADO_DURANTE, PERFIL_C01_REVOCADO_DURANTE.id);
+      const con = (causa: string | null) => ({
+        ...PERFIL_C01_REVOCADO_DURANTE,
+        comprobacionFinal: { decision: 'RECHAZADO' as const, causa, vigenteHasta: null },
+      });
+      expect(fixture.componentInstance.motivoRevocadoDurante(con('VENCIDO'))).toBe('Motivo: consentimiento vencido.');
+      expect(fixture.componentInstance.motivoRevocadoDurante(con('OTRA'))).toBe('');
+      expect(fixture.componentInstance.motivoRevocadoDurante(con(null))).toBe('');
+      expect(fixture.componentInstance.motivoRevocadoDurante({ ...PERFIL_C01_REVOCADO_DURANTE, comprobacionFinal: null })).toBe('');
+    });
+
+    it('sin la marca o sin el campo (backend anterior) no hay aviso', () => {
+      montar();
+      responder(PERFIL_C01);
+      expect(aviso()).toBeNull();
+      fixture.componentRef.setInput('perfilId', PERFIL_C03.id);
+      fixture.detectChanges();
+      responder({ ...PERFIL_C03, revocadoDurantePerfilamiento: false, comprobacionFinal: null }, PERFIL_C03.id);
+      expect(aviso()).toBeNull();
+    });
+
+    it('se presenta en en-US', () => {
+      montar('en-US', PERFIL_C01_REVOCADO_DURANTE.id);
+      responder(PERFIL_C01_REVOCADO_DURANTE, PERFIL_C01_REVOCADO_DURANTE.id);
+      expect(aviso()?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'Consent stopped being valid while the sources were being queried. Reason: consent revoked. ' +
+          'What was obtained before is kept; no new query will use this consent.',
+      );
+    });
+
+    for (const idioma of ['es-CO', 'en-US'] as Idioma[]) {
+      it(`cumple axe-core con el aviso (${idioma})`, async () => {
+        montar(idioma, PERFIL_C01_REVOCADO_DURANTE.id);
+        responder(PERFIL_C01_REVOCADO_DURANTE, PERFIL_C01_REVOCADO_DURANTE.id);
         expect(await violacionesA11y(html())).toEqual([]);
       });
     }
