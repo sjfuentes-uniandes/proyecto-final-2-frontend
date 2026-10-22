@@ -105,6 +105,8 @@ const ES = {
   sinPerfil: 'Sin perfil',
   notaOferta: 'La oferta con su vigencia y exclusiones se genera en el siguiente paso (próxima versión).',
   nuevaCotizacion: 'Nueva cotización',
+  // HU-W13: entrada a la suscripción automática (texto de C06).
+  continuarSuscripcion: 'Continuar con la suscripción',
   verPerfil: 'Ver el perfil',
   cargandoCotizacion: 'Cargando la cotización…',
   cotizacionNoEncontrada: 'La cotización no existe o ya no está disponible.',
@@ -231,6 +233,7 @@ const EN: TextosCotizacion = {
   sinPerfil: 'No profile',
   notaOferta: 'The offer, with its validity period and exclusions, is generated in the next step (upcoming release).',
   nuevaCotizacion: 'New quote',
+  continuarSuscripcion: 'Continue to underwriting',
   verPerfil: 'View the profile',
   cargandoCotizacion: 'Loading the quote…',
   cotizacionNoEncontrada: 'The quote does not exist or is no longer available.',

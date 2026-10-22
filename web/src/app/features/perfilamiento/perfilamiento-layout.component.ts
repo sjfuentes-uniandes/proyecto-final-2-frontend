@@ -3,7 +3,10 @@ import { Component, computed, inject } from '@angular/core';
 import { GrupoSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 import { TextosPerfilamientoService } from './perfilamiento.i18n';
 
-/** Menú de dos grupos de D02. Existen Nueva cotización, Perfilamiento y Consentimientos (HU-W31, solo lectura). */
+/**
+ * Menú de dos grupos de D02. Existen Nueva cotización, Perfilamiento, Consentimientos (HU-W31, solo
+ * lectura) y, desde HU-W13, Suscripción y Emisión (llevan a Contratación).
+ */
 @Component({
   selector: 'app-perfilamiento-layout',
   imports: [SeccionLayoutComponent],
@@ -20,8 +23,9 @@ export class PerfilamientoLayoutComponent {
         items: [
           { etiqueta: t.menuNuevaCotizacion, icono: '$', ruta: 'nuevo' },
           { etiqueta: t.menuCotizacionesAbiertas, icono: '📄', pendiente: t.proximamente },
-          { etiqueta: t.menuSuscripcion, icono: '⚖', pendiente: t.proximamente },
-          { etiqueta: t.menuEmision, icono: '✎', pendiente: t.proximamente },
+          // HU-W13: la suscripción y la emisión viven en Contratación.
+          { etiqueta: t.menuSuscripcion, icono: '⚖', ruta: '/contratacion' },
+          { etiqueta: t.menuEmision, icono: '✎', ruta: '/contratacion' },
         ],
       },
       {

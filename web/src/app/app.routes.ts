@@ -12,6 +12,10 @@ function inicio(): string {
   if (sesion.tieneGrupo('operacion')) {
     return '/operacion';
   }
+  // HU-W13: el suscriptor entra a su bandeja (E01).
+  if (sesion.tieneGrupo('suscriptores')) {
+    return '/contratacion/bandeja';
+  }
   if (sesion.tieneGrupo('asesores')) {
     return '/perfilamiento';
   }
@@ -30,6 +34,7 @@ export const routes: Routes = [
   { path: 'identidad', loadChildren: () => import('./features/identidad/identidad.routes').then((m) => m.routes) },
   { path: 'consentimientos', loadChildren: () => import('./features/consentimientos/consentimientos.routes').then((m) => m.routes) },
   { path: 'perfilamiento', loadChildren: () => import('./features/perfilamiento/perfilamiento.routes').then((m) => m.routes) },
+  { path: 'contratacion', loadChildren: () => import('./features/contratacion/contratacion.routes').then((m) => m.routes) },
   {
     path: 'sin-acceso',
     title: 'Acceso restringido · Solventa',

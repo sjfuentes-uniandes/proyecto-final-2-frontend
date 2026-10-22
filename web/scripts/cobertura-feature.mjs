@@ -11,6 +11,8 @@ const GRUPOS = [
   { nombre: 'consentimientos', partes: ['/features/consentimientos/'] },
   /** HU-W03: cálculo de la prima (condiciones, validación, cálculo en curso y prima calculada). */
   { nombre: 'cotizacion', partes: ['/features/cotizacion/'] },
+  /** HU-W13: suscripción automática (bandeja E01, decisión E02/E03 y revisión E04). */
+  { nombre: 'contratacion', partes: ['/features/contratacion/'] },
 ];
 /** Apoyo de las pruebas, no código de la feature. */
 const EXCLUIDAS = [/\.testing\.ts$/, /\.spec\.ts$/];
