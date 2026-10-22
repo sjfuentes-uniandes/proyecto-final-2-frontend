@@ -1,7 +1,11 @@
 @let t = textos.t();
+@let tc = textosCotizacion.t();
 <!-- W12-P10: durante el recálculo se muestra D01 en lugar del perfil. -->
 @if (recalculando()) {
   <app-perfil-cargando />
+} @else if (cotizando()) {
+  <!-- HU-W03, mockup "Calculando tu oferta" con el perfil. -->
+  <app-cotizacion-cargando [conPerfil]="true" />
 } @else {
   <nav class="crumb" [attr.aria-label]="t.migas">
     {{ t.inicio }} › {{ t.grupoContratacion }} › <strong>{{ t.perfilamientoMiga }}</strong>
@@ -32,7 +36,7 @@
   }
 }
 
-@if (!recalculando() && perfil(); as p) {
+@if (!recalculando() && !cotizando() && perfil(); as p) {
   <div class="h-row">
     <header>
       <h2>{{ t.perfilTitulo }}</h2>
@@ -60,6 +64,18 @@
         {{ e.mensaje }}
         @if (e.correlationId) {
           <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+        }
+      </p>
+    </div>
+  }
+
+  @if (errorCotizacion(); as e) {
+    <div class="alerta alerta--error" role="alert" tabindex="-1" #alertaCotizacion>
+      <span aria-hidden="true">⚠</span>
+      <p>
+        {{ e.mensaje }}
+        @if (e.correlationId) {
+          <br /><span class="seguimiento">{{ tc.codigoSeguimiento(e.correlationId) }}</span>
         }
       </p>
     </div>
@@ -127,6 +143,11 @@
         </button>
         <p class="ayuda ayuda--centro" id="ayuda-solicitar">{{ t.disponibleConConsentimientos }}</p>
       } @else {
+        <!-- HU-W03: la prima con este perfil; la oferta completa sigue siendo de HU-W04. -->
+        <button class="btn btn--primario" type="button" (click)="calcularPrima(p)" [disabled]="!borrador()" aria-describedby="ayuda-prima">
+          {{ tc.calcularPrima }}
+        </button>
+        <p class="ayuda ayuda--centro" id="ayuda-prima">{{ borrador() ? tc.calcularPrimaAyuda : tc.sinBorrador }}</p>
         <button class="btn btn--primario" type="button" disabled aria-describedby="ayuda-oferta">{{ t.generarOferta }}</button>
         <p class="ayuda ayuda--centro" id="ayuda-oferta">{{ t.ofertaProxima }}</p>
       }

@@ -1,0 +1,140 @@
+@let t = textos.t();
+@let tp = textosPerfilamiento.t();
+<nav class="crumb" [attr.aria-label]="tp.migas">{{ tp.inicio }} › {{ tp.grupoContratacion }} › <strong>{{ t.primaCalculada }}</strong></nav>
+
+@switch (carga().estado) {
+  @case ('cargando') {
+    <p class="sub" role="status">{{ t.cargandoCotizacion }}</p>
+  }
+  @case ('no-encontrada') {
+    <div class="alerta alerta--error" role="alert"><p>{{ t.cotizacionNoEncontrada }}</p></div>
+    <a class="btn btn--secundario volver" routerLink="/perfilamiento/nuevo">{{ t.nuevaCotizacion }}</a>
+  }
+  @case ('error') {
+    @if (error(); as e) {
+      <div class="alerta alerta--error" role="alert">
+        <p>
+          {{ e.mensaje }}
+          @if (e.correlationId) {
+            <br /><span class="mono">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+          }
+        </p>
+      </div>
+    }
+  }
+}
+
+@if (cotizacion(); as c) {
+  <header>
+    <h2>{{ t.primaCalculada }}</h2>
+    <p class="sub">{{ t.subtituloCotizacion(c.versionReglas) }}</p>
+  </header>
+
+  <ol class="pasos-cotizacion" [attr.aria-label]="tp.pasos">
+    <li class="hecho">1 · {{ tp.paso1 }}</li>
+    <li [class.hecho]="c.perfilId !== null">2 · {{ tp.paso2 }}</li>
+    <li aria-current="step">3 · {{ tp.paso3 }}</li>
+  </ol>
+
+  <div class="resultado">
+    <div class="columna">
+      <section class="card prima" aria-labelledby="titulo-prima">
+        <h3 id="titulo-prima">{{ t.primaPeriodo(c.periodicidad) }}</h3>
+        <p class="monto mono">{{ monto(c.primaTotal) }}</p>
+        <p class="sub">{{ t.valoresEn(c.moneda) }}</p>
+      </section>
+
+      <section class="card" aria-labelledby="titulo-desglose">
+        <h3 id="titulo-desglose">{{ t.desgloseTitulo }}</h3>
+        <table class="desglose">
+          <thead>
+            <tr><th scope="col">{{ t.colConcepto }}</th><th scope="col">{{ t.colValor }}</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">{{ t.primaBase }}</th><td class="mono">{{ monto(c.desglose.primaBase) }}</td></tr>
+            @for (f of c.desglose.factores; track f.codigo) {
+              <tr class="factor">
+                <th scope="row">{{ t.factor(textos.factor(f.codigo), valorFactor(f.codigo, f.valor)) }}</th>
+                <td class="mono">{{ t.multiplicador(textos.decimal(f.factor)) }}</td>
+              </tr>
+            }
+            <tr><th scope="row">{{ t.primaAjustada }}</th><td class="mono">{{ monto(c.desglose.primaAjustada) }}</td></tr>
+            @for (r of c.desglose.recargos; track r.cobertura) {
+              <tr><th scope="row">{{ t.recargo(nombreCobertura(r.cobertura)) }}</th><td class="mono">{{ monto(r.valor) }}</td></tr>
+            }
+            @if (c.desglose.ajusteLimite !== '0') {
+              <tr>
+                <th scope="row">{{ ajusteNegativo(c.desglose.ajusteLimite) ? t.ajusteMaximo : t.ajusteMinimo }}</th>
+                <td class="mono">{{ monto(c.desglose.ajusteLimite) }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr><th scope="row">{{ t.primaTotal }}</th><td class="mono">{{ monto(c.desglose.primaTotal) }}</td></tr>
+          </tfoot>
+        </table>
+      </section>
+    </div>
+
+    <div class="lateral">
+      @if (c.pasos?.length) {
+        <section class="card" aria-labelledby="titulo-progreso">
+          <h3 id="titulo-progreso">{{ t.progresoConsulta }}</h3>
+          <ol class="linea">
+            <li class="hecho"><strong>{{ t.pasoSolicitud }}</strong><span>{{ t.entradaSegura }}</span></li>
+            @for (paso of c.pasos; track paso.codigo) {
+              <li class="hecho"><strong>{{ nombrePaso(paso) }}</strong><span>{{ detallePaso(paso) }}</span></li>
+            }
+            <li class="hecho"><strong>{{ t.pasoLista }}</strong><span>{{ t.hecho }}</span></li>
+          </ol>
+        </section>
+
+        <section class="card" aria-labelledby="titulo-presupuesto">
+          <h3 id="titulo-presupuesto">{{ t.presupuestoConsumido }}</h3>
+          <dl class="kv">
+            <div><dt>{{ t.transcurrido }}</dt><dd class="mono">{{ t.milisegundos(c.duracionMs) }}</dd></div>
+            <div><dt>{{ t.presupuestoTotal }}</dt><dd class="mono">{{ t.milisegundos(c.presupuestoMs) }}</dd></div>
+          </dl>
+          <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="porcentaje()"
+               [attr.aria-label]="t.presupuestoConsumido">
+            <span [style.width.%]="porcentaje()"></span>
+          </div>
+          <p class="sub">{{ t.porcentajePresupuesto(porcentaje()) }}</p>
+        </section>
+        <p class="nota">{{ t.notaPresupuesto(c.presupuestoMs) }}</p>
+      }
+
+      <section class="card" aria-labelledby="titulo-datos">
+        <h3 id="titulo-datos">{{ t.datosCotizacion }}</h3>
+        <dl class="kv">
+          <div><dt>{{ t.kvProducto }}</dt><dd>{{ c.productoId }} · {{ c.versionProducto }}</dd></div>
+          <div><dt>{{ t.kvVersionReglas }}</dt><dd class="mono">{{ c.versionReglas }}</dd></div>
+          <div>
+            <dt>{{ t.kvNivel }}</dt>
+            <dd>{{ c.entradas.nivelRiesgo ? textosPerfilamiento.nivel(c.entradas.nivelRiesgo) : t.sinPerfil }}</dd>
+          </div>
+          <div><dt>{{ t.kvEdad }}</dt><dd>{{ t.anios(c.entradas.edad) }}</dd></div>
+          <div><dt>{{ t.kvSuma }}</dt><dd class="mono">{{ monto(c.entradas.sumaAsegurada) }}</dd></div>
+          <div><dt>{{ t.kvPlazo }}</dt><dd>{{ t.meses(c.entradas.plazoCreditoMeses) }}</dd></div>
+          <div><dt>{{ t.kvCalculada }}</dt><dd>{{ textosPerfilamiento.fechaHora(c.calculadoEn) }}</dd></div>
+          <div><dt>{{ t.kvHuella }}</dt><dd class="mono huella" [title]="c.huellaCalculo">{{ c.huellaCalculo }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="card" aria-labelledby="titulo-coberturas-incluidas">
+        <h3 id="titulo-coberturas-incluidas">{{ t.coberturasIncluidas }}</h3>
+        <ul class="incluidas">
+          @for (cobertura of c.coberturas; track cobertura.codigo) {
+            <li>{{ cobertura.nombre }}</li>
+          }
+        </ul>
+      </section>
+
+      <p class="nota">{{ t.notaOferta }}</p>
+      <a class="btn btn--primario" routerLink="/perfilamiento/nuevo">{{ t.nuevaCotizacion }}</a>
+      @if (c.perfilId) {
+        <a class="btn btn--secundario" [routerLink]="['/perfilamiento', c.perfilId]">{{ t.verPerfil }}</a>
+      }
+    </div>
+  </div>
+}

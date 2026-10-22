@@ -1,12 +1,19 @@
 @let t = textos.t();
-<nav class="crumb" [attr.aria-label]="t.migas" [hidden]="enviando()">{{ t.inicio }} › {{ t.grupoContratacion }} › <strong>{{ t.nuevaCotizacion }}</strong></nav>
-<header [hidden]="enviando()">
-  <h2>{{ t.nuevaCotizacion }}</h2>
-  <p class="sub">{{ t.pasoProducto }}</p>
+@let tc = textosCotizacion.t();
+<nav class="crumb" [attr.aria-label]="t.migas" [hidden]="ocupado()">{{ t.inicio }} › {{ t.grupoContratacion }} › <strong>{{ t.nuevaCotizacion }}</strong></nav>
+<header [hidden]="ocupado()">
+  @if (conErrores()) {
+    <!-- HU-W03, mockup "Revisa los datos antes de continuar". -->
+    <h2>{{ tc.revisaDatos }}</h2>
+    <p class="sub">{{ tc.camposRequierenCorreccion(camposConError()) }}</p>
+  } @else {
+    <h2>{{ t.nuevaCotizacion }}</h2>
+    <p class="sub">{{ t.pasoProducto }}</p>
+  }
 </header>
 
-<ol class="pasos" [attr.aria-label]="t.pasos" [hidden]="enviando()">
-  <li aria-current="step">1 · {{ t.paso1 }}</li>
+<ol class="pasos" [attr.aria-label]="t.pasos" [hidden]="ocupado()">
+  <li aria-current="step" [class.con-error]="conErrores()">1 · {{ t.paso1 }}</li>
   <li>2 · {{ t.paso2 }}</li>
   <li>3 · {{ t.paso3 }}</li>
 </ol>
@@ -21,14 +28,23 @@
       }
     </p>
   </div>
+} @else if (conErrores() && !ocupado()) {
+  <div class="alerta alerta--error">
+    <span aria-hidden="true">⚠</span>
+    <p>{{ tc.alertaValidacion }}</p>
+  </div>
 }
 
 <!-- W12-P09: mientras se consultan las fuentes, D01 reemplaza al formulario, que conserva su estado. -->
 @if (enviando()) {
   <app-perfil-cargando />
 }
+<!-- HU-W03, mockup "Calculando tu oferta": mientras cotizacion calcula la prima sin perfil. -->
+@if (cotizando()) {
+  <app-cotizacion-cargando [presupuestoMs]="presupuestoCotizacionMs" />
+}
 
-<form #formularioHtml [formGroup]="formulario" (ngSubmit)="enviar()" novalidate [attr.aria-busy]="enviando()" [hidden]="enviando()">
+<form #formularioHtml [formGroup]="formulario" (ngSubmit)="enviar()" novalidate [attr.aria-busy]="ocupado()" [hidden]="ocupado()">
   <div class="cols">
     <div class="columna">
       <section class="card" aria-labelledby="titulo-producto">
@@ -41,9 +57,19 @@
             </select>
           </label>
           <label class="fld">
+            <span>{{ tc.versionProducto }}</span>
+            <input class="inp" readonly [value]="condiciones()?.versionProducto ?? '—'" />
+          </label>
+          <label class="fld">
             <span>{{ t.pais }}</span>
             <select class="inp" disabled>
               <option selected>{{ t.paisColombia }}</option>
+            </select>
+          </label>
+          <label class="fld">
+            <span>{{ tc.canalVenta }}</span>
+            <select class="inp">
+              <option selected>{{ tc.canalDirecto }}</option>
             </select>
           </label>
         </div>
@@ -78,38 +104,62 @@
               <small class="fld__error" id="error-nombre">{{ t.nombreCompletoError }}</small>
             }
           </label>
+          @let limiteFecha = motivoLimite('fechaNacimiento');
           <label class="fld">
             <span>{{ t.fechaNacimiento }}</span>
             <input class="inp" type="date" formControlName="fechaNacimiento" autocomplete="bday" [max]="hoy"
-                   [attr.aria-invalid]="invalido('fechaNacimiento')"
-                   [attr.aria-describedby]="invalido('fechaNacimiento') ? 'error-fecha' : null" />
+                   [attr.aria-invalid]="invalido('fechaNacimiento') || !!limiteFecha"
+                   [attr.aria-describedby]="invalido('fechaNacimiento') ? 'error-fecha' : limiteFecha ? 'limite-fecha' : null" />
             @if (invalido('fechaNacimiento')) {
               <small class="fld__error" id="error-fecha">{{ t.fechaNacimientoError }}</small>
+            } @else if (limiteFecha) {
+              <small class="fld__error" id="limite-fecha">⚠ {{ textoLimite(limiteFecha) }}</small>
+            } @else if (dentroDelRango('fechaNacimiento')) {
+              <small class="fld__ok">✓ {{ tc.dentroDelRango }}</small>
             }
           </label>
+          @let limiteSuma = motivoLimite('sumaAsegurada');
           <label class="fld">
             <span>{{ t.sumaAsegurada }}</span>
             <input class="inp" formControlName="sumaAsegurada" inputmode="numeric" autocomplete="off"
                    (blur)="formatearSuma()" (focus)="desformatearSuma()"
-                   [attr.aria-invalid]="invalido('sumaAsegurada')"
-                   [attr.aria-describedby]="invalido('sumaAsegurada') ? 'error-suma' : null" />
+                   [attr.aria-invalid]="invalido('sumaAsegurada') || !!limiteSuma"
+                   [attr.aria-describedby]="invalido('sumaAsegurada') ? 'error-suma' : limiteSuma ? 'limite-suma' : null" />
             @if (invalido('sumaAsegurada')) {
               <small class="fld__error" id="error-suma">{{ t.sumaAseguradaError }}</small>
+            } @else if (limiteSuma) {
+              <small class="fld__error" id="limite-suma">⚠ {{ textoLimite(limiteSuma) }}</small>
+            } @else if (dentroDelRango('sumaAsegurada')) {
+              <small class="fld__ok">✓ {{ tc.dentroDelRango }}</small>
             }
           </label>
+          @let limitePlazo = motivoLimite('plazoCreditoMeses');
           <label class="fld">
             <span>{{ t.plazoCredito }}</span>
-            <select class="inp" formControlName="plazoCreditoMeses">
+            <select class="inp" formControlName="plazoCreditoMeses" [attr.aria-invalid]="!!limitePlazo"
+                    [attr.aria-describedby]="limitePlazo ? 'limite-plazo' : null">
               @for (meses of plazos; track meses) {
                 <option [ngValue]="meses">{{ t.plazoMeses(meses) }}</option>
               }
             </select>
+            @if (limitePlazo) {
+              <small class="fld__error" id="limite-plazo">⚠ {{ textoLimite(limitePlazo) }}</small>
+            } @else if (dentroDelRango('plazoCreditoMeses')) {
+              <small class="fld__ok">✓ {{ tc.dentroDelRango }}</small>
+            }
           </label>
         </div>
       </section>
     </div>
 
     <div class="lateral">
+      <!-- El resumen se suma a las coberturas, no las reemplaza: siguen visibles y editables al validar. -->
+      @if (validacionMostrada()) {
+        <app-resumen-validacion [revisados]="revisados" [conError]="camposConError()"
+                                [versionReglas]="condiciones()?.versionReglas ?? null" />
+      }
+      <app-coberturas-producto [condiciones]="condiciones()" [cargando]="cargandoCondiciones()" [fallo]="falloCondiciones()"
+                               [(seleccionadas)]="coberturasOpcionales" />
       <section class="card" aria-labelledby="titulo-identidad">
         <h3 id="titulo-identidad">{{ t.identidadTitulo }}</h3>
         <div role="status" class="identidad" [class.identidad--ok]="estadoIdentidad() === 'VERIFICADO'">
@@ -135,11 +185,28 @@
             <p class="sub">{{ t.identidadReferencia(i.referencia) }}</p>
           }
         }
-        <button class="btn btn--secundario" type="button" (click)="verificarIdentidad()" [disabled]="verificando() || estadoIdentidad() === 'VERIFICADO'">
+        <button class="btn btn--secundario" type="button" (click)="verificarIdentidad()" [attr.aria-busy]="verificando()"
+                [disabled]="verificando() || estadoIdentidad() === 'VERIFICADO'">
           {{ estadoIdentidad() === 'PENDIENTE' ? t.reintentar : t.verificarIdentidad }}
         </button>
       </section>
-      <button class="btn btn--primario" type="submit" [disabled]="enviando() || verificando() || !puedeContinuar()">{{ t.continuar }}</button>
+      <button class="btn btn--primario" type="submit" [class.bloqueado]="conErrores()" [disabled]="enviando() || verificando() || !puedeContinuar() || conErrores()"
+              [attr.aria-describedby]="conErrores() ? 'ayuda-deshabilitado' : null">{{ t.continuar }}</button>
+      @if (conErrores()) {
+        <p class="ayuda" id="ayuda-deshabilitado">{{ tc.ayudaDeshabilitado }}</p>
+      }
+      <!-- HU-W03: la cotización sin perfil usa el factor SIN_PERFIL de las reglas (perfil 0..1). -->
+      <button class="btn btn--secundario" type="button" (click)="cotizarSinPerfilar()"
+              [disabled]="ocupado() || verificando() || !puedeCotizar() || conErrores()"
+              [attr.aria-describedby]="clienteId() === null ? 'ayuda-cotizar' : null">{{ tc.cotizarSinPerfilar }}</button>
+      @if (clienteId() === null) {
+        <p class="ayuda" id="ayuda-cotizar">{{ tc.cotizarSinPerfilarAyuda }}</p>
+      }
+      @if (conErrores()) {
+        <button class="btn btn--enlace" type="button" (click)="corregir()">{{ tc.corregirDatos }}</button>
+      } @else {
+        <button class="btn btn--enlace" type="button" (click)="validar()">{{ tc.validarDatos }}</button>
+      }
     </div>
   </div>
 </form>

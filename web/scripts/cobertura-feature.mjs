@@ -9,6 +9,8 @@ const GRUPOS = [
   { nombre: 'perfilamiento', partes: ['/features/perfilamiento/', '/shared/seccion/'] },
   /** HU-W31 (PR 3.8). */
   { nombre: 'consentimientos', partes: ['/features/consentimientos/'] },
+  /** HU-W03: cálculo de la prima (condiciones, validación, cálculo en curso y prima calculada). */
+  { nombre: 'cotizacion', partes: ['/features/cotizacion/'] },
 ];
 /** Apoyo de las pruebas, no código de la feature. */
 const EXCLUIDAS = [/\.testing\.ts$/, /\.spec\.ts$/];

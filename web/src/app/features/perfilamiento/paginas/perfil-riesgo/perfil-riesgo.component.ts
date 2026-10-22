@@ -4,6 +4,11 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
+import { BorradorCotizacionService } from '../../../cotizacion/borrador-cotizacion.service';
+import { CotizacionCargandoComponent } from '../../../cotizacion/componentes/cotizacion-cargando/cotizacion-cargando.component';
+import { ErrorCotizacion, errorCotizacion } from '../../../cotizacion/cotizacion.errores';
+import { TextosCotizacionService } from '../../../cotizacion/cotizacion.i18n';
+import { CotizacionService } from '../../../cotizacion/cotizacion.service';
 import { PanelFactoresComponent } from '../../componentes/panel-factores/panel-factores.component';
 import { PerfilCargandoComponent } from '../../componentes/perfil-cargando/perfil-cargando.component';
 import { TablaLinajeComponent } from '../../componentes/tabla-linaje/tabla-linaje.component';
@@ -34,7 +39,14 @@ type Carga =
  */
 @Component({
   selector: 'app-perfil-riesgo',
-  imports: [TarjetaMetricaComponent, PanelFactoresComponent, TablaLinajeComponent, PerfilCargandoComponent, RouterLink],
+  imports: [
+    TarjetaMetricaComponent,
+    PanelFactoresComponent,
+    TablaLinajeComponent,
+    PerfilCargandoComponent,
+    CotizacionCargandoComponent,
+    RouterLink,
+  ],
   templateUrl: './perfil-riesgo.component.html',
   styleUrls: ['../../perfilamiento.scss', './perfil-riesgo.component.scss'],
 })
@@ -66,6 +78,17 @@ export class PerfilRiesgoComponent {
   /** Una clave por clic; se reutiliza solo al reintentar tras una falla de red o del servicio (DT-26). */
   private claveRecalculo: string | null = null;
 
+  // --- HU-W03: prima con este perfil (la cotización utiliza 0..1 perfil) -------------------
+  private readonly cotizaciones = inject(CotizacionService);
+  private readonly borradores = inject(BorradorCotizacionService);
+  readonly textosCotizacion = inject(TextosCotizacionService);
+  /** Los datos de "Nueva cotización" con que se calculó este perfil (solo en memoria). */
+  readonly borrador = computed(() => this.borradores.obtener(this.perfilId()));
+  readonly cotizando = signal(false);
+  readonly errorCotizacion = signal<ErrorCotizacion | null>(null);
+  private claveCotizacion: string | null = null;
+  private readonly alertaCotizacion = viewChild<ElementRef<HTMLElement>>('alertaCotizacion');
+
   constructor() {
     toObservable(this.perfilId)
       .pipe(
@@ -79,6 +102,8 @@ export class PerfilRiesgoComponent {
     this.carga.set({ estado: 'cargando' });
     this.errorRecalculo.set(null);
     this.claveRecalculo = null;
+    this.errorCotizacion.set(null);
+    this.claveCotizacion = null;
     return this.servicio.obtener(id).pipe(
       map((perfil): Carga => ({ estado: 'listo', perfil })),
       catchError((e: HttpErrorResponse) =>
@@ -170,5 +195,30 @@ export class PerfilRiesgoComponent {
     const titulo = this.tituloRequeridos()?.nativeElement;
     titulo?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     titulo?.focus();
+  }
+
+  /** HU-W03: calcula la prima con el nivel de este perfil y los datos con que se perfiló. */
+  calcularPrima(perfil: PerfilRespuesta): void {
+    const borrador = this.borrador();
+    if (this.cotizando() || !borrador) {
+      return;
+    }
+    this.claveCotizacion ??= crypto.randomUUID();
+    this.cotizando.set(true);
+    this.errorCotizacion.set(null);
+    this.cotizaciones.cotizar({ ...borrador, perfilId: perfil.id }, this.claveCotizacion).subscribe({
+      next: (cotizacion) => {
+        this.cotizando.set(false);
+        void this.router.navigate(['/perfilamiento/cotizaciones', cotizacion.id], { state: { cotizacion } });
+      },
+      error: (e: HttpErrorResponse) => {
+        this.cotizando.set(false);
+        if (!esFallaTransitoria(e)) {
+          this.claveCotizacion = null;
+        }
+        this.errorCotizacion.set(errorCotizacion(this.textosCotizacion.t(), e));
+        setTimeout(() => this.alertaCotizacion()?.nativeElement.focus());
+      },
+    });
   }
 }

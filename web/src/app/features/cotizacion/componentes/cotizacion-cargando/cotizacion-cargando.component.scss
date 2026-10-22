@@ -1,0 +1,56 @@
+/* Mockup "Calculando tu oferta": comparte la línea de pasos y las tarjetas con cotizacion-calculada. */
+:host { display: flex; flex-direction: column; gap: 10px; }
+h2 { margin: 0 0 4px; font-size: 22px; color: var(--sv-azul-oscuro); }
+h3 { margin: 0 0 12px; font-size: 15px; color: var(--sv-azul-oscuro); }
+.sub { margin: 0; font-size: 13px; color: var(--sv-texto-secundario); }
+
+.pasos-cotizacion { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 8px 0 0; list-style: none; }
+.pasos-cotizacion li { padding-top: 9px; border-top: 4px solid var(--sv-borde); font-size: 11.5px; color: var(--sv-texto-secundario); }
+.pasos-cotizacion .hecho { border-color: var(--sv-verde); color: #00663f; font-weight: 600; }
+.pasos-cotizacion [aria-current='step'] { border-color: var(--sv-azul-medio); color: var(--sv-azul); font-weight: 700; }
+
+.tablero > .card, .pila > .card { margin: 0; }
+.tablero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 0; padding-top: 10px; align-items: start; }
+.pila { display: flex; flex-direction: column; gap: 16px; }
+.espera { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px; text-align: center; }
+.espera .titulo { margin: 0; font-size: 15px; font-weight: 700; color: var(--sv-azul-oscuro); }
+.espera .sub { line-height: 21px; }
+.giro {
+  width: 46px; height: 46px; border: 4px solid var(--sv-borde); border-top-color: var(--sv-azul-medio);
+  border-radius: 50%; animation: girar 0.9s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+.bloque { align-self: flex-start; width: 100%; height: 13px; border-radius: 4px; background: var(--sv-fondo); }
+.bloque--titulo { width: 62%; height: 26px; margin-top: 8px; }
+/* Anchos de las líneas de esqueleto del mockup (334, 291, 313 y 192 px de 368). */
+.bloque--91 { width: 91%; }
+.bloque--79 { width: 79%; }
+.bloque--85 { width: 85%; }
+.bloque--52 { width: 52%; }
+
+/* Línea de tiempo del mockup: círculo de 19 px con aro y conector de 2 px al siguiente paso. */
+.linea { margin: 0; padding: 4px 0 0; list-style: none; }
+.linea li { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 0 0 21px 26px; }
+.linea li:last-child { padding-bottom: 3px; }
+.linea li strong { font-size: 13px; font-weight: 700; color: var(--sv-texto); }
+/* El mockup usa #7a8189; no alcanza 4,5:1 en 11,5 px (WCAG AA), como ya se decidió en perfilamiento. */
+.linea li span { font-size: 11.5px; color: var(--sv-texto-secundario); }
+.linea li::before {
+  --tono: var(--sv-borde);
+  content: ''; position: absolute; left: 0; top: 2px; box-sizing: border-box; width: 19px; height: 19px;
+  border: 3px solid var(--sv-blanco); border-radius: 50%; background: var(--tono); box-shadow: 0 0 0 1.5px var(--tono);
+}
+.linea li::after { content: ''; position: absolute; left: 8.5px; top: 21px; bottom: 0; width: 2px; background: var(--sv-borde); }
+.linea li:last-child::after { display: none; }
+.linea .hecho::before { --tono: var(--sv-verde); }
+.linea .hecho::after { background: var(--sv-verde); }
+.linea .en-curso::before { --tono: var(--sv-azul-medio); }
+
+.barra { height: 9px; margin: 10px 0 6px; border-radius: 4px; background: var(--sv-borde); overflow: hidden; }
+.barra span { display: block; height: 100%; background: var(--sv-azul-medio); }
+
+.anuncio { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+@media (max-width: 900px) {
+  .tablero { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}

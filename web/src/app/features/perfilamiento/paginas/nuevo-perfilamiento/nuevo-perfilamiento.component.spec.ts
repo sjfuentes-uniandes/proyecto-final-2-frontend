@@ -12,6 +12,8 @@ const URL = 'https://api/web/v1/perfiles';
 const URL_CLIENTES = 'https://api/web/v1/clientes';
 const CLIENTE_ID = '00000000-0000-4000-8000-000000000001';
 const URL_VERIFICAR = `${URL_CLIENTES}/${CLIENTE_ID}/identidad/verificaciones`;
+/** HU-W03: la pantalla pide las condiciones del producto al iniciar; aquí se dejan sin responder. */
+const URL_CONDICIONES = 'https://api/web/v1/productos/vida-hipotecario/condiciones';
 const C01 = {
   tipoDocumento: 'CC',
   numeroDocumento: '1.020.456.789',
@@ -79,6 +81,7 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
     solicitud.flush(cuerpo, { status, statusText: 'x' });
 
   afterEach(() => {
+    http.match(URL_CONDICIONES);
     http.verify();
     TestBed.inject(IdiomaService).cambiar('es-CO');
   });
