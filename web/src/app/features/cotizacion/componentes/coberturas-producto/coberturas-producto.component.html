@@ -1,0 +1,32 @@
+@let t = textos.t();
+<section class="card" aria-labelledby="titulo-coberturas">
+  <h3 id="titulo-coberturas">{{ t.coberturasTitulo }}</h3>
+  @if (cargando()) {
+    <p class="sub" role="status">{{ t.cargandoCondiciones }}</p>
+  } @else if (fallo()) {
+    <p class="sub" role="status">{{ t.sinCondiciones }}</p>
+  } @else {
+    <ul class="coberturas">
+      @for (cobertura of coberturas(); track cobertura.codigo) {
+        <li>
+          @if (cobertura.obligatoria) {
+            <span>{{ cobertura.nombre }}</span>
+            <strong>{{ t.obligatoria }}</strong>
+          } @else {
+            <label [for]="'cobertura-' + cobertura.codigo">{{ cobertura.nombre }}</label>
+            <input
+              class="interruptor"
+              type="checkbox"
+              role="switch"
+              [id]="'cobertura-' + cobertura.codigo"
+              [checked]="elegida(cobertura.codigo)"
+              [attr.aria-checked]="elegida(cobertura.codigo)"
+              (change)="alternar(cobertura.codigo, $any($event.target).checked)"
+            />
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
+<p class="nota">{{ t.notaCatalogo }}</p>

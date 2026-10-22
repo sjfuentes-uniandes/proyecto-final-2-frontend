@@ -1,0 +1,23 @@
+:host { display: flex; flex-direction: column; gap: 8px; }
+h3 { margin: 0 0 6px; font-size: 15px; color: var(--sv-azul-oscuro); }
+.sub { margin: 0; font-size: 13px; color: var(--sv-texto-secundario); }
+.coberturas { margin: 0; padding: 0; list-style: none; }
+.coberturas li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13px;
+}
+.coberturas li:last-child { border-bottom: 0; }
+.coberturas strong { color: var(--sv-azul-oscuro); }
+
+/* Interruptor accesible: un checkbox nativo con role="switch" y su etiqueta. */
+.interruptor {
+  appearance: none; position: relative; flex: none; width: 34px; height: 20px; margin: 0;
+  border-radius: 10px; background: var(--sv-borde); cursor: pointer; transition: background 0.15s;
+}
+.interruptor::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--sv-blanco); transition: transform 0.15s;
+}
+.interruptor:checked { background: var(--sv-verde); }
+.interruptor:checked::after { transform: translateX(14px); }
+.interruptor:focus-visible { outline: 3px solid var(--sv-azul-medio); outline-offset: 2px; }

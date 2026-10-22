@@ -17,6 +17,15 @@ export const routes: Routes = [
           import('./paginas/nuevo-perfilamiento/nuevo-perfilamiento.component').then((m) => m.NuevoPerfilamientoComponent),
       },
       {
+        // HU-W03: prima calculada (paso 3); la oferta completa es de HU-W04.
+        path: 'cotizaciones/:cotizacionId',
+        title: 'Cotización · Solventa',
+        loadComponent: () =>
+          import('../cotizacion/paginas/cotizacion-calculada/cotizacion-calculada.component').then(
+            (m) => m.CotizacionCalculadaComponent,
+          ),
+      },
+      {
         path: ':perfilId/actualizacion',
         title: 'Perfil actualizado · Solventa',
         loadComponent: () =>

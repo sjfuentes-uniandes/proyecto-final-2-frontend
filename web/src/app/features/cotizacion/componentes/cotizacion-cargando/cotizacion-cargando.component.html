@@ -1,0 +1,51 @@
+@let t = textos.t();
+@let tp = textosPerfilamiento.t();
+<nav class="crumb" [attr.aria-label]="tp.migas">{{ tp.inicio }} › {{ tp.grupoContratacion }} › <strong>{{ t.calculoMiga }}</strong></nav>
+<header>
+  <h2>{{ t.calculandoOferta }}</h2>
+  <p class="sub">{{ t.consultandoFuentes }}</p>
+</header>
+
+<ol class="pasos-cotizacion" [attr.aria-label]="tp.pasos">
+  <li class="hecho">1 · {{ tp.paso1 }}</li>
+  <li [class.hecho]="conPerfil()">2 · {{ tp.paso2 }}</li>
+  <li aria-current="step">3 · {{ tp.paso3 }}</li>
+</ol>
+
+<div class="tablero">
+  <section class="card espera" aria-hidden="true">
+    <span class="giro"></span>
+    <p class="titulo">{{ t.tomaMenos }}</p>
+    <p class="sub">{{ conPerfil() ? t.combinandoConPerfil : t.combinandoSinPerfil }}</p>
+    <span class="bloque bloque--ancho"></span>
+    <span class="bloque"></span>
+    <span class="bloque"></span>
+  </section>
+
+  <section class="card" aria-labelledby="titulo-progreso">
+    <h3 id="titulo-progreso">{{ t.progresoConsulta }}</h3>
+    <ol class="linea">
+      @for (paso of pasos(); track paso.nombre) {
+        <li [class]="paso.estado">
+          <strong>{{ paso.nombre }}</strong>
+          <span>{{ paso.estado === 'hecho' ? t.hecho : paso.estado === 'en-curso' ? t.enCurso : t.pendiente }}</span>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <section class="card" aria-labelledby="titulo-presupuesto">
+    <h3 id="titulo-presupuesto">{{ t.presupuestoConsumido }}</h3>
+    <dl class="kv">
+      <div><dt>{{ t.transcurrido }}</dt><dd class="mono">{{ t.milisegundos(transcurridoMs()) }}</dd></div>
+      <div><dt>{{ t.presupuestoTotal }}</dt><dd class="mono">{{ t.milisegundos(presupuestoMs()) }}</dd></div>
+    </dl>
+    <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="porcentaje()"
+         [attr.aria-label]="t.presupuestoConsumido">
+      <span [style.width.%]="porcentaje()"></span>
+    </div>
+    <p class="sub">{{ t.porcentajePresupuesto(porcentaje()) }}</p>
+  </section>
+</div>
+
+<p class="anuncio" role="status" aria-live="polite">{{ t.calculandoOferta }}</p>
