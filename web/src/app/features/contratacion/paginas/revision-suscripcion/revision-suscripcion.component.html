@@ -1,0 +1,71 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › <a routerLink="/contratacion/bandeja">{{ t.migaBandeja }}</a> ›
+  <strong>{{ decision() ? codigoCotizacion() : t.tituloRevision }}</strong>
+</nav>
+
+@switch (carga().estado) {
+  @case ('cargando') {
+    <h2>{{ t.tituloRevision }}</h2>
+    <p class="sub" role="status">{{ t.cargando }}</p>
+  }
+  @case ('no-encontrada') {
+    <h2>{{ t.tituloRevision }}</h2>
+    <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ t.errorDecisionNoEncontrada }}</span></p>
+  }
+  @case ('error') {
+    @if (error(); as e) {
+      <h2>{{ t.tituloRevision }}</h2>
+      <div class="alerta alerta--error" role="alert">
+        <span aria-hidden="true">⚠</span>
+        <p>
+          {{ e.mensaje }}
+          @if (e.correlationId) {
+            <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+          }
+        </p>
+      </div>
+    }
+  }
+}
+
+@if (decision(); as d) {
+  <div class="h-row">
+    <header>
+      <h2>
+        {{ t.tituloRevision }}
+        @if (d.resultado === 'REVISION_REQUERIDA') {
+          <span class="tag tag--alerta">{{ t.requiereDecision }}</span>
+        }
+      </h2>
+      <p class="sub">{{ subtitulo() }}</p>
+    </header>
+    <!-- HU-W16: «Solicitar más información» (E05). -->
+  </div>
+
+  @if (d.resultado === 'REVISION_REQUERIDA') {
+    <p class="nota nota--alerta"><span aria-hidden="true">⚠</span> {{ t.bannerRevisionSuscriptor(incumplidas()) }}</p>
+  }
+
+  <div class="cols">
+    <div class="columna">
+      <app-tabla-reglas [titulo]="t.reglasNoSeCumplen" [reglas]="d.reglasEvaluadas" [moneda]="d.condiciones.moneda" [fallidasPrimero]="true" />
+      <!-- HU-W16: decisión del suscriptor (resultado, ajustes y motivación). -->
+    </div>
+    <div class="columna">
+      @if (contexto(); as c) {
+        <section class="card" aria-labelledby="titulo-contexto">
+          <h3 id="titulo-contexto">{{ t.contextoCaso }}</h3>
+          <dl class="kv">
+            <div><dt>{{ t.nivelRiesgo }}</dt><dd [class]="c.claseNivel">{{ c.nivel }}</dd></div>
+            <div><dt>{{ t.fuentesConsultadas }}</dt><dd>{{ c.fuentes }}</dd></div>
+            <div><dt>{{ t.canalOrigen }}</dt><dd>{{ c.canal }}</dd></div>
+            <div><dt>{{ t.primaCalculada }}</dt><dd>{{ c.prima }}</dd></div>
+            <div><dt>{{ t.tiempoEnCola }}</dt><dd>{{ c.enCola }}</dd></div>
+          </dl>
+        </section>
+      }
+      <!-- HU-W16: Aceptar con ajuste, Rechazar la solicitud y Devolver al asesor. -->
+    </div>
+  </div>
+}

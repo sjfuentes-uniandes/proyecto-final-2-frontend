@@ -22,6 +22,34 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: inicioContratacion },
       { path: 'decisiones', pathMatch: 'full', redirectTo: inicioContratacion },
+      {
+        // Desde «Continuar a la suscripción» de la cotización (HU-W03).
+        path: 'cotizaciones/:cotizacionId/suscripcion',
+        title: 'Suscripción · Solventa',
+        canActivate: [requiereGrupo('asesores')],
+        loadComponent: () =>
+          import('./paginas/solicitar-suscripcion/solicitar-suscripcion.component').then((m) => m.SolicitarSuscripcionComponent),
+      },
+      {
+        path: 'decisiones/:decisionId',
+        title: 'Decisión de suscripción · Solventa',
+        loadComponent: () =>
+          import('./paginas/decision-suscripcion/decision-suscripcion.component').then((m) => m.DecisionSuscripcionComponent),
+      },
+      {
+        path: 'bandeja',
+        title: 'Bandeja de suscripción · Solventa',
+        canActivate: [requiereGrupo('suscriptores')],
+        loadComponent: () =>
+          import('./paginas/bandeja-suscripcion/bandeja-suscripcion.component').then((m) => m.BandejaSuscripcionComponent),
+      },
+      {
+        path: 'bandeja/:decisionId',
+        title: 'Revisión de suscripción · Solventa',
+        canActivate: [requiereGrupo('suscriptores')],
+        loadComponent: () =>
+          import('./paginas/revision-suscripcion/revision-suscripcion.component').then((m) => m.RevisionSuscripcionComponent),
+      },
     ],
   },
 ];

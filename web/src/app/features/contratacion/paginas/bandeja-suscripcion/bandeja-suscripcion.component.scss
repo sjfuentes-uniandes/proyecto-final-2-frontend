@@ -1,0 +1,15 @@
+.indicadores { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 18px; }
+.filtros .fld { margin: 0; }
+.filtros .btn { margin-bottom: 0; }
+.tabla { padding: 0; overflow-x: auto; }
+.tabla .sub { padding: 18px; }
+.cotizacion { padding: 16px 14px; border-bottom: 1px solid var(--sv-borde); background: none; font-size: 13px; letter-spacing: 0;
+  text-transform: none; color: var(--sv-azul); }
+.abrir { font-weight: 600; color: var(--sv-azul); }
+.mas { margin: 12px 14px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

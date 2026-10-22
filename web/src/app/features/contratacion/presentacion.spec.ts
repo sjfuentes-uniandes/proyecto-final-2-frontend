@@ -3,6 +3,7 @@ import { ReglaEvaluada } from './contratacion.modelo';
 import { DECISION_RESERVADA, DECISION_REVISION, REGLAS_S01 } from './contratacion.testing';
 import {
   Formatos,
+  claseTono,
   codigoCotizacion,
   condicion,
   diaLocal,
@@ -103,5 +104,14 @@ describe('Presentación de la suscripción (funciones puras)', () => {
     const { desde, hasta } = diaLocal(new Date(2026, 9, 22, 15, 30));
     expect([desde.getDate(), desde.getHours(), desde.getMinutes()]).toEqual([22, 0, 0]);
     expect(hasta.getTime() - desde.getTime()).toBe(24 * 3600 * 1000);
+  });
+
+  it('clase global de la insignia por tono', () => {
+    expect(['exito', 'alerta', 'peligro', 'neutro'].map((t) => claseTono(t as Parameters<typeof claseTono>[0]))).toEqual([
+      'tag tag--ok',
+      'tag tag--alerta',
+      'tag tag--error',
+      'tag tag--info',
+    ]);
   });
 });

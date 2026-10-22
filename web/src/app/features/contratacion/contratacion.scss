@@ -1,0 +1,32 @@
+/* Estilos comunes de las pantallas de suscripción (E01 a E04); los globales están en styles.scss. */
+@use 'contraste';
+
+:host { display: flex; flex-direction: column; gap: 12px; }
+
+h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 4px; font-size: 22px; color: var(--sv-azul-oscuro); }
+h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
+.sub { margin: 0; font-size: 13px; color: var(--sv-texto-secundario); }
+/* Contraste WCAG AA: --sv-texto-tenue no alcanza 4,5:1 en 12 px. */
+.crumb { color: var(--sv-texto-secundario); }
+.crumb a { color: var(--sv-azul); }
+.h-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.columna { display: flex; flex-direction: column; gap: 16px; }
+.seguimiento { font-size: 12px; }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Contraste WCAG AA del texto sobre blanco: verde y rojo más oscuros que los tokens. */
+.kv .exito { color: #00663f; }
+.kv .peligro { color: var(--sv-error); }
+.kv .advertencia { color: #7a4a00; }
+
+@media (max-width: 900px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Solicitud en curso. */
+.evaluando { display: flex; align-items: center; gap: 16px; }
+.evaluando h3 { margin: 0 0 4px; }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--sv-seleccion); border-top-color: var(--sv-azul-medio);
+  border-radius: 50%; animation: girar 1s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }

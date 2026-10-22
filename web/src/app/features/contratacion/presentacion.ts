@@ -148,3 +148,9 @@ export function diaLocal(ahora: Date): { desde: Date; hasta: Date } {
   const hasta = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1);
   return { desde, hasta };
 }
+
+/** Clase global de la insignia (styles.scss) para cada tono. */
+export function claseTono(tono: Tono): string {
+  const clases: Record<Tono, string> = { exito: 'tag--ok', alerta: 'tag--alerta', peligro: 'tag--error', neutro: 'tag--info' };
+  return `tag ${clases[tono]}`;
+}

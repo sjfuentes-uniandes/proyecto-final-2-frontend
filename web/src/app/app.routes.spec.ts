@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { routes } from './app.routes';
@@ -46,26 +46,45 @@ describe('Rutas del portal: inicio por grupo y acceso a perfilamiento', () => {
   });
 });
 
-describe('Rutas del portal: inicio del suscriptor (HU-W13)', () => {
-  // La ruta auxiliar del final solo resuelve /contratacion/bandeja: el router prueba las rutas en
-  // orden, así que la redirección se comprueba sin depender de la página de la bandeja.
-  @Component({ template: '' })
-  class DestinoComponent {}
-
+describe('Rutas del portal: contratación por grupo (HU-W13)', () => {
+  // Las páginas piden datos al abrir: el backend de pruebas recibe esas peticiones sin responderlas.
   beforeEach(() =>
     TestBed.configureTestingModule({
       providers: [
-        provideRouter([...routes, { path: 'contratacion/bandeja', component: DestinoComponent }]),
+        provideRouter(routes, withComponentInputBinding()),
         provideHttpClient(),
+        provideHttpClientTesting(),
         proveerAuthFalso(),
       ],
     }),
   );
 
+  // Un solo harness por prueba: cada navegación lo reutiliza.
+  let harness: RouterTestingHarness | undefined;
+  afterEach(() => (harness = undefined));
+  const navegar = async (url: string) => {
+    harness ??= await RouterTestingHarness.create();
+    await harness.navigateByUrl(url);
+    return TestBed.inject(Router).url;
+  };
+
   it('un suscriptor termina en la bandeja de suscripción', async () => {
     await iniciarSesion({ name: 'Ana Suárez', 'cognito:groups': ['suscriptores'] });
-    const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/');
-    expect(TestBed.inject(Router).url).toBe('/contratacion/bandeja');
+    expect(await navegar('/')).toBe('/contratacion/bandeja');
+    expect(await navegar('/contratacion/bandeja/caso-1')).toBe('/contratacion/bandeja/caso-1');
+    expect(await navegar('/contratacion/decisiones/dec-1')).toBe('/contratacion/decisiones/dec-1');
+  });
+
+  it('un suscriptor no solicita suscripciones: va a /sin-acceso', async () => {
+    await iniciarSesion({ name: 'Ana Suárez', 'cognito:groups': ['suscriptores'] });
+    expect(await navegar('/contratacion/cotizaciones/cot-1/suscripcion')).toBe('/sin-acceso');
+  });
+
+  it('un asesor abre la solicitud y la decisión, pero no la bandeja', async () => {
+    await iniciarSesion({ name: 'Carlos Portillo', 'cognito:groups': ['asesores'] });
+    expect(await navegar('/contratacion/cotizaciones/cot-1/suscripcion')).toBe('/contratacion/cotizaciones/cot-1/suscripcion');
+    expect(await navegar('/contratacion/decisiones/dec-1')).toBe('/contratacion/decisiones/dec-1');
+    expect(await navegar('/contratacion/bandeja')).toBe('/sin-acceso');
+    expect(await navegar('/contratacion/bandeja/caso-1')).toBe('/sin-acceso');
   });
 });

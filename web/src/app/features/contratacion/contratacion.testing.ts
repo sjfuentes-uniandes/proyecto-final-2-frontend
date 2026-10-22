@@ -191,7 +191,7 @@ function caso(codigo: string, minutos: number, cambios: Partial<CasoBandeja> = {
   };
 }
 
-/** Tres casos del más antiguo al más reciente: 9 h 02 m (rojo), 2 h 14 m (ámbar) y 48 m (verde). */
+/** Tres casos del más antiguo al más reciente: 9 h 02 m (rojo), 5 h 02 m (ámbar) y 48 m (verde), CF-S2-06. */
 export const BANDEJA: BandejaSuscripcion = {
   items: [
     caso('DEC-2026-000007', 542, {
@@ -200,7 +200,7 @@ export const BANDEJA: BandejaSuscripcion = {
       reglasNoCumplidas: ['SUS-015'],
       clienteNombre: null,
     }),
-    caso('DEC-2026-000005', 134),
+    caso('DEC-2026-000005', 302),
     caso('DEC-2026-000006', 48, {
       decisionId: '00000000-0000-4000-e000-000000000006',
       motivos: ['SUMA_REQUIERE_REVISION'],
