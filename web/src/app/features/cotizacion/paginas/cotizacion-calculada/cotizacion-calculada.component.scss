@@ -11,6 +11,7 @@
 .desglose th, .desglose td { padding: 8px 0; border-bottom: 1px solid var(--sv-borde); text-align: left; font-weight: 400; }
 .desglose td { text-align: right; }
 .desglose thead th { color: var(--sv-texto-secundario); font-size: 12px; }
+.desglose thead th:last-child { text-align: right; }
 .desglose .factor th, .desglose .factor td { color: var(--sv-texto-secundario); padding-left: 12px; }
 .desglose tfoot th, .desglose tfoot td { border-bottom: 0; font-weight: 700; color: var(--sv-azul-oscuro); }
 

@@ -153,13 +153,13 @@
     </div>
 
     <div class="lateral">
+      <!-- El resumen se suma a las coberturas, no las reemplaza: siguen visibles y editables al validar. -->
       @if (validacionMostrada()) {
         <app-resumen-validacion [revisados]="revisados" [conError]="camposConError()"
                                 [versionReglas]="condiciones()?.versionReglas ?? null" />
-      } @else {
-        <app-coberturas-producto [condiciones]="condiciones()" [cargando]="cargandoCondiciones()" [fallo]="falloCondiciones()"
-                                 [(seleccionadas)]="coberturasOpcionales" />
       }
+      <app-coberturas-producto [condiciones]="condiciones()" [cargando]="cargandoCondiciones()" [fallo]="falloCondiciones()"
+                               [(seleccionadas)]="coberturasOpcionales" />
       <section class="card" aria-labelledby="titulo-identidad">
         <h3 id="titulo-identidad">{{ t.identidadTitulo }}</h3>
         <div role="status" class="identidad" [class.identidad--ok]="estadoIdentidad() === 'VERIFICADO'">
@@ -185,7 +185,8 @@
             <p class="sub">{{ t.identidadReferencia(i.referencia) }}</p>
           }
         }
-        <button class="btn btn--secundario" type="button" (click)="verificarIdentidad()" [disabled]="verificando() || estadoIdentidad() === 'VERIFICADO'">
+        <button class="btn btn--secundario" type="button" (click)="verificarIdentidad()" [attr.aria-busy]="verificando()"
+                [disabled]="verificando() || estadoIdentidad() === 'VERIFICADO'">
           {{ estadoIdentidad() === 'PENDIENTE' ? t.reintentar : t.verificarIdentidad }}
         </button>
       </section>

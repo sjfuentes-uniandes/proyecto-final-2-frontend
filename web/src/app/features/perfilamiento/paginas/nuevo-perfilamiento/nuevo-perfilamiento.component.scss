@@ -18,3 +18,6 @@
 .pasos .con-error { border-color: var(--sv-error); color: var(--sv-error); }
 .btn--primario.bloqueado:disabled { opacity: 1; background: var(--sv-borde); color: var(--sv-texto-secundario); cursor: not-allowed; }
 .btn--enlace:hover { text-decoration: underline; }
+/* El global usa cursor de progreso en todo botón deshabilitado; aquí solo mientras se verifica. */
+.btn:disabled { cursor: not-allowed; }
+.btn:disabled[aria-busy='true'] { cursor: progress; }
