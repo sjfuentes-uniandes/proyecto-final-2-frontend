@@ -1,10 +1,19 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, catchError, of, switchMap, throwError } from 'rxjs';
 
+import { BorradorCotizacionService } from '../../../cotizacion/borrador-cotizacion.service';
+import { CoberturasProductoComponent } from '../../../cotizacion/componentes/coberturas-producto/coberturas-producto.component';
+import { CotizacionCargandoComponent } from '../../../cotizacion/componentes/cotizacion-cargando/cotizacion-cargando.component';
+import { ResumenValidacionComponent } from '../../../cotizacion/componentes/resumen-validacion/resumen-validacion.component';
+import { errorCotizacion } from '../../../cotizacion/cotizacion.errores';
+import { TextosCotizacionService } from '../../../cotizacion/cotizacion.i18n';
+import { CondicionesProducto } from '../../../cotizacion/cotizacion.modelo';
+import { CotizacionService } from '../../../cotizacion/cotizacion.service';
+import { CampoLimitado, MotivoLimite, fueraDeLimites } from '../../../cotizacion/validacion';
 import { ClientesService } from '../../../identidad/clientes.service';
 import { ClienteDto, EstadoIdentidad, TIPOS_DOCUMENTO } from '../../../identidad/identidad.modelo';
 import { PerfilCargandoComponent } from '../../componentes/perfil-cargando/perfil-cargando.component';
@@ -20,6 +29,8 @@ const SUMA_MAXIMA = 5_000_000_000;
 /** De 12 a 360 meses, de 12 en 12. */
 export const PLAZOS = Array.from({ length: 30 }, (_, i) => (i + 1) * 12);
 const PLAZO_POR_DEFECTO = 180;
+/** HU-W03: meta p95 de la operación `cotizacion` (latency_targets en int), para el panel de presupuesto. */
+export const PRESUPUESTO_COTIZACION_MS = 250;
 
 type Campo = 'tipoDocumento' | 'numeroDocumento' | 'nombreCompleto' | 'fechaNacimiento' | 'sumaAsegurada' | 'plazoCreditoMeses';
 /** Los campos que identifican al cliente: si cambian, la verificación anterior ya no aplica. */
@@ -60,9 +71,17 @@ function sumaEnRango(control: AbstractControl<string>): ValidationErrors | null 
   return texto && valor >= SUMA_MINIMA && valor <= SUMA_MAXIMA ? null : { rango: true };
 }
 
+const CAMPOS: Campo[] = ['tipoDocumento', 'numeroDocumento', 'nombreCompleto', 'fechaNacimiento', 'sumaAsegurada', 'plazoCreditoMeses'];
+
 @Component({
   selector: 'app-nuevo-perfilamiento',
-  imports: [ReactiveFormsModule, PerfilCargandoComponent],
+  imports: [
+    ReactiveFormsModule,
+    PerfilCargandoComponent,
+    CoberturasProductoComponent,
+    ResumenValidacionComponent,
+    CotizacionCargandoComponent,
+  ],
   templateUrl: './nuevo-perfilamiento.component.html',
   styleUrls: ['../../perfilamiento.scss', './nuevo-perfilamiento.component.scss'],
 })
@@ -73,8 +92,13 @@ export class NuevoPerfilamientoComponent implements OnInit {
   private readonly destruir = inject(DestroyRef);
   private readonly fb = inject(FormBuilder).nonNullable;
   readonly textos = inject(TextosPerfilamientoService);
+  readonly textosCotizacion = inject(TextosCotizacionService);
+  private readonly cotizaciones = inject(CotizacionService);
+  private readonly borradores = inject(BorradorCotizacionService);
 
   readonly plazos = PLAZOS;
+  readonly presupuestoCotizacionMs = PRESUPUESTO_COTIZACION_MS;
+  readonly revisados = CAMPOS.length;
   readonly tiposDocumento = TIPOS_DOCUMENTO;
   readonly nombreMaximo = NOMBRE_MAXIMO;
   readonly hoy = hoyIso();
@@ -97,10 +121,53 @@ export class NuevoPerfilamientoComponent implements OnInit {
   /** Una clave por intento de envío; se reutiliza solo al reintentar tras una falla de red o del servicio. */
   private clave: string | null = null;
 
+  // --- HU-W03: condiciones del producto, coberturas, validación y cotización sin perfil -------
+  readonly condiciones = signal<CondicionesProducto | null>(null);
+  readonly cargandoCondiciones = signal(true);
+  readonly falloCondiciones = signal(false);
+  /** Coberturas opcionales elegidas (las obligatorias van siempre). */
+  readonly coberturasOpcionales = signal<string[]>([]);
+  /** Mockup "Revisa los datos": se muestra al validar o al intentar continuar con datos fuera de rango. */
+  readonly validacionMostrada = signal(false);
+  readonly cotizando = signal(false);
+  private claveCotizacion: string | null = null;
+  private readonly valores = toSignal(this.formulario.valueChanges);
+  /** Límites de las reglas vigentes que incumplen los datos (cotizacion vuelve a validarlos). */
+  readonly limites = computed<MotivoLimite[]>(() => {
+    this.valores();
+    const condiciones = this.condiciones();
+    if (!condiciones) {
+      return [];
+    }
+    const { fechaNacimiento, sumaAsegurada, plazoCreditoMeses } = this.formulario.getRawValue();
+    const suma = this.formulario.controls.sumaAsegurada.valid ? Number(digitos(sumaAsegurada)) : null;
+    return fueraDeLimites({ fechaNacimiento, sumaAsegurada: suma, plazoCreditoMeses: Number(plazoCreditoMeses) }, condiciones, this.hoy);
+  });
+  /** Campos con error de forma o fuera de los límites del producto (mockup "Revisa los datos"). */
+  readonly camposConError = computed(() => {
+    this.valores();
+    const fuera = new Set<string>(this.limites().map((m) => m.campo));
+    return CAMPOS.filter((campo) => this.formulario.controls[campo].invalid || fuera.has(campo)).length;
+  });
+
   private readonly alerta = viewChild<ElementRef<HTMLElement>>('alerta');
   private readonly formularioHtml = viewChild<ElementRef<HTMLFormElement>>('formularioHtml');
 
   ngOnInit(): void {
+    this.cotizaciones
+      .condiciones(PRODUCTO_VIDA_HIPOTECARIO)
+      .pipe(takeUntilDestroyed(this.destruir))
+      .subscribe({
+        next: (condiciones) => {
+          this.condiciones.set(condiciones);
+          this.cargandoCondiciones.set(false);
+        },
+        error: () => {
+          this.falloCondiciones.set(true);
+          this.cargandoCondiciones.set(false);
+        },
+      });
+    this.formulario.valueChanges.pipe(takeUntilDestroyed(this.destruir)).subscribe(() => (this.claveCotizacion = null));
     // Datos distintos = otra solicitud: la clave anterior ya no aplica (evita IDEMPOTENCIA_CONFLICTO).
     this.formulario.valueChanges.pipe(takeUntilDestroyed(this.destruir)).subscribe(() => (this.clave = null));
     for (const campo of CAMPOS_IDENTIDAD) {
@@ -123,6 +190,54 @@ export class NuevoPerfilamientoComponent implements OnInit {
   invalido(campo: Campo): boolean {
     const control = this.formulario.controls[campo];
     return control.touched && control.invalid;
+  }
+
+  ocupado(): boolean {
+    return this.enviando() || this.cotizando();
+  }
+
+  conErrores(): boolean {
+    return this.validacionMostrada() && this.camposConError() > 0;
+  }
+
+  /** El límite incumplido del campo, solo cuando la validación está a la vista. */
+  motivoLimite(campo: CampoLimitado): MotivoLimite | null {
+    return this.validacionMostrada() ? (this.limites().find((m) => m.campo === campo) ?? null) : null;
+  }
+
+  textoLimite(motivo: MotivoLimite): string {
+    const t = this.textosCotizacion.t();
+    switch (motivo.campo) {
+      case 'sumaAsegurada':
+        return motivo.tipo === 'maximo' ? t.sumaMaxima(this.textos.moneda(motivo.limite)) : t.sumaMinima(this.textos.moneda(motivo.limite));
+      case 'fechaNacimiento':
+        return motivo.tipo === 'minimo' ? t.edadMinima(motivo.limite) : t.edadMaxima(motivo.limite);
+      default:
+        return motivo.tipo === 'minimo' ? t.plazoMinimo(motivo.limite) : t.plazoMaximo(motivo.limite);
+    }
+  }
+
+  /** Un campo revisado sin errores (marca "Dentro del rango permitido" del mockup). */
+  dentroDelRango(campo: CampoLimitado): boolean {
+    return this.validacionMostrada() && !this.motivoLimite(campo) && this.formulario.controls[campo].valid;
+  }
+
+  /** Para cotizar el cliente debe existir (lo crea "Verificar cliente") y las condiciones, estar cargadas. */
+  puedeCotizar(): boolean {
+    return this.clienteId() !== null && this.condiciones() !== null;
+  }
+
+  /** "Validar los datos": revisa forma y límites del producto sin enviar nada. */
+  validar(): void {
+    this.formulario.markAllAsTouched();
+    this.validacionMostrada.set(true);
+    if (this.camposConError() > 0) {
+      this.enfocarPrimerInvalido();
+    }
+  }
+
+  corregir(): void {
+    this.enfocarPrimerInvalido();
   }
 
   /** Al salir del campo, la suma se muestra como moneda; al volver, como número sin formato. */
@@ -206,11 +321,16 @@ export class NuevoPerfilamientoComponent implements OnInit {
       this.enfocarPrimerInvalido();
       return;
     }
+    if (this.limites().length > 0) {
+      this.validar();
+      return;
+    }
     const clienteId = this.clienteId();
     if (!this.puedeContinuar() || !clienteId) {
       return;
     }
     const { fechaNacimiento, sumaAsegurada, plazoCreditoMeses } = this.formulario.getRawValue();
+    const datosAsegurado = { fechaNacimiento, plazoCreditoMeses: Number(plazoCreditoMeses), sumaAsegurada: Number(digitos(sumaAsegurada)) };
     this.clave ??= crypto.randomUUID();
     this.enviando.set(true);
     this.error.set(null);
@@ -219,13 +339,20 @@ export class NuevoPerfilamientoComponent implements OnInit {
         {
           clienteId,
           productoId: PRODUCTO_VIDA_HIPOTECARIO,
-          datosDeclarados: { fechaNacimiento, plazoCreditoMeses: Number(plazoCreditoMeses), sumaAsegurada: Number(digitos(sumaAsegurada)) },
+          datosDeclarados: datosAsegurado,
         },
         this.clave,
       )
       .subscribe({
         next: (perfil) => {
           this.enviando.set(false);
+          // HU-W03: el perfil podrá calcular la prima con estos mismos datos (solo en memoria).
+          this.borradores.guardar(perfil.id, {
+            clienteId,
+            productoId: PRODUCTO_VIDA_HIPOTECARIO,
+            datosAsegurado,
+            coberturasOpcionales: this.coberturasOpcionales(),
+          });
           void this.router.navigate(['/perfilamiento', perfil.id]);
         },
         error: (e: HttpErrorResponse) => {
@@ -234,6 +361,50 @@ export class NuevoPerfilamientoComponent implements OnInit {
             this.clave = null;
           }
           this.fallar(e);
+        },
+      });
+  }
+
+  /** HU-W03: "Cotizar sin perfilar": la prima con el factor SIN_PERFIL de las reglas vigentes. */
+  cotizarSinPerfilar(): void {
+    if (this.ocupado() || this.verificando() || !this.puedeCotizar()) {
+      return;
+    }
+    if (this.formulario.invalid || this.limites().length > 0) {
+      this.validar();
+      return;
+    }
+    const clienteId = this.clienteId()!;
+    const { fechaNacimiento, sumaAsegurada, plazoCreditoMeses } = this.formulario.getRawValue();
+    this.claveCotizacion ??= crypto.randomUUID();
+    this.cotizando.set(true);
+    this.error.set(null);
+    this.cotizaciones
+      .cotizar(
+        {
+          clienteId,
+          productoId: PRODUCTO_VIDA_HIPOTECARIO,
+          datosAsegurado: { fechaNacimiento, plazoCreditoMeses: Number(plazoCreditoMeses), sumaAsegurada: Number(digitos(sumaAsegurada)) },
+          coberturasOpcionales: this.coberturasOpcionales(),
+        },
+        this.claveCotizacion,
+      )
+      .subscribe({
+        next: (cotizacion) => {
+          this.cotizando.set(false);
+          void this.router.navigate(['/perfilamiento/cotizaciones', cotizacion.id], { state: { cotizacion } });
+        },
+        error: (e: HttpErrorResponse) => {
+          this.cotizando.set(false);
+          if (!esFallaTransitoria(e)) {
+            this.claveCotizacion = null;
+          }
+          const error = errorCotizacion(this.textosCotizacion.t(), e);
+          if (error.campos.length > 0) {
+            this.validacionMostrada.set(true);
+          }
+          this.error.set(error);
+          setTimeout(() => this.alerta()?.nativeElement.focus());
         },
       });
   }
