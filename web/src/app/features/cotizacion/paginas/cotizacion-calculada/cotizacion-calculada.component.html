@@ -81,7 +81,7 @@
         <section class="card" aria-labelledby="titulo-progreso">
           <h3 id="titulo-progreso">{{ t.progresoConsulta }}</h3>
           <ol class="linea">
-            <li class="hecho"><strong>{{ t.pasoSolicitud }}</strong><span>{{ t.hecho }}</span></li>
+            <li class="hecho"><strong>{{ t.pasoSolicitud }}</strong><span>{{ t.entradaSegura }}</span></li>
             @for (paso of c.pasos; track paso.codigo) {
               <li class="hecho"><strong>{{ nombrePaso(paso) }}</strong><span>{{ detallePaso(paso) }}</span></li>
             }

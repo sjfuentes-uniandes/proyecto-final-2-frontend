@@ -17,9 +17,11 @@
     <span class="giro"></span>
     <p class="titulo">{{ t.tomaMenos }}</p>
     <p class="sub">{{ conPerfil() ? t.combinandoConPerfil : t.combinandoSinPerfil }}</p>
-    <span class="bloque bloque--ancho"></span>
-    <span class="bloque"></span>
-    <span class="bloque"></span>
+    <span class="bloque bloque--titulo"></span>
+    <span class="bloque bloque--91"></span>
+    <span class="bloque bloque--79"></span>
+    <span class="bloque bloque--85"></span>
+    <span class="bloque bloque--52"></span>
   </section>
 
   <section class="card" aria-labelledby="titulo-progreso">
@@ -28,12 +30,13 @@
       @for (paso of pasos(); track paso.nombre) {
         <li [class]="paso.estado">
           <strong>{{ paso.nombre }}</strong>
-          <span>{{ paso.estado === 'hecho' ? t.hecho : paso.estado === 'en-curso' ? t.enCurso : t.pendiente }}</span>
+          <span>{{ $first ? t.entradaSegura : paso.estado === 'en-curso' ? t.enCurso : t.pendiente }}</span>
         </li>
       }
     </ol>
   </section>
 
+  <div class="pila">
   <section class="card" aria-labelledby="titulo-presupuesto">
     <h3 id="titulo-presupuesto">{{ t.presupuestoConsumido }}</h3>
     <dl class="kv">
@@ -46,6 +49,8 @@
     </div>
     <p class="sub">{{ t.porcentajePresupuesto(porcentaje()) }}</p>
   </section>
+  <p class="nota">{{ t.notaPresupuesto(presupuestoMs()) }}</p>
+  </div>
 </div>
 
 <p class="anuncio" role="status" aria-live="polite">{{ t.calculandoOferta }}</p>

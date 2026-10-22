@@ -13,5 +13,8 @@
 /* HU-W03: validación contra las reglas del producto y acciones de la cotización. */
 .fld__ok { display: block; margin-top: 4px; font-size: 12px; color: #00663f; }
 .ayuda { margin: 0; font-size: 12px; color: var(--sv-texto-secundario); }
-.btn--enlace { border: 0; background: none; color: var(--sv-azul); font-weight: 600; }
+.btn--enlace { border: 0; background: none; font-weight: 500; font-size: 13.3px; color: var(--sv-texto-secundario); }
+/* Mockup "Revisa los datos": el paso 1 en rojo y el botón bloqueado en gris sólido. */
+.pasos .con-error { border-color: var(--sv-error); color: var(--sv-error); }
+.btn--primario.bloqueado:disabled { opacity: 1; background: var(--sv-borde); color: var(--sv-texto-secundario); cursor: not-allowed; }
 .btn--enlace:hover { text-decoration: underline; }

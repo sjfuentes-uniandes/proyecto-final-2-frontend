@@ -71,6 +71,8 @@ function sumaEnRango(control: AbstractControl<string>): ValidationErrors | null 
   return texto && valor >= SUMA_MINIMA && valor <= SUMA_MAXIMA ? null : { rango: true };
 }
 
+/** Campos del producto que se revisan y no pueden quedar con error (vienen del catálogo). */
+const CAMPOS_PRODUCTO = 5;
 const CAMPOS: Campo[] = ['tipoDocumento', 'numeroDocumento', 'nombreCompleto', 'fechaNacimiento', 'sumaAsegurada', 'plazoCreditoMeses'];
 
 @Component({
@@ -98,7 +100,8 @@ export class NuevoPerfilamientoComponent implements OnInit {
 
   readonly plazos = PLAZOS;
   readonly presupuestoCotizacionMs = PRESUPUESTO_COTIZACION_MS;
-  readonly revisados = CAMPOS.length;
+  /** Mockup "Revisa los datos": 11 campos = ramo, versión, país, canal y coberturas (fijos) + los 6 del cliente. */
+  readonly revisados = CAMPOS_PRODUCTO + CAMPOS.length;
   readonly tiposDocumento = TIPOS_DOCUMENTO;
   readonly nombreMaximo = NOMBRE_MAXIMO;
   readonly hoy = hoyIso();

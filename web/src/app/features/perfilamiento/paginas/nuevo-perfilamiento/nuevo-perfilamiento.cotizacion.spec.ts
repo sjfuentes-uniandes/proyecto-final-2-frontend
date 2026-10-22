@@ -100,7 +100,9 @@ describe('NuevoPerfilamientoComponent · HU-W03 (mockups "Nueva cotización" y "
     expect(html().querySelector('#limite-fecha')?.textContent).toContain('al menos 18 años');
     expect(html().querySelector('.fld__ok')?.textContent).toContain('Dentro del rango permitido');
     const resumen = Array.from(html().querySelectorAll('app-resumen-validacion dd')).map((dd) => dd.textContent?.trim());
-    expect(resumen).toEqual(['6', '3', '3', 'Catálogo 2026.09.1']);
+    expect(resumen).toEqual(['11', '8', '3', 'Catálogo 2026.09.1']);
+    expect(html().querySelector('.pasos li')?.classList).toContain('con-error');
+    expect(html().querySelector('button[type=submit]')?.classList).toContain('bloqueado');
     expect(html().querySelector<HTMLButtonElement>('button[type=submit]')!.disabled).toBeTrue();
     expect(html().querySelector('#ayuda-deshabilitado')).not.toBeNull();
     expect(document.activeElement).toBe(html().querySelector('input[formControlName=numeroDocumento]'));

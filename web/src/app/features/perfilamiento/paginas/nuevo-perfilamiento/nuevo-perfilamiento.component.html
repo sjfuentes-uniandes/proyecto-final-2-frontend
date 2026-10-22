@@ -13,7 +13,7 @@
 </header>
 
 <ol class="pasos" [attr.aria-label]="t.pasos" [hidden]="ocupado()">
-  <li aria-current="step">1 · {{ t.paso1 }}</li>
+  <li aria-current="step" [class.con-error]="conErrores()">1 · {{ t.paso1 }}</li>
   <li>2 · {{ t.paso2 }}</li>
   <li>3 · {{ t.paso3 }}</li>
 </ol>
@@ -189,7 +189,7 @@
           {{ estadoIdentidad() === 'PENDIENTE' ? t.reintentar : t.verificarIdentidad }}
         </button>
       </section>
-      <button class="btn btn--primario" type="submit" [disabled]="enviando() || verificando() || !puedeContinuar() || conErrores()"
+      <button class="btn btn--primario" type="submit" [class.bloqueado]="conErrores()" [disabled]="enviando() || verificando() || !puedeContinuar() || conErrores()"
               [attr.aria-describedby]="conErrores() ? 'ayuda-deshabilitado' : null">{{ t.continuar }}</button>
       @if (conErrores()) {
         <p class="ayuda" id="ayuda-deshabilitado">{{ tc.ayudaDeshabilitado }}</p>

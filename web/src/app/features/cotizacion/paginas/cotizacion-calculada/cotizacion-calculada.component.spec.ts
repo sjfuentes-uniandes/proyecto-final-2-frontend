@@ -43,11 +43,11 @@ describe('CotizacionCalculadaComponent (HU-W03, prima calculada)', () => {
     expect(texto('header .sub')).toContain('Reglas 2026.09.1');
     const pasos = Array.from(html().querySelectorAll('.linea li')).map(celdas);
     expect(pasos).toEqual([
-      'Solicitud recibida Listo',
+      'Solicitud recibida Entrada segura',
       'Catálogo y reglas del producto Resuelto desde caché · 11 ms',
       'Cliente Respondió · 78 ms',
       'Cálculo de la prima Listo · 1 ms',
-      'Cotización lista Listo',
+      'Oferta lista Listo',
     ]);
     expect(html().querySelector('[role=progressbar]')?.getAttribute('aria-valuenow')).toBe('62');
     expect(await violacionesA11y(html())).toEqual([]);
