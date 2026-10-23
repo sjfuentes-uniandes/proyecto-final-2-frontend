@@ -1,4 +1,4 @@
-import { CondicionesProducto, CotizacionRespuesta } from './cotizacion.modelo';
+import { CondicionesProducto, CotizacionRespuesta, Oferta } from './cotizacion.modelo';
 
 /** Datos sintéticos de las pruebas web de HU-W03: las respuestas de bff-web para C01 (01 §3.5). */
 export const URL_CONDICIONES = 'https://api/web/v1/productos/vida-hipotecario/condiciones';
@@ -76,3 +76,39 @@ export const COTIZACION_C01: CotizacionRespuesta = {
     { codigo: 'CALCULO_PRIMA', duracionMs: 1, origen: null },
   ],
 };
+
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * HU-W04: la oferta de C01 con las reglas 2026.10.1 (7 días de vigencia, exclusiones y 30 % de la suma
+ * para Enfermedades graves). `vigenteHasta` es relativo al reloj: `diasRestantes` < 0 la deja vencida.
+ */
+export function ofertaC01(diasRestantes = 7, estado: Oferta['estado'] = diasRestantes > 0 ? 'VIGENTE' : 'VENCIDA'): Oferta {
+  const vigenteHasta = new Date(Date.now() + diasRestantes * DIA_MS);
+  return {
+    id: '00000000-0000-4000-e000-000000000001',
+    codigo: 'COT-2026-88214',
+    cotizacionId: COTIZACION_ID,
+    precio: '97460',
+    moneda: 'COP',
+    periodicidad: 'MENSUAL',
+    coberturas: [
+      { codigo: 'MUERTE', nombre: 'Muerte por cualquier causa', sumaAsegurada: '180000000' },
+      { codigo: 'INCAPACIDAD_TOTAL_PERMANENTE', nombre: 'Incapacidad total y permanente', sumaAsegurada: '180000000' },
+      { codigo: 'ENFERMEDADES_GRAVES', nombre: 'Enfermedades graves', sumaAsegurada: '54000000' },
+    ],
+    exclusionesResumidas: [
+      { codigo: 'SUICIDIO_PRIMER_ANIO', descripcion: 'Suicidio o intento de suicidio durante el primer año de vigencia' },
+      { codigo: 'PREEXISTENCIAS_NO_DECLARADAS', descripcion: 'Enfermedades o lesiones preexistentes no declaradas al contratar' },
+    ],
+    version: 1,
+    versionReglas: '2026.10.1',
+    creadaEn: new Date(vigenteHasta.getTime() - 7 * DIA_MS).toISOString(),
+    vigenteHasta: vigenteHasta.toISOString(),
+    estado,
+  };
+}
+
+export function cotizacionConOferta(oferta: Oferta = ofertaC01()): CotizacionRespuesta {
+  return { ...COTIZACION_C01, versionReglas: oferta.versionReglas, vigenteHasta: oferta.vigenteHasta, oferta };
+}

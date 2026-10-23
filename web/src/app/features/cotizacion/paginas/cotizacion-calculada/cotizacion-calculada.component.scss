@@ -21,3 +21,13 @@
 @media (max-width: 900px) {
   .resultado { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* HU-W04: la oferta (C04) y la oferta vencida (C08). */
+.coberturas-oferta { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 13px; }
+.coberturas-oferta th, .coberturas-oferta td { padding: 8px 0; border-bottom: 1px solid var(--sv-borde); text-align: left; font-weight: 400; }
+.coberturas-oferta td { text-align: right; font-weight: 700; }
+.prima h4 { margin: 14px 0 6px; font-size: 13px; color: var(--sv-azul-oscuro); }
+.exclusiones { margin: 0; padding-left: 18px; font-size: 13px; color: var(--sv-texto-secundario); }
+/* El naranja solo en el borde: el texto sobre el fondo crema necesita contraste AA (axe). */
+.alerta--advertencia { border-color: var(--sv-naranja); background: var(--sv-naranja-fondo); color: var(--sv-texto); }
+.tenue { color: var(--sv-texto-secundario); }

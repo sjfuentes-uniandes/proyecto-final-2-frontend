@@ -1,10 +1,12 @@
-/** Contrato de /web/v1/cotizaciones y /web/v1/productos/{id}/condiciones (bff-web, HU-W03). */
+/** Contrato de /web/v1/cotizaciones y /web/v1/productos/{id}/condiciones (bff-web, HU-W03 y HU-W04). */
 import { NivelRiesgo } from '../perfilamiento/perfilamiento.modelo';
 
 /** Montos y tasas viajan como texto decimal (exactos): se formatean, no se operan. */
 export type TextoDecimal = string;
 export type OrigenDato = 'CACHE' | 'MEMORIA' | 'CATALOGO';
 export type EstadoCotizacion = 'CALCULADA';
+/** Lo decide cotizacion con su reloj al responder: vigente si ahora < vigenteHasta. */
+export type EstadoOferta = 'VIGENTE' | 'VENCIDA';
 
 export interface CoberturaProducto {
   codigo: string;
@@ -75,6 +77,36 @@ export interface PasoCotizacion {
   origen: OrigenDato | null;
 }
 
+export interface CoberturaOferta {
+  codigo: string;
+  nombre: string;
+  /** La parte de la suma asegurada que cubre. */
+  sumaAsegurada: TextoDecimal;
+}
+
+export interface ExclusionResumida {
+  codigo: string;
+  descripcion: string;
+}
+
+/** HU-W04: la oferta de la cotización (C04 vigente, C08 vencida). */
+export interface Oferta {
+  id: string;
+  /** Identificador legible para el cliente: COT-AAAA-NNNNN. */
+  codigo: string;
+  cotizacionId: string;
+  precio: TextoDecimal;
+  moneda: string;
+  periodicidad: string;
+  coberturas: CoberturaOferta[];
+  exclusionesResumidas: ExclusionResumida[];
+  version: number;
+  versionReglas: string;
+  creadaEn: string;
+  vigenteHasta: string;
+  estado: EstadoOferta;
+}
+
 export interface CotizacionRespuesta {
   id: string;
   clienteId: string;
@@ -102,4 +134,8 @@ export interface CotizacionRespuesta {
   presupuestoMs: number;
   /** Pasos del cálculo; vacío al leer una cotización o al repetir la clave. */
   pasos?: PasoCotizacion[];
+  /** HU-W13: fin de la vigencia de la oferta (UTC). */
+  vigenteHasta?: string | null;
+  /** HU-W04: null en las cotizaciones anteriores a la oferta. */
+  oferta?: Oferta | null;
 }
