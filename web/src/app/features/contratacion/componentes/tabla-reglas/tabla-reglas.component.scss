@@ -8,3 +8,6 @@ td.mono { white-space: normal; }
 /* La tabla vive en una columna angosta (E02 a E04): encabezados que se parten y menos relleno lateral. */
 thead th { white-space: normal; }
 table.data th, table.data td { padding-left: 10px; padding-right: 10px; }
+/* HU-W14 (pseudo-localización a 1024 px): textos más largos parten la palabra antes que desbordar la tarjeta. */
+table.data th, table.data td { overflow-wrap: anywhere; }
+.tag { max-width: 100%; overflow-wrap: anywhere; }

@@ -17,8 +17,9 @@ import {
   diaLocal,
   duracion,
   incumplidasPrimero,
+  condicionDe,
+  insigniaCondicion,
   insigniaRegla,
-  insigniaResultado,
   insigniaSiguientePaso,
   rutaAceptacion,
   textoCondicion,
@@ -40,10 +41,18 @@ const regla = (codigo: string, cambios: Partial<ReglaEvaluada> = {}): ReglaEvalu
 });
 
 describe('Presentación de la suscripción (funciones puras)', () => {
-  it('insignia del resultado de la decisión', () => {
-    expect(insigniaResultado(t, 'APROBADA')).toEqual({ texto: 'Aceptado', tono: 'exito' });
-    expect(insigniaResultado(t, 'RECHAZADA')).toEqual({ texto: 'Rechazado', tono: 'peligro' });
-    expect(insigniaResultado(t, 'REVISION_REQUERIDA')).toEqual({ texto: 'En revisión', tono: 'alerta' });
+  it('insignia del encabezado por condición (HU-W14)', () => {
+    expect(insigniaCondicion(t, 'APROBADA_SIN_AJUSTES')).toEqual({ texto: 'Aceptado', tono: 'exito' });
+    expect(insigniaCondicion(t, 'NO_ASEGURABLE')).toEqual({ texto: 'Rechazado', tono: 'peligro' });
+    expect(insigniaCondicion(t, 'EN_REVISION')).toEqual({ texto: 'En revisión', tono: 'alerta' });
+  });
+
+  it('la condición del encabezado es la de la comunicación; sin ella (bff-web de W13), la del resultado', () => {
+    expect(condicionDe(DECISION_REVISION)).toBe('EN_REVISION');
+    expect(condicionDe({ ...DECISION_REVISION, comunicacion: { ...COMUNICACION_RECHAZADA } })).toBe('NO_ASEGURABLE');
+    expect(condicionDe({ ...DECISION_REVISION, comunicacion: undefined })).toBe('EN_REVISION');
+    expect(condicionDe({ ...DECISION_RESERVADA, comunicacion: null })).toBe('NO_ASEGURABLE');
+    expect(condicionDe({ ...DECISION_REVISION, resultado: 'APROBADA', comunicacion: null })).toBe('APROBADA_SIN_AJUSTES');
   });
 
   it('insignia de cada regla: Cumple, Excluyente, Excede, Por debajo, No cumple y Sin dato', () => {

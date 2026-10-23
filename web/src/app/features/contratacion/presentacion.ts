@@ -3,7 +3,14 @@
  * Los textos llegan del catálogo de la feature; aquí solo se elige cuál y con qué valores.
  */
 import { TextosContratacion } from './contratacion.i18n';
-import { Comunicacion, CondicionAseguramiento, DescriptorAlternativa, ReglaEvaluada, ResultadoDecision } from './contratacion.modelo';
+import {
+  Comunicacion,
+  CondicionAseguramiento,
+  DecisionSuscripcion,
+  DescriptorAlternativa,
+  ReglaEvaluada,
+  ResultadoDecision,
+} from './contratacion.modelo';
 
 /** Variante visual de una insignia (texto + color, WCAG 1.4.1). */
 export type Tono = 'exito' | 'alerta' | 'peligro' | 'neutro';
@@ -18,17 +25,6 @@ export interface Formatos {
   monto(valor: string, moneda: string): string;
   decimal(valor: string): string;
   nivel(nivel: 'BAJO' | 'MEDIO' | 'ALTO'): string;
-}
-
-export function insigniaResultado(t: TextosContratacion, resultado: ResultadoDecision): Insignia {
-  switch (resultado) {
-    case 'APROBADA':
-      return { texto: t.resultadoAprobada, tono: 'exito' };
-    case 'RECHAZADA':
-      return { texto: t.resultadoRechazada, tono: 'peligro' };
-    default:
-      return { texto: t.resultadoRevision, tono: 'alerta' };
-  }
 }
 
 /**
@@ -166,6 +162,35 @@ export function textoCondicion(t: TextosContratacion, condicion: CondicionAsegur
       return t.condicionNoAsegurable;
     default:
       return t.condicionEnRevision;
+  }
+}
+
+/**
+ * La condición que encabeza la página (insignia y banner). Con `comunicacion` es la suya; un bff-web
+ * de W13 no la trae y entonces se deduce del resultado solo para el encabezado: nunca habilita la
+ * contratación, que depende únicamente de `comunicacion.admiteContratacion`.
+ */
+export function condicionDe(decision: DecisionSuscripcion): CondicionAseguramiento {
+  if (decision.comunicacion) {
+    return decision.comunicacion.condicion;
+  }
+  const porResultado: Record<ResultadoDecision, CondicionAseguramiento> = {
+    APROBADA: 'APROBADA_SIN_AJUSTES',
+    RECHAZADA: 'NO_ASEGURABLE',
+    REVISION_REQUERIDA: 'EN_REVISION',
+  };
+  return porResultado[decision.resultado];
+}
+
+/** Insignia del encabezado por condición (E02, E03): Aceptado, Rechazado o En revisión. */
+export function insigniaCondicion(t: TextosContratacion, condicion: CondicionAseguramiento): Insignia {
+  switch (condicion) {
+    case 'APROBADA_SIN_AJUSTES':
+      return { texto: t.resultadoAprobada, tono: 'exito' };
+    case 'NO_ASEGURABLE':
+      return { texto: t.resultadoRechazada, tono: 'peligro' };
+    default:
+      return { texto: t.resultadoRevision, tono: 'alerta' };
   }
 }
 

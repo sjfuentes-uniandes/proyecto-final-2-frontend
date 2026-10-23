@@ -35,7 +35,7 @@
 @if (decision(); as d) {
   <div class="h-row">
     <header>
-      <h2>
+      <h2 #titulo tabindex="-1">
         {{ t.tituloDecision }}
         @if (insignia(); as i) {
           <span [class]="i.clase">{{ i.texto }}</span>
@@ -46,56 +46,68 @@
     <button class="btn btn--secundario" type="button" (click)="verReglas()">{{ t.verReglasAplicadas }}</button>
   </div>
 
-  @switch (d.resultado) {
-    @case ('APROBADA') {
-      <p class="alerta alerta--ok"><span aria-hidden="true">✓</span><span>{{ t.bannerAprobada }}</span></p>
+  @switch (condicion()) {
+    @case ('APROBADA_SIN_AJUSTES') {
+      <p class="alerta alerta--ok" role="status"><span aria-hidden="true">✓</span><span>{{ t.bannerAprobada }}</span></p>
     }
-    @case ('RECHAZADA') {
-      <p class="alerta alerta--error">
+    @case ('NO_ASEGURABLE') {
+      <p class="alerta alerta--error" role="alert">
         <span aria-hidden="true">⚠</span><span><strong>{{ t.bannerRechazadaTitulo }}</strong> {{ t.bannerRechazadaDetalle }}</span>
       </p>
     }
     @default {
-      <p class="nota nota--alerta"><span aria-hidden="true">⚠</span> {{ t.bannerRevision }}</p>
+      <p class="nota nota--alerta" role="status"><span aria-hidden="true">⚠</span> {{ t.bannerRevision }}</p>
     }
   }
 
   <div class="cols">
     <div class="columna">
       <app-tabla-reglas [titulo]="t.reglasEvaluadas" [reglas]="d.reglasEvaluadas" [moneda]="d.condiciones.moneda" />
-      <!-- HU-W14: explicación para el cliente (E03) y siguiente paso de la revisión. -->
+      @if (comunicacion(); as c) {
+        @if (c.condicion !== 'APROBADA_SIN_AJUSTES') {
+          <app-explicacion-cliente [comunicacion]="c" />
+        }
+      }
     </div>
     <div class="columna">
-      @if (d.resultado === 'APROBADA') {
-        <section class="card" aria-labelledby="titulo-resultado">
-          <h3 id="titulo-resultado">{{ t.resultadoTitulo }}</h3>
-          <dl class="kv">
-            <div><dt>{{ t.decision }}</dt><dd class="exito">{{ t.aceptadoSinAjustes }}</dd></div>
-            <div><dt>{{ t.primaConfirmada }}</dt><dd>{{ t.primaPorPeriodo(monto(d.condiciones.primaTotal), d.condiciones.periodicidad) }}</dd></div>
-            <div><dt>{{ t.ofertaVigenteHasta }}</dt><dd>{{ textos.fechaHora(d.condiciones.vigenteHasta) }}</dd></div>
-            <div><dt>{{ t.reglasVersion }}</dt><dd>{{ d.versionReglas }}</dd></div>
-            <div><dt>{{ t.tiempoDecision }}</dt><dd class="exito">{{ t.milisegundos(d.duracionMs) }}</dd></div>
-            <div><dt>{{ t.identificador }}</dt><dd>{{ d.codigo }}</dd></div>
-          </dl>
-        </section>
-        <!-- HU-W14: «Continuar a la aceptación» (lleva a F01 de HU-W15). -->
-      } @else {
-        <!-- HU-W14: alternativas disponibles (E03). -->
-        <section class="card" aria-labelledby="titulo-registro">
-          <h3 id="titulo-registro">{{ t.registroDecision }}</h3>
-          <dl class="kv">
-            <div><dt>{{ t.identificador }}</dt><dd>{{ d.codigo }}</dd></div>
-            @if (d.reglaDeterminante) {
-              <div><dt>{{ t.reglaDeterminante }}</dt><dd>{{ d.reglaDeterminante }}</dd></div>
+      @if (comunicacion(); as c) {
+        @switch (c.condicion) {
+          @case ('APROBADA_SIN_AJUSTES') {
+            <app-resultado-decision [decision]="d" [comunicacion]="c" />
+            @if (!c.admiteContratacion) {
+              <app-siguiente-paso [comunicacion]="c" />
             }
-            <div><dt>{{ t.reglasVersion }}</dt><dd>{{ d.versionReglas }}</dd></div>
-            <div>
-              <dt>{{ t.admiteExcepcion }}</dt>
-              <dd [class.peligro]="!d.admiteExcepcion">{{ d.admiteExcepcion ? t.si : t.no }}</dd>
-            </div>
-          </dl>
-        </section>
+          }
+          @case ('NO_ASEGURABLE') {
+            <app-alternativas [alternativas]="c.alternativas" />
+            <ng-container *ngTemplateOutlet="registro; context: { $implicit: d }" />
+          }
+          @default {
+            <app-siguiente-paso [comunicacion]="c" />
+            <ng-container *ngTemplateOutlet="registro; context: { $implicit: d }" />
+          }
+        }
+      } @else {
+        <!-- bff-web de W13 sin comunicación: solo el registro, sin opción de aceptar. -->
+        <ng-container *ngTemplateOutlet="registro; context: { $implicit: d }" />
       }
     </div>
   </div>
 }
+
+<ng-template #registro let-d>
+  <section class="card" aria-labelledby="titulo-registro">
+    <h3 id="titulo-registro">{{ t.registroDecision }}</h3>
+    <dl class="kv">
+      <div><dt>{{ t.identificador }}</dt><dd>{{ d.codigo }}</dd></div>
+      @if (d.reglaDeterminante) {
+        <div><dt>{{ t.reglaDeterminante }}</dt><dd>{{ d.reglaDeterminante }}</dd></div>
+      }
+      <div><dt>{{ t.reglasVersion }}</dt><dd>{{ d.versionReglas }}</dd></div>
+      <div>
+        <dt>{{ t.admiteExcepcion }}</dt>
+        <dd [class.peligro]="!d.admiteExcepcion">{{ d.admiteExcepcion ? t.si : t.no }}</dd>
+      </div>
+    </dl>
+  </section>
+</ng-template>
