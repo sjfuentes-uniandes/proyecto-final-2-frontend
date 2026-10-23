@@ -25,8 +25,9 @@ const INSTANTE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2}
 const instante = (ejemplo: string) => regex(INSTANTE, ejemplo);
 
 /**
- * Sin `valorCaso`: es null en una regla reservada para el asesor (DS2-07) y `eachLike` exigiría el
- * tipo del primer elemento a todos; el portal ya muestra «Reservado» o «Sin dato» con null.
+ * Sin `valor` ni `valorCaso`: `eachLike` exige a todas las reglas el tipo de la primera, y `valor` es
+ * texto o lista según el operador y `valorCaso` es null en una regla reservada para el asesor
+ * (DS2-07). La tabla de reglas es de HU-W13; este pacto es sobre la comunicación.
  */
 function regla(ejemplo: ReglaEvaluada) {
   return {
@@ -36,7 +37,6 @@ function regla(ejemplo: ReglaEvaluada) {
     descripcion: like(ejemplo.descripcion),
     campo: like(ejemplo.campo),
     operador: like(ejemplo.operador),
-    valor: like(ejemplo.valor),
     resultado: like(ejemplo.resultado),
     visibilidad: like(ejemplo.visibilidad),
     reservada: boolean(ejemplo.reservada),
@@ -56,13 +56,16 @@ function comunicacion(c: Comunicacion) {
   };
 }
 
+/**
+ * Sin `ofertaId`, `cotizacionCodigo` ni `clienteNombre`: pueden ser null o texto (W04 los llena; el
+ * nombre depende de clientes, R-31) y Pact no puede expresar «null o texto». El portal no usa el
+ * primero y trata los otros dos como opcionales.
+ */
 function decision(d: DecisionSuscripcion) {
   return {
     id: uuid(d.id),
     codigo: regex(/^DEC-\d{4}-\d{6}$/, d.codigo),
     cotizacionId: uuid(d.cotizacionId),
-    ofertaId: d.ofertaId,
-    cotizacionCodigo: d.cotizacionCodigo,
     clienteId: uuid(d.clienteId),
     productoId: like(d.productoId),
     resultado: equal(d.resultado),
@@ -77,7 +80,6 @@ function decision(d: DecisionSuscripcion) {
     admiteExcepcion: equal(false),
     decididaEn: instante(d.decididaEn),
     duracionMs: integer(d.duracionMs),
-    clienteNombre: like(d.clienteNombre ?? 'Cliente'),
     comunicacion: comunicacion(d.comunicacion as Comunicacion),
   };
 }

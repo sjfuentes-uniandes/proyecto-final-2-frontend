@@ -68,7 +68,8 @@ const ES = {
   no: 'No',
   milisegundos: (ms: number) => `${ms} ms`,
 
-  // HU-W14: comunicación de la decisión en lenguaje del cliente (docs/hu-w14-comunicacion.md §2).
+  // HU-W14: comunicación de la decisión en lenguaje del cliente (docs/hu-w14-comunicacion.md §2). Una fecha
+  // nunca cierra la oración: en es-CO la hora termina en «p. m.» y quedaría «p. m..».
   condicionNoAsegurable: 'No podemos asegurar esta solicitud con este producto',
   condicionEnRevision: 'En revisión',
   continuarAceptacion: 'Continuar a la aceptación',
@@ -83,8 +84,8 @@ const ES = {
   ofertaVencida: 'Oferta vencida',
   plazoRespuesta: 'Plazo de respuesta',
   hastaHoras: (horas: number) => (horas === 1 ? 'hasta 1 hora' : `hasta ${horas} horas`),
-  pasoAceptarOferta: (fecha: string) => `Puedes continuar a la aceptación. La oferta está vigente hasta el ${fecha}.`,
-  pasoCotizarNuevamente: (fecha: string) => `La oferta venció el ${fecha}. Para continuar, haz una nueva cotización.`,
+  pasoAceptarOferta: (fecha: string) => `La oferta está vigente hasta el ${fecha} y puedes continuar a la aceptación.`,
+  pasoCotizarNuevamente: (fecha: string) => `La oferta venció el ${fecha} y ya no se puede aceptar. Para continuar, haz una nueva cotización.`,
   pasoCotizarAlternativa: 'Puedes cotizar uno de los productos alternativos.',
   pasoEsperarRevision: (horas: number) =>
     `Aún no tienes cobertura. Un suscriptor revisará tu solicitud y te responderá en un plazo de hasta ${horas} ${horas === 1 ? 'hora' : 'horas'}.`,
@@ -255,8 +256,8 @@ const EN: TextosContratacion = {
   ofertaVencida: 'Offer expired',
   plazoRespuesta: 'Response time',
   hastaHoras: (horas: number) => (horas === 1 ? 'up to 1 hour' : `up to ${horas} hours`),
-  pasoAceptarOferta: (fecha: string) => `You can continue to acceptance. The offer is valid until ${fecha}.`,
-  pasoCotizarNuevamente: (fecha: string) => `The offer expired on ${fecha}. To continue, request a new quote.`,
+  pasoAceptarOferta: (fecha: string) => `The offer is valid until ${fecha} and you can continue to acceptance.`,
+  pasoCotizarNuevamente: (fecha: string) => `The offer expired on ${fecha} and can no longer be accepted. To continue, request a new quote.`,
   pasoCotizarAlternativa: 'You can get a quote for one of the alternative products.',
   pasoEsperarRevision: (horas: number) =>
     `You are not covered yet. An underwriter will review your request and reply within ${horas} ${horas === 1 ? 'hour' : 'hours'}.`,

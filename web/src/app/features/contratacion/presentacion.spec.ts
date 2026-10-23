@@ -156,10 +156,10 @@ describe('Presentación de la comunicación (HU-W14, funciones puras)', () => {
 
   it('texto del siguiente paso con la vigencia o el plazo', () => {
     expect(textoSiguientePaso(t, COMUNICACION_APROBADA, fecha)).toBe(
-      'Puedes continuar a la aceptación. La oferta está vigente hasta el <2026-10-26T14:00:00Z>.',
+      'La oferta está vigente hasta el <2026-10-26T14:00:00Z> y puedes continuar a la aceptación.',
     );
     expect(textoSiguientePaso(t, COMUNICACION_VENCIDA, fecha)).toBe(
-      'La oferta venció el <2026-10-26T14:00:00Z>. Para continuar, haz una nueva cotización.',
+      'La oferta venció el <2026-10-26T14:00:00Z> y ya no se puede aceptar. Para continuar, haz una nueva cotización.',
     );
     expect(textoSiguientePaso(t, COMUNICACION_RECHAZADA, fecha)).toBe('Puedes cotizar uno de los productos alternativos.');
     expect(textoSiguientePaso(t, COMUNICACION_REVISION, fecha)).toContain('hasta 8 horas');

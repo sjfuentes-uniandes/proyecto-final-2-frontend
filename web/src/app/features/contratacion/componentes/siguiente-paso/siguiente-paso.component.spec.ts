@@ -46,7 +46,7 @@ describe('SiguientePasoComponent (revisión y aprobada vencida, HU-W14)', () => 
     expect(insignia()?.textContent?.trim()).toBe('Oferta vencida');
     expect(insignia()?.className).toBe('tag tag--error');
     expect(mensaje()).toBe(
-      `La oferta venció el ${fecha('2026-10-26T14:00:00Z', 'es-CO')}. Para continuar, haz una nueva cotización.`,
+      `La oferta venció el ${fecha('2026-10-26T14:00:00Z', 'es-CO')} y ya no se puede aceptar. Para continuar, haz una nueva cotización.`,
     );
     expect(html().querySelector('.kv')).toBeNull();
     expect(enlaces().map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
