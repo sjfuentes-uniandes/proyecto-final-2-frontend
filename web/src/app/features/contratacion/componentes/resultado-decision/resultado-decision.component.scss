@@ -1,0 +1,8 @@
+@use '../../contraste';
+
+:host { display: flex; flex-direction: column; gap: 8px; }
+.card { padding: 18px; }
+h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
+/* Contraste WCAG AA (R-44): verde y rojo más oscuros que los tokens sobre blanco. */
+.kv .exito { color: #00663f; }
+.kv .peligro { color: var(--sv-error); }

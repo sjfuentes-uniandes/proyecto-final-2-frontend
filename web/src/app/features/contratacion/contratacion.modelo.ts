@@ -1,4 +1,4 @@
-/** Contrato de /web/v1/suscripciones y /web/v1/bandeja-suscripcion (bff-web, HU-W13). */
+/** Contrato de /web/v1/suscripciones y /web/v1/bandeja-suscripcion (bff-web, HU-W13 y HU-W14). */
 import { CoberturaProducto, TextoDecimal } from '../cotizacion/cotizacion.modelo';
 import { NivelRiesgo } from '../perfilamiento/perfilamiento.modelo';
 
@@ -21,6 +21,11 @@ export type MotivoCliente =
   | 'SUMA_REQUIERE_REVISION'
   | 'PERFIL_REQUIERE_REVISION'
   | 'NO_ELEGIBLE';
+
+/** HU-W14: comunicación de la decisión (ComunicacionDto). */
+export type CondicionAseguramiento = 'APROBADA_SIN_AJUSTES' | 'NO_ASEGURABLE' | 'EN_REVISION';
+export type SiguientePaso = 'ACEPTAR_OFERTA' | 'COTIZAR_NUEVAMENTE' | 'COTIZAR_ALTERNATIVA' | 'ESPERAR_REVISION';
+export type CodigoDescriptor = 'EDAD_MAXIMA' | 'SIN_LIMITE_EDAD';
 
 export interface SolicitudSuscripcion {
   cotizacionId: string;
@@ -68,6 +73,36 @@ export interface ContextoCaso {
   fuentesDeclaradas: number | null;
 }
 
+/** Lo que el portal muestra de un producto alternativo (E03): años con EDAD_MAXIMA. */
+export interface DescriptorAlternativa {
+  codigo: CodigoDescriptor;
+  valor: TextoDecimal | null;
+}
+
+export interface Alternativa {
+  productoId: string;
+  descriptor: DescriptorAlternativa;
+}
+
+/**
+ * La decisión en términos del cliente (HU-W14). El portal decide qué mostrar solo con esto, nunca
+ * con las reglas evaluadas. No trae códigos ni valores de reglas.
+ */
+export interface Comunicacion {
+  condicion: CondicionAseguramiento;
+  /** true solo en una aprobada con la oferta vigente: única condición para ofrecer aceptar. */
+  admiteContratacion: boolean;
+  siguientePaso: SiguientePaso;
+  /** Solo en APROBADA_SIN_AJUSTES (vigente o vencida). */
+  vigenteHasta: string | null;
+  /** Rechazo: el de la regla determinante; revisión: el de la primera regla explicable, o null. */
+  motivoCliente: MotivoCliente | null;
+  /** Solo en NO_ASEGURABLE; vacía si el catálogo no respondió. */
+  alternativas: Alternativa[];
+  /** Solo en EN_REVISION. */
+  plazoRespuestaHoras: number | null;
+}
+
 /** DecisionSuscripcion (POST) y DecisionSuscripcionVista (GET, con el nombre del cliente). */
 export interface DecisionSuscripcion {
   id: string;
@@ -92,6 +127,8 @@ export interface DecisionSuscripcion {
   duracionMs: number;
   /** Solo en la vista (GET): null si clientes no lo dio. */
   clienteNombre?: string | null;
+  /** HU-W14: opcional en el contrato (un bff-web de W13 no la trae). */
+  comunicacion?: Comunicacion | null;
 }
 
 export interface ResumenDecision {

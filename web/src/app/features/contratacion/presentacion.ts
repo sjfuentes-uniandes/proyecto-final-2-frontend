@@ -3,7 +3,7 @@
  * Los textos llegan del catálogo de la feature; aquí solo se elige cuál y con qué valores.
  */
 import { TextosContratacion } from './contratacion.i18n';
-import { ReglaEvaluada, ResultadoDecision } from './contratacion.modelo';
+import { Comunicacion, CondicionAseguramiento, DescriptorAlternativa, ReglaEvaluada, ResultadoDecision } from './contratacion.modelo';
 
 /** Variante visual de una insignia (texto + color, WCAG 1.4.1). */
 export type Tono = 'exito' | 'alerta' | 'peligro' | 'neutro';
@@ -153,4 +153,55 @@ export function diaLocal(ahora: Date): { desde: Date; hasta: Date } {
 export function claseTono(tono: Tono): string {
   const clases: Record<Tono, string> = { exito: 'tag--ok', alerta: 'tag--alerta', peligro: 'tag--error', neutro: 'tag--info' };
   return `tag ${clases[tono]}`;
+}
+
+// --- HU-W14: comunicación de la decisión. Se decide solo con `comunicacion`, nunca con las reglas. ---
+
+/** La condición de aseguramiento en palabras del cliente (E02: «Aceptado sin ajustes»). */
+export function textoCondicion(t: TextosContratacion, condicion: CondicionAseguramiento): string {
+  switch (condicion) {
+    case 'APROBADA_SIN_AJUSTES':
+      return t.aceptadoSinAjustes;
+    case 'NO_ASEGURABLE':
+      return t.condicionNoAsegurable;
+    default:
+      return t.condicionEnRevision;
+  }
+}
+
+/** Insignia del siguiente paso: En revisión (ámbar) u Oferta vencida (rojo); ninguna en otro caso. */
+export function insigniaSiguientePaso(t: TextosContratacion, comunicacion: Comunicacion): Insignia | null {
+  switch (comunicacion.siguientePaso) {
+    case 'ESPERAR_REVISION':
+      return { texto: t.condicionEnRevision, tono: 'alerta' };
+    case 'COTIZAR_NUEVAMENTE':
+      return { texto: t.ofertaVencida, tono: 'peligro' };
+    default:
+      return null;
+  }
+}
+
+/** El siguiente paso con su dato (fecha de la vigencia o plazo de la revisión). */
+export function textoSiguientePaso(t: TextosContratacion, comunicacion: Comunicacion, fecha: (instante: string) => string): string {
+  const vigencia = comunicacion.vigenteHasta ? fecha(comunicacion.vigenteHasta) : '';
+  switch (comunicacion.siguientePaso) {
+    case 'ACEPTAR_OFERTA':
+      return t.pasoAceptarOferta(vigencia);
+    case 'COTIZAR_NUEVAMENTE':
+      return t.pasoCotizarNuevamente(vigencia);
+    case 'COTIZAR_ALTERNATIVA':
+      return t.pasoCotizarAlternativa;
+    default:
+      return t.pasoEsperarRevision(comunicacion.plazoRespuestaHoras ?? 0);
+  }
+}
+
+/** Lo que distingue a una alternativa (E03): «hasta 80 años», «sin límite de edad». */
+export function textoDescriptor(t: TextosContratacion, descriptor: DescriptorAlternativa): string {
+  return descriptor.codigo === 'EDAD_MAXIMA' && descriptor.valor !== null ? t.hastaEdad(descriptor.valor) : t.sinLimiteEdad;
+}
+
+/** Ruta de la aceptación de HU-W15 (DS2-21): W14 enlaza a ella sin crearla. */
+export function rutaAceptacion(cotizacionId: string): string[] {
+  return ['/contratacion', 'cotizaciones', cotizacionId, 'aceptacion'];
 }

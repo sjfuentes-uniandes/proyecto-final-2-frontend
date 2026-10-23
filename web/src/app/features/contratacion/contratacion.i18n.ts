@@ -10,7 +10,7 @@ type Texto = string | ((...valores: never[]) => string);
 const NUMEROS_ES = ['', 'Una', 'Dos', 'Tres'];
 const NUMEROS_EN = ['', 'One', 'Two', 'Three'];
 
-/** HU-W13: textos de la suscripción automática (mockups E01 a E04). */
+/** HU-W13: textos de la suscripción automática (mockups E01 a E04); HU-W14: su comunicación (E02, E03). */
 const ES = {
   // Menú lateral y migas.
   seccion: 'Contratación',
@@ -67,6 +67,27 @@ const ES = {
   si: 'Sí',
   no: 'No',
   milisegundos: (ms: number) => `${ms} ms`,
+
+  // HU-W14: comunicación de la decisión en lenguaje del cliente (docs/hu-w14-comunicacion.md §2).
+  condicionNoAsegurable: 'No podemos asegurar esta solicitud con este producto',
+  condicionEnRevision: 'En revisión',
+  continuarAceptacion: 'Continuar a la aceptación',
+  explicacionTitulo: 'Explicación para el cliente',
+  explicacionRevisionGenerica: 'Un suscriptor revisará tu solicitud.',
+  alternativasTitulo: 'Alternativas disponibles',
+  sinAlternativas: 'Por ahora no hay alternativas para mostrar. Tu asesor puede revisar otras opciones contigo.',
+  cotizarAlternativa: 'Cotizar una alternativa',
+  hastaEdad: (anios: string) => `hasta ${anios} años`,
+  sinLimiteEdad: 'sin límite de edad',
+  siguientePasoTitulo: 'Siguiente paso',
+  ofertaVencida: 'Oferta vencida',
+  plazoRespuesta: 'Plazo de respuesta',
+  hastaHoras: (horas: number) => (horas === 1 ? 'hasta 1 hora' : `hasta ${horas} horas`),
+  pasoAceptarOferta: (fecha: string) => `Puedes continuar a la aceptación. La oferta está vigente hasta el ${fecha}.`,
+  pasoCotizarNuevamente: (fecha: string) => `La oferta venció el ${fecha}. Para continuar, haz una nueva cotización.`,
+  pasoCotizarAlternativa: 'Puedes cotizar uno de los productos alternativos.',
+  pasoEsperarRevision: (horas: number) =>
+    `Aún no tienes cobertura. Un suscriptor revisará tu solicitud y te responderá en un plazo de hasta ${horas} ${horas === 1 ? 'hora' : 'horas'}.`,
 
   // Tabla de reglas.
   colRegla: 'Regla',
@@ -220,6 +241,26 @@ const EN: TextosContratacion = {
   no: 'No',
   milisegundos: (ms: number) => `${ms} ms`,
 
+  condicionNoAsegurable: 'We can’t insure this request with this product',
+  condicionEnRevision: 'Under review',
+  continuarAceptacion: 'Continue to acceptance',
+  explicacionTitulo: 'Explanation for the customer',
+  explicacionRevisionGenerica: 'An underwriter will review your request.',
+  alternativasTitulo: 'Available alternatives',
+  sinAlternativas: 'There are no alternatives to show right now. Your advisor can review other options with you.',
+  cotizarAlternativa: 'Get a quote for an alternative',
+  hastaEdad: (anios: string) => `up to age ${anios}`,
+  sinLimiteEdad: 'no age limit',
+  siguientePasoTitulo: 'Next step',
+  ofertaVencida: 'Offer expired',
+  plazoRespuesta: 'Response time',
+  hastaHoras: (horas: number) => (horas === 1 ? 'up to 1 hour' : `up to ${horas} hours`),
+  pasoAceptarOferta: (fecha: string) => `You can continue to acceptance. The offer is valid until ${fecha}.`,
+  pasoCotizarNuevamente: (fecha: string) => `The offer expired on ${fecha}. To continue, request a new quote.`,
+  pasoCotizarAlternativa: 'You can get a quote for one of the alternative products.',
+  pasoEsperarRevision: (horas: number) =>
+    `You are not covered yet. An underwriter will review your request and reply within ${horas} ${horas === 1 ? 'hour' : 'hours'}.`,
+
   colRegla: 'Rule',
   colCondicion: 'Condition',
   colValorCaso: 'Case value',
@@ -331,13 +372,20 @@ export const TEXTOS_CONTRATACION: Record<Idioma, TextosContratacion> = {
 type Catalogo = {
   productos: Record<string, string>;
   motivos: Record<MotivoCliente, string>;
+  /** HU-W14: el motivo explicado al cliente. Sin cifras de las reglas ni menciones a listas (R-65). */
+  explicaciones: Record<MotivoCliente, string>;
   niveles: Record<NivelRiesgo, string>;
 };
 
-/** Nombres que no vienen en el contrato: producto (el catálogo solo da el id) y motivos. */
+/** Nombres que no vienen en el contrato: productos (el contrato solo da el id), motivos y explicaciones. */
 const CATALOGO: Record<Exclude<Idioma, 'pseudo'>, Catalogo> = {
   'es-CO': {
-    productos: { 'vida-hipotecario': 'Vida hipotecario' },
+    productos: {
+      'vida-hipotecario': 'Vida hipotecario',
+      'vida-senior': 'Vida sénior',
+      'proteccion-pagos': 'Protección de pagos',
+      'auxilio-funerario': 'Auxilio funerario',
+    },
     motivos: {
       EDAD_FUERA_DE_RANGO: 'Edad fuera del rango del producto',
       PLAZO_FUERA_DE_RANGO: 'Plazo fuera del máximo del producto',
@@ -345,16 +393,37 @@ const CATALOGO: Record<Exclude<Idioma, 'pseudo'>, Catalogo> = {
       PERFIL_REQUIERE_REVISION: 'Perfil de riesgo requiere revisión',
       NO_ELEGIBLE: 'No elegible',
     },
+    explicaciones: {
+      EDAD_FUERA_DE_RANGO:
+        'Tu edad está fuera del rango que cubre este producto. No es una valoración de tu situación financiera, y otros productos tienen límites de edad distintos.',
+      PLAZO_FUERA_DE_RANGO: 'El plazo de tu crédito es mayor que el que cubre este producto.',
+      NO_ELEGIBLE: 'Por ahora no podemos ofrecerte este producto. Tu asesor puede mostrarte otras opciones.',
+      SUMA_REQUIERE_REVISION: 'El valor que quieres asegurar necesita la revisión de un suscriptor.',
+      PERFIL_REQUIERE_REVISION: 'Necesitamos revisar con más detalle la información de tu perfil.',
+    },
     niveles: { BAJO: 'Bajo', MEDIO: 'Medio', ALTO: 'Alto' },
   },
   'en-US': {
-    productos: { 'vida-hipotecario': 'Mortgage life' },
+    productos: {
+      'vida-hipotecario': 'Mortgage life',
+      'vida-senior': 'Senior life',
+      'proteccion-pagos': 'Payment protection',
+      'auxilio-funerario': 'Funeral assistance',
+    },
     motivos: {
       EDAD_FUERA_DE_RANGO: 'Age outside the product range',
       PLAZO_FUERA_DE_RANGO: 'Term above the product maximum',
       SUMA_REQUIERE_REVISION: 'Sum above the automatic limit',
       PERFIL_REQUIERE_REVISION: 'Risk profile needs review',
       NO_ELEGIBLE: 'Not eligible',
+    },
+    explicaciones: {
+      EDAD_FUERA_DE_RANGO:
+        'Your age is outside the range this product covers. This is not an assessment of your finances, and other products have different age limits.',
+      PLAZO_FUERA_DE_RANGO: 'Your loan term is longer than this product covers.',
+      NO_ELEGIBLE: 'We can’t offer you this product right now. Your advisor can show you other options.',
+      SUMA_REQUIERE_REVISION: 'The amount you want to insure needs to be reviewed by an underwriter.',
+      PERFIL_REQUIERE_REVISION: 'We need to take a closer look at your profile information.',
     },
     niveles: { BAJO: 'Low', MEDIO: 'Medium', ALTO: 'High' },
   },
@@ -380,6 +449,14 @@ export class TextosContratacionService {
 
   motivo(motivo: MotivoCliente): string {
     return this.marcar(this.catalogo().motivos[motivo] ?? motivo);
+  }
+
+  /** HU-W14: el motivo explicado al cliente; sin motivo (revisión por reglas reservadas), el genérico. */
+  explicacion(motivo: MotivoCliente | null): string {
+    if (motivo === null) {
+      return this.t().explicacionRevisionGenerica;
+    }
+    return this.marcar(this.catalogo().explicaciones[motivo] ?? this.t().explicacionRevisionGenerica);
   }
 
   nivel(nivel: NivelRiesgo): string {
