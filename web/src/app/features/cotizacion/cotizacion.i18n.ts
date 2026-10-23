@@ -5,7 +5,8 @@ import { pseudo } from '../perfilamiento/perfilamiento.i18n';
 
 type Texto = string | ((...valores: never[]) => string);
 
-/** HU-W03: textos de la cotización (mockups "Nueva cotización", "Revisa los datos" y "Calculando tu oferta"). */
+/** HU-W03: textos de la cotización (mockups "Nueva cotización", "Revisa los datos" y "Calculando tu oferta").
+ * HU-W04: la oferta (C04) y la oferta vencida (C08). */
 const ES = {
   // Formulario (mockup 1).
   versionProducto: 'Versión del producto',
@@ -103,13 +104,42 @@ const ES = {
   anios: (n: number) => `${n} años`,
   meses: (n: number) => `${n} meses`,
   sinPerfil: 'Sin perfil',
-  notaOferta: 'La oferta con su vigencia y exclusiones se genera en el siguiente paso (próxima versión).',
+  // Cotizaciones anteriores a HU-W04: no tienen oferta guardada.
+  notaOferta: 'Esta cotización es anterior a las ofertas: no tiene vigencia ni exclusiones guardadas.',
   nuevaCotizacion: 'Nueva cotización',
   // HU-W13: entrada a la suscripción automática (texto de C06).
   continuarSuscripcion: 'Continuar con la suscripción',
   verPerfil: 'Ver el perfil',
   cargandoCotizacion: 'Cargando la cotización…',
   cotizacionNoEncontrada: 'La cotización no existe o ya no está disponible.',
+
+  // HU-W04: la oferta (C04) y la oferta vencida (C08).
+  ofertaTitulo: 'Oferta',
+  subtituloOferta: (ms: number, hasta: string) => `calculada en ${ms} ms · vigente hasta el ${hasta}`,
+  periodoSuma: (periodicidad: string, suma: string): string =>
+    `${periodicidad === 'ANUAL' ? 'al año' : 'al mes'} · suma asegurada ${suma}`,
+  coberturasOferta: 'Coberturas de la oferta',
+  porcentajeSuma: (porcentaje: string) => `${porcentaje} %`,
+  exclusionesTitulo: 'Exclusiones principales',
+  sinExclusiones: 'Esta versión de las reglas no declara exclusiones resumidas.',
+  notaVigencia: (hasta: string) =>
+    `La oferta puede presentarse y aceptarse hasta el ${hasta}. Después hay que calcular una nueva cotización.`,
+  vencidaTitulo: 'Esta cotización ya no está vigente',
+  vencidaSub: (codigo: string, fecha: string) => `${codigo} · venció el ${fecha}`,
+  vencidaHace: (dias: number): string =>
+    dias <= 0 ? 'La oferta expiró hoy.' : dias === 1 ? 'La oferta expiró hace 1 día.' : `La oferta expiró hace ${dias} días.`,
+  vencidaAlerta:
+    'No puede aceptarse porque las tarifas y el perfil de riesgo pudieron cambiar desde entonces. Calcula una nueva cotización para el cliente.',
+  datosVencida: 'Datos de la cotización vencida',
+  kvPrimaOfrecida: 'Prima ofrecida entonces',
+  kvVencio: 'Venció el',
+  kvVersionUsada: 'Versión de reglas usada',
+  queCambio: 'Qué cambió desde entonces',
+  kvReglasVigentes: 'Versión de reglas vigente',
+  alRecalcular: 'Al recalcular',
+  alRecalcularTexto:
+    'Se generará una cotización nueva con su propio identificador. La anterior queda archivada como evidencia, no se sobrescribe, y el precio resultante puede diferir del que se ofreció.',
+  recalcular: 'Recalcular ahora',
 
   // Perfil de riesgo (D02).
   calcularPrima: 'Calcular la prima',
@@ -231,12 +261,38 @@ const EN: TextosCotizacion = {
   anios: (n: number) => `${n} years`,
   meses: (n: number) => `${n} months`,
   sinPerfil: 'No profile',
-  notaOferta: 'The offer, with its validity period and exclusions, is generated in the next step (upcoming release).',
+  notaOferta: 'This quote predates offers: it has no stored validity period or exclusions.',
   nuevaCotizacion: 'New quote',
   continuarSuscripcion: 'Continue to underwriting',
   verPerfil: 'View the profile',
   cargandoCotizacion: 'Loading the quote…',
   cotizacionNoEncontrada: 'The quote does not exist or is no longer available.',
+
+  ofertaTitulo: 'Offer',
+  subtituloOferta: (ms: number, hasta: string) => `calculated in ${ms} ms · valid until ${hasta}`,
+  periodoSuma: (periodicidad: string, suma: string): string =>
+    `${periodicidad === 'ANUAL' ? 'per year' : 'per month'} · sum insured ${suma}`,
+  coberturasOferta: 'Offer coverages',
+  porcentajeSuma: (porcentaje: string) => `${porcentaje}%`,
+  exclusionesTitulo: 'Main exclusions',
+  sinExclusiones: 'This rules version does not declare summarized exclusions.',
+  notaVigencia: (hasta: string) => `The offer can be presented and accepted until ${hasta}. After that, a new quote is needed.`,
+  vencidaTitulo: 'This quote is no longer valid',
+  vencidaSub: (codigo: string, fecha: string) => `${codigo} · expired on ${fecha}`,
+  vencidaHace: (dias: number): string =>
+    dias <= 0 ? 'The offer expired today.' : dias === 1 ? 'The offer expired 1 day ago.' : `The offer expired ${dias} days ago.`,
+  vencidaAlerta:
+    'It cannot be accepted because rates and the risk profile may have changed since then. Calculate a new quote for the customer.',
+  datosVencida: 'Expired quote details',
+  kvPrimaOfrecida: 'Premium offered then',
+  kvVencio: 'Expired on',
+  kvVersionUsada: 'Rules version used',
+  queCambio: 'What changed since then',
+  kvReglasVigentes: 'Rules version in force',
+  alRecalcular: 'When recalculating',
+  alRecalcularTexto:
+    'A new quote with its own identifier will be created. The previous one stays archived as evidence, it is not overwritten, and the resulting price may differ from the one offered.',
+  recalcular: 'Recalculate now',
 
   calcularPrima: 'Calculate the premium',
   calcularPrimaAyuda: "Uses this profile's risk level with the data from the new quote.",

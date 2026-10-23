@@ -6,7 +6,15 @@ import { provideRouter } from '@angular/router';
 import { ConfigService } from '../../../../core/config/app-config';
 import { IdiomaService } from '../../../../core/i18n/idioma.service';
 import { violacionesA11y } from '../../../../testing';
-import { COTIZACION_C01, COTIZACION_ID, URL_COTIZACIONES } from '../../cotizacion.testing';
+import {
+  CONDICIONES,
+  COTIZACION_C01,
+  COTIZACION_ID,
+  URL_CONDICIONES,
+  URL_COTIZACIONES,
+  cotizacionConOferta,
+  ofertaC01,
+} from '../../cotizacion.testing';
 import { CotizacionCalculadaComponent } from './cotizacion-calculada.component';
 
 describe('CotizacionCalculadaComponent (HU-W03, prima calculada)', () => {
@@ -109,5 +117,85 @@ describe('CotizacionCalculadaComponent (HU-W03, prima calculada)', () => {
       .flush({ codigo: 'SERVICIO_NO_DISPONIBLE', correlationId: 'c-9' }, { status: 503, statusText: 'x' });
     fixture.detectChanges();
     expect(texto('[role=alert]')).toContain('Código de seguimiento: c-9');
+  });
+
+  // --- HU-W04 -------------------------------------------------------------------------------------
+
+  const fecha = (iso: string) => new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso));
+
+  it('C04: la oferta con su código, vigencia, coberturas con su parte de la suma y exclusiones', async () => {
+    const oferta = ofertaC01();
+    montar({ cotizacion: cotizacionConOferta(oferta) });
+    expect(texto('header h2')).toBe('Oferta');
+    expect(texto('header .sub')).toBe(`COT-2026-88214 · calculada en 155 ms · vigente hasta el ${fecha(oferta.vigenteHasta)}`);
+    expect(texto('.crumb strong')).toBe('COT-2026-88214');
+    expect(texto('.prima .monto')).toBe('$ 97.460');
+    expect(texto('.prima .sub')).toBe('al mes · suma asegurada $ 180.000.000');
+    const coberturas = Array.from(html().querySelectorAll('.coberturas-oferta tr')).map(celdas);
+    expect(coberturas).toEqual([
+      'Muerte por cualquier causa 100 %',
+      'Incapacidad total y permanente 100 %',
+      'Enfermedades graves 30 %',
+    ]);
+    const exclusiones = Array.from(html().querySelectorAll('.exclusiones li')).map((li) => li.textContent?.trim());
+    expect(exclusiones).toEqual([
+      'Suicidio o intento de suicidio durante el primer año de vigencia',
+      'Enfermedades o lesiones preexistentes no declaradas al contratar',
+    ]);
+    expect(html().textContent).toContain(`La oferta puede presentarse y aceptarse hasta el ${fecha(oferta.vigenteHasta)}`);
+    // La lista de coberturas ya está en la oferta, y el aviso provisional de HU-W03 no aparece.
+    expect(html().querySelector('.incluidas')).toBeNull();
+    expect(html().textContent).not.toContain('anterior a las ofertas');
+    expect(html().querySelector(`a[href="/contratacion/cotizaciones/${COTIZACION_ID}/suscripcion"]`)).not.toBeNull();
+    expect(await violacionesA11y(html())).toEqual([]);
+  });
+
+  it('C04 sin exclusiones lo dice', () => {
+    montar({ cotizacion: cotizacionConOferta({ ...ofertaC01(), exclusionesResumidas: [] }) });
+    expect(html().querySelector('.exclusiones')).toBeNull();
+    expect(html().textContent).toContain('Esta versión de las reglas no declara exclusiones resumidas.');
+  });
+
+  it('C08 (AC3): vencida, no deja continuar y ofrece recalcular con las reglas vigentes de hoy', async () => {
+    const oferta = ofertaC01(-7);
+    montar();
+    http.expectOne(`${URL_COTIZACIONES}/${COTIZACION_ID}`).flush({ ...cotizacionConOferta(oferta), pasos: [] });
+    fixture.detectChanges();
+    http.expectOne(URL_CONDICIONES).flush({ ...CONDICIONES, versionReglas: '2026.11.1' });
+    fixture.detectChanges();
+    expect(texto('header h2')).toBe('Esta cotización ya no está vigente');
+    expect(texto('header .sub')).toBe(`COT-2026-88214 · venció el ${fecha(oferta.vigenteHasta)}`);
+    expect(texto('[role=alert]')).toContain('La oferta expiró hace 7 días.');
+    expect(texto('[role=alert]')).toContain('No puede aceptarse');
+    const datos = Array.from(html().querySelectorAll('.kv.vencida > div')).map(celdas);
+    expect(datos.length).toBe(6);
+    expect(datos[0]).toBe('Producto vida-hipotecario · 2026.09.1');
+    expect(datos[1]).toBe('Suma asegurada $ 180.000.000');
+    expect(datos[2]).toBe('Prima ofrecida entonces $ 97.460');
+    expect(datos[3]).toMatch(/^Calculada \d{2}\/\d{2}\/\d{4}/);
+    expect(datos[4]).toBe(`Venció el ${fecha(oferta.vigenteHasta)}`);
+    expect(datos[5]).toBe('Versión de reglas usada 2026.10.1');
+    expect(texto('.reglas-vigentes')).toBe('2026.11.1');
+    // Una oferta vencida no se acepta: no hay paso a la suscripción.
+    expect(html().querySelector('a[href*="/suscripcion"]')).toBeNull();
+    expect(html().querySelector('a[href="/perfilamiento/nuevo"]')?.textContent?.trim()).toBe('Recalcular ahora');
+    expect(await violacionesA11y(html())).toEqual([]);
+  });
+
+  it('C08: vencida aunque cotizacion la diera vigente si la vigencia pasó; sin condiciones muestra un guion', () => {
+    montar({ cotizacion: cotizacionConOferta(ofertaC01(-1, 'VIGENTE')) });
+    http.expectOne(URL_CONDICIONES).flush({ codigo: 'SERVICIO_NO_DISPONIBLE' }, { status: 503, statusText: 'x' });
+    fixture.detectChanges();
+    expect(texto('[role=alert]')).toContain('La oferta expiró hace 1 día.');
+    expect(texto('.reglas-vigentes')).toBe('—');
+  });
+
+  it('C08 de hoy y en inglés', () => {
+    montar({ cotizacion: cotizacionConOferta(ofertaC01(-0.01)) });
+    http.expectOne(URL_CONDICIONES).flush(CONDICIONES);
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    fixture.detectChanges();
+    expect(texto('header h2')).toBe('This quote is no longer valid');
+    expect(texto('[role=alert]')).toContain('The offer expired today.');
   });
 });

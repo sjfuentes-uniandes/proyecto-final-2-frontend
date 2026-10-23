@@ -7,7 +7,7 @@ import { Observable, catchError, map, of, switchMap } from 'rxjs';
 import { TextosPerfilamientoService } from '../../../perfilamiento/perfilamiento.i18n';
 import { ErrorCotizacion, errorCotizacion } from '../../cotizacion.errores';
 import { TextosCotizacionService } from '../../cotizacion.i18n';
-import { CotizacionRespuesta, PasoCotizacion } from '../../cotizacion.modelo';
+import { CoberturaOferta, CotizacionRespuesta, PasoCotizacion } from '../../cotizacion.modelo';
 import { CotizacionService } from '../../cotizacion.service';
 
 type Carga =
@@ -21,10 +21,15 @@ export interface EstadoNavegacionCotizacion {
   cotizacion?: CotizacionRespuesta;
 }
 
+const DIA_MS = 24 * 60 * 60 * 1000;
+
 /**
  * HU-W03: la prima calculada, su desglose y, si llega de un cálculo recién hecho, los pasos con sus
- * tiempos reales (mockup "Calculando tu oferta" completado). La oferta con vigencia y exclusiones
- * es de HU-W04.
+ * tiempos reales (mockup "Calculando tu oferta" completado).
+ *
+ * HU-W04: con la oferta, C04 (código, precio, coberturas con su parte de la suma, exclusiones y
+ * vigencia) y, vencida, C08: no se puede continuar con ella; se ofrece calcular una nueva y se
+ * muestra la versión de las reglas vigente hoy (condiciones del producto).
  */
 @Component({
   selector: 'app-cotizacion-calculada',
@@ -49,6 +54,18 @@ export class CotizacionCalculadaComponent {
     const c = this.cotizacion();
     return c ? Math.min(100, Math.round((c.duracionMs / c.presupuestoMs) * 100)) : 0;
   });
+  readonly oferta = computed(() => this.cotizacion()?.oferta ?? null);
+  /** Vencida según cotizacion al responder o porque la vigencia pasó mientras se veía la página. */
+  readonly vencida = computed(() => {
+    const o = this.oferta();
+    return o !== null && (o.estado === 'VENCIDA' || Date.parse(o.vigenteHasta) <= Date.now());
+  });
+  readonly diasVencida = computed(() => {
+    const o = this.oferta();
+    return o ? Math.max(0, Math.floor((Date.now() - Date.parse(o.vigenteHasta)) / DIA_MS)) : 0;
+  });
+  /** C08: la versión de las reglas vigente hoy; null mientras carga o si no se pudo leer. */
+  readonly reglasVigentes = signal<string | null>(null);
 
   constructor() {
     toObservable(this.cotizacionId)
@@ -56,7 +73,22 @@ export class CotizacionCalculadaComponent {
         switchMap((id) => this.cargar(id)),
         takeUntilDestroyed(),
       )
-      .subscribe((carga) => this.carga.set(carga));
+      .subscribe((carga) => {
+        this.carga.set(carga);
+        this.consultarReglasVigentes();
+      });
+  }
+
+  private consultarReglasVigentes(): void {
+    const c = this.cotizacion();
+    this.reglasVigentes.set(null);
+    if (!c || !this.vencida()) {
+      return;
+    }
+    this.servicio
+      .condiciones(c.productoId)
+      .pipe(catchError(() => of(null)))
+      .subscribe((condiciones) => this.reglasVigentes.set(condiciones?.versionReglas ?? null));
   }
 
   private cargar(id: string): Observable<Carga> {
@@ -79,6 +111,21 @@ export class CotizacionCalculadaComponent {
 
   monto(valor: string): string {
     return this.textos.monto(valor, this.cotizacion()?.moneda ?? 'COP');
+  }
+
+  /** Fecha sin hora en la zona del navegador (dd/mm/aaaa en es-CO). */
+  fecha(iso: string): string {
+    return new Intl.DateTimeFormat(this.textos.locale(), { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
+      new Date(iso),
+    );
+  }
+
+  /** La parte de la suma asegurada que cubre la cobertura (100 %, 30 %), como en C04. */
+  porcentajeSuma(cobertura: CoberturaOferta): string {
+    const suma = Number(this.cotizacion()?.entradas.sumaAsegurada ?? 0);
+    const porcentaje = suma > 0 ? (Number(cobertura.sumaAsegurada) / suma) * 100 : 0;
+    const texto = new Intl.NumberFormat(this.textos.locale(), { maximumFractionDigits: 2 }).format(porcentaje);
+    return this.textos.t().porcentajeSuma(texto);
   }
 
   /** El nombre de la cobertura del recargo, tal como lo publica el catálogo. */
