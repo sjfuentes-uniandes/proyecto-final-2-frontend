@@ -1,0 +1,10 @@
+@use '../../contraste';
+
+:host { display: block; }
+.card { padding: 18px; }
+.card:focus { outline: 2px solid var(--sv-azul-medio); outline-offset: 2px; }
+.codigo { font-weight: 400; text-align: left; text-transform: none; letter-spacing: 0; background: none; color: var(--sv-texto); }
+td.mono { white-space: normal; }
+/* La tabla vive en una columna angosta (E02 a E04): encabezados que se parten y menos relleno lateral. */
+thead th { white-space: normal; }
+table.data th, table.data td { padding-left: 10px; padding-right: 10px; }

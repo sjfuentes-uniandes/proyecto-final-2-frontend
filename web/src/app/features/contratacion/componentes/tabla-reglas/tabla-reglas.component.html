@@ -1,0 +1,24 @@
+@let t = textos.t();
+<section class="card" #seccion tabindex="-1" [attr.aria-labelledby]="idTitulo">
+  <h3 [id]="idTitulo">{{ titulo() }}</h3>
+  <table class="data" [attr.aria-labelledby]="idTitulo">
+    <thead>
+      <tr>
+        <th scope="col">{{ t.colRegla }}</th>
+        <th scope="col">{{ t.colCondicion }}</th>
+        <th scope="col">{{ t.colValorCaso }}</th>
+        <th scope="col">{{ t.colResultado }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (fila of filas(); track fila.codigo) {
+        <tr>
+          <th scope="row" class="codigo">{{ fila.codigo }}</th>
+          <td>{{ fila.condicion }}</td>
+          <td class="mono">{{ fila.valor }}</td>
+          <td><span [class]="fila.clase">{{ fila.insignia }}</span></td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>

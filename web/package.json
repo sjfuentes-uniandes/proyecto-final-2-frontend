@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false --browsers=ChromeHeadless --code-coverage && node scripts/cobertura-feature.mjs",
-    "lint:consentimientos": "eslint src/app/features/consentimientos"
+    "lint:consentimientos": "eslint src/app/features/consentimientos",
+    "lint:contratacion": "eslint src/app/features/contratacion"
   },
   "private": true,
   "dependencies": {

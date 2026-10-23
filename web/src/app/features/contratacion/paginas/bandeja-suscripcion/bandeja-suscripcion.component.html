@@ -1,0 +1,97 @@
+@let t = textos.t();
+@let f = filtros();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaContratacion }} › <strong>{{ t.menuBandeja }}</strong>
+</nav>
+
+<div class="h-row">
+  <header>
+    <h2>{{ t.tituloBandeja }}</h2>
+    <p class="sub">{{ t.casosEnRevision(total()) }}</p>
+  </header>
+  <button class="btn btn--secundario" type="button" [disabled]="casos().length === 0" (click)="tomarSiguiente()">
+    {{ t.tomarSiguiente }}
+  </button>
+</div>
+
+@if (indicadores().length) {
+  <section class="indicadores" [attr.aria-label]="t.indicadores">
+    @for (indicador of indicadores(); track indicador.etiqueta) {
+      <app-tarjeta-metrica [etiqueta]="indicador.etiqueta" [valor]="indicador.valor" [detalle]="indicador.detalle" [tono]="indicador.tono" />
+    }
+  </section>
+}
+
+<form class="card filtros" [attr.aria-label]="t.filtros" (submit)="$event.preventDefault(); buscar(q.value, motivo.value, producto.value)">
+  <label class="fld fld--ancho">
+    {{ t.buscar }}
+    <input #q class="inp" type="search" maxlength="64" [value]="f.q ?? ''" [placeholder]="t.buscarAyuda" />
+  </label>
+  <label class="fld">
+    {{ t.motivoRevision }}
+    <select #motivo class="inp">
+      <option value="">{{ t.todos }}</option>
+      @for (m of motivos; track m) {
+        <option [value]="m" [selected]="f.motivo === m">{{ textos.motivo(m) }}</option>
+      }
+    </select>
+  </label>
+  <label class="fld">
+    {{ t.producto }}
+    <select #producto class="inp">
+      <option value="">{{ t.todos }}</option>
+      @for (p of productos; track p) {
+        <option [value]="p" [selected]="f.productoId === p">{{ textos.producto(p) }}</option>
+      }
+    </select>
+  </label>
+  <button class="btn btn--primario" type="submit">{{ t.buscar }}</button>
+</form>
+
+@if (error(); as e) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <p>
+      {{ e.mensaje }}
+      @if (e.correlationId) {
+        <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+      }
+    </p>
+  </div>
+}
+
+<section class="card tabla" [attr.aria-label]="t.tituloBandeja" aria-live="polite">
+  @if (cargando() && casos().length === 0) {
+    <p class="sub" role="status">{{ t.cargando }}</p>
+  } @else if (filas().length === 0) {
+    <p class="sub vacia">{{ t.bandejaVacia }}</p>
+  } @else {
+    <table class="data">
+      <thead>
+        <tr>
+          <th scope="col">{{ t.colCotizacion }}</th>
+          <th scope="col">{{ t.colClienteProducto }}</th>
+          <th scope="col">{{ t.colMotivo }}</th>
+          <th scope="col">{{ t.colSuma }}</th>
+          <th scope="col">{{ t.colEnCola }}</th>
+          <th scope="col"><span class="sr-only">{{ t.abrir }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila.decisionId) {
+          <tr>
+            <th scope="row" class="cotizacion">{{ fila.cotizacion }}</th>
+            <td>{{ fila.clienteProducto }}</td>
+            <td>{{ fila.motivo }}</td>
+            <td class="mono">{{ fila.suma }}</td>
+            <td><span [class]="fila.claseCola">{{ fila.enCola }}</span></td>
+            <td><a class="abrir" [routerLink]="[fila.decisionId]" [attr.aria-label]="t.abrirCaso(fila.codigo)">{{ t.abrir }}</a></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (cursor()) {
+      <button class="btn btn--secundario mas" type="button" [disabled]="cargando()" (click)="cargarMas()">{{ t.cargarMas }}</button>
+    }
+  }
+</section>

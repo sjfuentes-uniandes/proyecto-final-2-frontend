@@ -1,0 +1,33 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaContratacion }} › <strong>{{ t.migaSuscripcion }}</strong>
+</nav>
+<h2>{{ t.tituloDecision }}</h2>
+
+@if (error(); as e) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <p>
+      {{ e.mensaje }}
+      @if (e.correlationId) {
+        <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+      }
+    </p>
+  </div>
+  <div class="acciones">
+    @if (e.nuevaCotizacion) {
+      <a class="btn btn--primario" routerLink="/perfilamiento/nuevo">{{ t.cotizarNuevamente }}</a>
+    } @else {
+      <button class="btn btn--primario" type="button" (click)="solicitar()">{{ t.reintentar }}</button>
+    }
+    <a class="btn btn--secundario" [routerLink]="['/perfilamiento/cotizaciones', cotizacionId()]">{{ t.volverCotizacion }}</a>
+  </div>
+} @else {
+  <div class="card evaluando" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <div>
+      <h3>{{ t.evaluandoTitulo }}</h3>
+      <p class="sub">{{ t.evaluandoDetalle }}</p>
+    </div>
+  </div>
+}

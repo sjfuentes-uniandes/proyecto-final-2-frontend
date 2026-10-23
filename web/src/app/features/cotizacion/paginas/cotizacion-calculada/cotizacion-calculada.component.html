@@ -131,7 +131,10 @@
       </section>
 
       <p class="nota">{{ t.notaOferta }}</p>
-      <a class="btn btn--primario" routerLink="/perfilamiento/nuevo">{{ t.nuevaCotizacion }}</a>
+      <a class="btn btn--primario" [routerLink]="['/contratacion/cotizaciones', c.id, 'suscripcion']">{{
+        t.continuarSuscripcion
+      }}</a>
+      <a class="btn btn--secundario" routerLink="/perfilamiento/nuevo">{{ t.nuevaCotizacion }}</a>
       @if (c.perfilId) {
         <a class="btn btn--secundario" [routerLink]="['/perfilamiento', c.perfilId]">{{ t.verPerfil }}</a>
       }

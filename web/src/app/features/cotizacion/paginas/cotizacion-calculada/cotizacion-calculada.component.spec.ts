@@ -50,6 +50,9 @@ describe('CotizacionCalculadaComponent (HU-W03, prima calculada)', () => {
       'Oferta lista Listo',
     ]);
     expect(html().querySelector('[role=progressbar]')?.getAttribute('aria-valuenow')).toBe('62');
+    // HU-W13: entrada a la suscripción automática.
+    const suscripcion = html().querySelector(`a[href="/contratacion/cotizaciones/${COTIZACION_ID}/suscripcion"]`);
+    expect(suscripcion?.textContent?.trim()).toBe('Continuar con la suscripción');
     expect(await violacionesA11y(html())).toEqual([]);
   });
 

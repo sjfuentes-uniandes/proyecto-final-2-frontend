@@ -1,0 +1,9 @@
+/*
+ * Contraste WCAG 2.2 AA (1.4.3) de las insignias y avisos de E01 a E04: el verde y el naranja de los
+ * tokens globales no alcanzan 4,5:1 sobre sus fondos en 10,5 a 13 px. Mismos tonos oscuros que
+ * tarjeta-metrica; los tokens globales no se tocan en HU-W13.
+ */
+.tag--ok,
+.alerta--ok { color: #00663f; }
+.tag--alerta,
+.nota--alerta { color: #7a4a00; }
