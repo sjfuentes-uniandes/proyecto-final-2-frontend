@@ -1,20 +1,29 @@
 import { MatchersV3 } from '@pact-foundation/pact';
 import { expect, test } from '@playwright/test';
 
-import { Comunicacion, DecisionSuscripcion, ReglaEvaluada } from '../src/app/features/contratacion/contratacion.modelo';
 import {
+  Aceptacion,
+  Comunicacion,
+  DecisionSuscripcion,
+  ReglaEvaluada,
+  SolicitudAceptacion,
+} from '../src/app/features/contratacion/contratacion.modelo';
+import {
+  ACEPTACION,
   DECISION_APROBADA,
   DECISION_RECHAZADA,
   DECISION_RESERVADA,
   DECISION_REVISION,
+  SOLICITUD_ACEPTACION,
 } from '../src/app/features/contratacion/contratacion.testing';
 import { ACEPTA_JSON, nuevoPacto } from './pacto';
 
 const { boolean, eachLike, equal, integer, like, regex, uuid } = MatchersV3;
 
 /**
- * Pact consumidor de contratación (HU-W14, W14-F06): lo que el portal necesita de
- * GET /v1/suscripciones/{decisionId} de bff-web para comunicar la decisión. La `comunicacion` se
+ * Pact consumidor de contratación. HU-W14 (W14-F06): lo que el portal necesita de
+ * GET /v1/suscripciones/{decisionId} de bff-web para comunicar la decisión. HU-W15 (W15-F07): el
+ * registro de la aceptación (POST /v1/cotizaciones/{cotizacionId}/aceptacion), al final del archivo. La `comunicacion` se
  * compara exacta (es con lo único que el portal decide qué mostrar); el resto de la decisión, por
  * tipo. Los estados del proveedor llevan el caso sintético (S01, S02, S04, S06) para que bff-web los
  * reproduzca con polizas y clientes simulados (fase C).
@@ -131,3 +140,141 @@ test('una decisión inexistente es 404 DECISION_NO_ENCONTRADA', async () => {
       expect((await respuesta.json()).codigo).toBe('DECISION_NO_ENCONTRADA');
     });
 });
+
+// --- HU-W15 (W15-F07): registro de la aceptación de la oferta --------------------------------------
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const CLAVE = '00000000-0000-4000-c000-000000000015';
+const COTIZACION_S02 = DECISION_RECHAZADA.cotizacionId;
+
+/**
+ * La aceptación que usa el portal (confirmación de F01). Sin `ofertaId`: es null en una decisión
+ * anterior a HU-W04 o un UUID, y Pact no puede expresar «null o texto» (R-81). `recaudoHabilitado`,
+ * `siguientePaso` y `canal` se comparan exactos: con ellos el portal arma la confirmación.
+ */
+function aceptacion(a: Aceptacion) {
+  return {
+    id: uuid(a.id),
+    cotizacionId: uuid(a.cotizacionId),
+    decisionId: uuid(a.decisionId),
+    clienteId: uuid(a.clienteId),
+    huellaCalculo: like(a.huellaCalculo),
+    versionDeclaraciones: equal(a.versionDeclaraciones),
+    declaraciones: equal(a.declaraciones),
+    canal: equal(a.canal),
+    actorId: like(a.actorId),
+    aceptadaEn: instante(a.aceptadaEn),
+    huellaEvidencia: regex(/^sha256:[0-9a-f]{64}$/, a.huellaEvidencia),
+    recaudoHabilitado: equal(true),
+    siguientePaso: equal(a.siguientePaso),
+  };
+}
+
+/** El cuerpo del POST de F01: el del contrato, con las declaraciones reales. */
+function cuerpoAceptacion(solicitud: SolicitudAceptacion) {
+  return {
+    decisionId: uuid(solicitud.decisionId),
+    versionDeclaraciones: equal(solicitud.versionDeclaraciones),
+    declaraciones: equal(solicitud.declaraciones),
+  };
+}
+
+function error(codigo: string, detalles: Record<string, unknown>) {
+  return { codigo, mensaje: like('mensaje'), correlationId: like('corr-pact'), detalles };
+}
+
+async function aceptar(url: string, cotizacionId: string, solicitud: SolicitudAceptacion): Promise<Response> {
+  return fetch(`${url}/v1/cotizaciones/${cotizacionId}/aceptacion`, {
+    method: 'POST',
+    headers: { ...ACEPTA_JSON, 'Content-Type': 'application/json', 'Idempotency-Key': CLAVE },
+    body: JSON.stringify(solicitud),
+  });
+}
+
+const INCOMPLETA: SolicitudAceptacion = {
+  ...SOLICITUD_ACEPTACION,
+  declaraciones: { ...SOLICITUD_ACEPTACION.declaraciones, leidoCondiciones: false },
+};
+
+const ACEPTACIONES: {
+  nombre: string;
+  estado: string;
+  parametros: Record<string, string>;
+  cotizacionId: string;
+  solicitud: SolicitudAceptacion;
+  status: number;
+  cuerpo: ReturnType<typeof aceptacion> | ReturnType<typeof error>;
+}[] = [
+  {
+    nombre: '201: registra la aceptación de una aprobada con la oferta vigente',
+    estado: 'existe una decisión aprobada con la oferta vigente',
+    parametros: { cotizacionId: ACEPTACION.cotizacionId, decisionId: DECISION_APROBADA.id, caso: 'S01' },
+    cotizacionId: ACEPTACION.cotizacionId,
+    solicitud: SOLICITUD_ACEPTACION,
+    status: 201,
+    cuerpo: aceptacion(ACEPTACION),
+  },
+  {
+    nombre: '200: la misma clave devuelve la aceptación existente',
+    estado: 'la cotización ya tiene una aceptación con la misma clave',
+    parametros: { cotizacionId: ACEPTACION.cotizacionId, decisionId: DECISION_APROBADA.id, idempotencyKey: CLAVE, caso: 'S01' },
+    cotizacionId: ACEPTACION.cotizacionId,
+    solicitud: SOLICITUD_ACEPTACION,
+    status: 200,
+    cuerpo: aceptacion(ACEPTACION),
+  },
+  {
+    nombre: '409 OFERTA_VENCIDA: la oferta de la aprobada ya venció',
+    estado: 'existe una decisión aprobada con la oferta vencida',
+    parametros: { cotizacionId: ACEPTACION.cotizacionId, decisionId: DECISION_APROBADA.id, caso: 'S01' },
+    cotizacionId: ACEPTACION.cotizacionId,
+    solicitud: SOLICITUD_ACEPTACION,
+    status: 409,
+    cuerpo: error('OFERTA_VENCIDA', { accion: equal('NUEVA_COTIZACION') }),
+  },
+  {
+    nombre: '409 DECISION_NO_APROBADA: la decisión es un rechazo',
+    estado: 'existe una decisión rechazada',
+    parametros: { cotizacionId: COTIZACION_S02, decisionId: DECISION_RECHAZADA.id, caso: 'S02' },
+    cotizacionId: COTIZACION_S02,
+    solicitud: { ...SOLICITUD_ACEPTACION, decisionId: DECISION_RECHAZADA.id },
+    status: 409,
+    cuerpo: error('DECISION_NO_APROBADA', {}),
+  },
+  {
+    nombre: '422 DECLARACIONES_INCOMPLETAS: falta «He leído las condiciones generales»',
+    estado: 'existe una decisión aprobada con la oferta vigente',
+    parametros: { cotizacionId: ACEPTACION.cotizacionId, decisionId: DECISION_APROBADA.id, caso: 'S01' },
+    cotizacionId: ACEPTACION.cotizacionId,
+    solicitud: INCOMPLETA,
+    status: 422,
+    cuerpo: error('DECLARACIONES_INCOMPLETAS', { campos: equal(['leidoCondiciones']) }),
+  },
+];
+
+for (const caso of ACEPTACIONES) {
+  test(`aceptación · ${caso.nombre}`, async () => {
+    await pacto
+      .addInteraction()
+      .given(caso.estado, caso.parametros)
+      .uponReceiving(`la aceptación de la oferta · ${caso.nombre}`)
+      .withRequest('POST', `/v1/cotizaciones/${caso.cotizacionId}/aceptacion`, (pedido) =>
+        pedido
+          // La clave es un UUID: el portal la genera por cotización y la reutiliza en los reintentos.
+          .headers({ ...ACEPTA_JSON, 'Content-Type': 'application/json', 'Idempotency-Key': regex(UUID, CLAVE) })
+          .jsonBody(cuerpoAceptacion(caso.solicitud)),
+      )
+      .willRespondWith(caso.status, (respuesta) => respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(caso.cuerpo))
+      .executeTest(async (servidor) => {
+        const respuesta = await aceptar(servidor.url, caso.cotizacionId, caso.solicitud);
+        expect(respuesta.status).toBe(caso.status);
+        const cuerpo = (await respuesta.json()) as Record<string, unknown>;
+        if (caso.status < 300) {
+          expect(cuerpo['recaudoHabilitado']).toBe(true);
+          expect(cuerpo['siguientePaso']).toBe('FIRMA');
+        } else {
+          expect(typeof cuerpo['codigo']).toBe('string');
+        }
+      });
+  });
+}

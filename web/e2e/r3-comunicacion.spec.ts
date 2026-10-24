@@ -8,6 +8,7 @@ import {
   DECISION_REVISION,
 } from '../src/app/features/contratacion/contratacion.testing';
 import { ASESOR, prepararPortal, simular, violacionesGraves } from './soporte/portal';
+import { focoVisible, tabularHasta } from './soporte/teclado';
 
 /**
  * E2E-W14-01 · R3 comunicación (HU-W14): las tres decisiones y la aprobada vencida con la API
@@ -139,33 +140,6 @@ for (const { nombre, decision, esperado } of ESTADOS) {
     if (testInfo.project.name === 'chromium-escritorio') {
       await testInfo.attach('captura-pseudo.png', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
     }
-  });
-}
-
-/**
- * Tab (o Shift+Tab) hasta que el foco esté en el elemento; falla si no llega en `maximo` pasos. En
- * WebKit para macOS, como en Safari, Tab no recorre botones ni enlaces por omisión: se usa Opción+Tab.
- */
-async function tabularHasta(page: Page, selector: string, atras = false, maximo = 20): Promise<void> {
-  const webkit = page.context().browser()?.browserType().name() === 'webkit';
-  const tecla = `${webkit ? 'Alt+' : ''}${atras ? 'Shift+' : ''}Tab`;
-  for (let i = 0; i < maximo; i++) {
-    if (await page.locator(selector).evaluate((e) => e === document.activeElement)) {
-      return;
-    }
-    await page.keyboard.press(tecla);
-  }
-  throw new Error(`El foco no llegó a ${selector} con ${tecla}`);
-}
-
-async function focoVisible(page: Page): Promise<boolean> {
-  return page.evaluate(() => {
-    const activo = document.activeElement as HTMLElement | null;
-    if (!activo) {
-      return false;
-    }
-    const estilo = getComputedStyle(activo);
-    return estilo.outlineStyle !== 'none' || estilo.boxShadow !== 'none';
   });
 }
 
