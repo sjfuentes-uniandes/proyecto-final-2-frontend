@@ -33,6 +33,12 @@ const POR_CODIGO: Record<string, ClaveError> = {
   IDEMPOTENCIA_CONFLICTO: 'errorIdempotenciaConflicto',
   DEPENDENCIA_NO_DISPONIBLE: 'errorDependenciaNoDisponible',
   SERVICIO_NO_DISPONIBLE: 'errorServicioNoDisponible',
+  // HU-W15: aceptación de la oferta.
+  DECISION_NO_APROBADA: 'errorDecisionNoAprobada',
+  OFERTA_YA_ACEPTADA: 'errorOfertaYaAceptada',
+  DECLARACIONES_INCOMPLETAS: 'errorDeclaracionesIncompletas',
+  TEXTO_NO_VIGENTE: 'errorTextoNoVigente',
+  ACEPTACION_NO_ENCONTRADA: 'errorAceptacionNoEncontrada',
 };
 
 export function errorContratacion(t: TextosContratacion, error: HttpErrorResponse): ErrorContratacion {

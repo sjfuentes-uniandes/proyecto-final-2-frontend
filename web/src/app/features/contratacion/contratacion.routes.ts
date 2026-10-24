@@ -31,6 +31,14 @@ export const routes: Routes = [
           import('./paginas/solicitar-suscripcion/solicitar-suscripcion.component').then((m) => m.SolicitarSuscripcionComponent),
       },
       {
+        // HU-W15 (F01): desde «Continuar a la aceptación» de la decisión aprobada (DS2-21).
+        path: 'cotizaciones/:cotizacionId/aceptacion',
+        title: 'Aceptación de la oferta · Solventa',
+        canActivate: [requiereGrupo('asesores')],
+        loadComponent: () =>
+          import('./paginas/aceptacion-oferta/aceptacion-oferta.component').then((m) => m.AceptacionOfertaComponent),
+      },
+      {
         path: 'decisiones/:decisionId',
         title: 'Decisión de suscripción · Solventa',
         loadComponent: () =>

@@ -1,0 +1,7 @@
+<ol class="pasos" [attr.aria-label]="textos.t().pasosContratacion">
+  @for (paso of pasos(); track paso.numero) {
+    <li [class.hecho]="paso.hecho" [class.actual]="paso.actual" [attr.aria-current]="paso.actual ? 'step' : null">
+      {{ paso.numero }} · {{ paso.texto }}
+    </li>
+  }
+</ol>

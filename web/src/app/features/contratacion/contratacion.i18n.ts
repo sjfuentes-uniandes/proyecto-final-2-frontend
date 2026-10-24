@@ -7,10 +7,19 @@ import { MotivoCliente } from './contratacion.modelo';
 
 type Texto = string | ((...valores: never[]) => string);
 
+/**
+ * HU-W15 (DS2-24): versión de los textos de las declaraciones del tomador de este catálogo. Si cambia
+ * su redacción, sube la versión aquí y en polizas (SOLVENTA_VERSION_DECLARACIONES).
+ */
+export const VERSION_DECLARACIONES = '2026.10.1';
+
 const NUMEROS_ES = ['', 'Una', 'Dos', 'Tres'];
 const NUMEROS_EN = ['', 'One', 'Two', 'Three'];
 
-/** HU-W13: textos de la suscripción automática (mockups E01 a E04); HU-W14: su comunicación (E02, E03). */
+/**
+ * HU-W13: textos de la suscripción automática (mockups E01 a E04); HU-W14: su comunicación (E02, E03);
+ * HU-W15: la aceptación de la oferta (F01) y la oferta vencida con el lenguaje de C08.
+ */
 const ES = {
   // Menú lateral y migas.
   seccion: 'Contratación',
@@ -89,6 +98,53 @@ const ES = {
   pasoCotizarAlternativa: 'Puedes cotizar uno de los productos alternativos.',
   pasoEsperarRevision: (horas: number) =>
     `Aún no tienes cobertura. Un suscriptor revisará tu solicitud y te responderá en un plazo de hasta ${horas} ${horas === 1 ? 'hora' : 'horas'}.`,
+
+  // HU-W15: aceptación de la oferta (F01).
+  migaAceptacion: 'Aceptación',
+  tituloAceptacion: 'Revisa y acepta la oferta',
+  pasoDeTres: 'Paso 1 de 3 · confirmación de condiciones',
+  pasosContratacion: 'Pasos de la contratación',
+  pasoAceptacion: 'Aceptación',
+  pasoFirma: 'Firma electrónica',
+  pasoRecaudo: 'Recaudo de la prima',
+  loQueSeContrata: 'Lo que se contrata',
+  kvProducto: 'Producto',
+  kvTomador: 'Tomador',
+  kvSumaAsegurada: 'Suma asegurada',
+  kvPrima: (periodicidad: string): string => (periodicidad === 'ANUAL' ? 'Prima anual' : 'Prima mensual'),
+  coberturasContratadas: 'Coberturas contratadas',
+  colCobertura: 'Cobertura',
+  colValorAsegurado: 'Valor asegurado',
+  exclusionesPrincipales: 'Exclusiones principales',
+  declaracionesTitulo: 'Declaraciones del tomador',
+  declLeidoCondiciones: 'He leído las condiciones generales',
+  declInformacionVeraz: 'La información declarada es veraz',
+  declDebitoAutomatico: 'Autorizo el débito automático',
+  declAvisosElectronicos: 'Acepto recibir avisos electrónicos',
+  obligatoria: 'Obligatoria',
+  versionDeclaraciones: (version: string) => `Texto de las declaraciones, versión ${version}`,
+  continuarFirma: 'Continuar a la firma',
+  registrandoAceptacion: 'Registrando la aceptación…',
+  motivoDeshabilitado: 'Para continuar, activa «He leído las condiciones generales» y «La información declarada es veraz».',
+  declaracionesCompletas: 'Las declaraciones obligatorias están completas: puedes continuar a la firma.',
+  volverOferta: 'Volver a la oferta',
+  notaSinDinero:
+    'Hasta este punto no se ha movido dinero ni se ha emitido nada. La póliza solo existe cuando la firma y el recaudo se completan.',
+  aceptacionRegistrada: 'Aceptación registrada',
+  aceptacionRegistradaDetalle: 'La aceptación quedó registrada como evidencia y el recaudo de la prima está habilitado.',
+  aceptacionExistente: 'Esta oferta ya tenía una aceptación registrada; esta es su evidencia.',
+  kvAceptadaEn: 'Fecha y hora',
+  kvRecaudo: 'Recaudo de la prima',
+  recaudoHabilitado: 'Habilitado',
+  kvSiguientePaso: 'Siguiente paso',
+  siguienteFirmaDetalle: 'El siguiente paso es la firma electrónica del tomador. Estará disponible en esta sección.',
+  vencidaTitulo: 'Esta oferta ya no está vigente',
+  vencidaSub: (codigo: string, fecha: string) => `${codigo} · venció el ${fecha}`,
+  vencidaAlertaTitulo: 'La oferta venció y no puede aceptarse.',
+  vencidaAlerta: 'Las tarifas y el perfil de riesgo pudieron cambiar desde entonces. Haz una nueva cotización para continuar.',
+  datosOfertaVencida: 'Datos de la oferta vencida',
+  kvPrimaOfrecida: 'Prima ofrecida entonces',
+  kvVencio: 'Venció el',
 
   // Tabla de reglas.
   colRegla: 'Regla',
@@ -183,6 +239,12 @@ const ES = {
   errorIdempotenciaConflicto: 'Esta solicitud ya se usó con otra cotización. Vuelve a intentarlo desde la cotización.',
   errorDependenciaNoDisponible: 'Un servicio necesario para decidir no está disponible. Inténtalo en unos minutos.',
   errorServicioNoDisponible: 'El servicio de suscripción no está disponible. Inténtalo en unos minutos.',
+  errorDecisionNoAprobada: 'La decisión de suscripción de esta cotización no permite aceptarla.',
+  errorOfertaYaAceptada: 'Esta oferta ya fue aceptada.',
+  errorDeclaracionesIncompletas: 'Faltan declaraciones obligatorias del tomador.',
+  errorTextoNoVigente: 'El texto de las declaraciones cambió. Recarga la página para ver la versión vigente.',
+  errorAceptacionNoEncontrada: 'La oferta aún no tiene una aceptación registrada.',
+  errorSinDecision: 'Esta cotización no tiene una decisión de suscripción. Solicítala desde la cotización.',
   errorRed: 'No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.',
   errorGeneral: 'No pudimos completar la operación. Inténtalo de nuevo.',
 };
@@ -261,6 +323,52 @@ const EN: TextosContratacion = {
   pasoCotizarAlternativa: 'You can get a quote for one of the alternative products.',
   pasoEsperarRevision: (horas: number) =>
     `You are not covered yet. An underwriter will review your request and reply within ${horas} ${horas === 1 ? 'hour' : 'hours'}.`,
+
+  migaAceptacion: 'Acceptance',
+  tituloAceptacion: 'Review and accept the offer',
+  pasoDeTres: 'Step 1 of 3 · confirm the terms',
+  pasosContratacion: 'Contracting steps',
+  pasoAceptacion: 'Acceptance',
+  pasoFirma: 'Electronic signature',
+  pasoRecaudo: 'Premium collection',
+  loQueSeContrata: 'What is being purchased',
+  kvProducto: 'Product',
+  kvTomador: 'Policyholder',
+  kvSumaAsegurada: 'Sum insured',
+  kvPrima: (periodicidad: string) => (periodicidad === 'ANUAL' ? 'Annual premium' : 'Monthly premium'),
+  coberturasContratadas: 'Purchased coverages',
+  colCobertura: 'Coverage',
+  colValorAsegurado: 'Insured amount',
+  exclusionesPrincipales: 'Main exclusions',
+  declaracionesTitulo: 'Policyholder declarations',
+  declLeidoCondiciones: 'I have read the general terms',
+  declInformacionVeraz: 'The information I declared is true',
+  declDebitoAutomatico: 'I authorize automatic debit',
+  declAvisosElectronicos: 'I agree to receive electronic notices',
+  obligatoria: 'Required',
+  versionDeclaraciones: (version: string) => `Declarations text, version ${version}`,
+  continuarFirma: 'Continue to signature',
+  registrandoAceptacion: 'Recording the acceptance…',
+  motivoDeshabilitado: 'To continue, turn on “I have read the general terms” and “The information I declared is true”.',
+  declaracionesCompletas: 'The required declarations are complete: you can continue to signature.',
+  volverOferta: 'Back to the offer',
+  notaSinDinero:
+    'No money has moved and nothing has been issued yet. The policy only exists once the signature and the collection are complete.',
+  aceptacionRegistrada: 'Acceptance recorded',
+  aceptacionRegistradaDetalle: 'The acceptance was recorded as evidence and premium collection is enabled.',
+  aceptacionExistente: 'This offer already had a recorded acceptance; this is its evidence.',
+  kvAceptadaEn: 'Date and time',
+  kvRecaudo: 'Premium collection',
+  recaudoHabilitado: 'Enabled',
+  kvSiguientePaso: 'Next step',
+  siguienteFirmaDetalle: 'The next step is the policyholder’s electronic signature. It will be available in this section.',
+  vencidaTitulo: 'This offer is no longer valid',
+  vencidaSub: (codigo: string, fecha: string) => `${codigo} · expired on ${fecha}`,
+  vencidaAlertaTitulo: 'The offer expired and cannot be accepted.',
+  vencidaAlerta: 'Rates and the risk profile may have changed since then. Request a new quote to continue.',
+  datosOfertaVencida: 'Expired offer details',
+  kvPrimaOfrecida: 'Premium offered then',
+  kvVencio: 'Expired on',
 
   colRegla: 'Rule',
   colCondicion: 'Condition',
@@ -351,6 +459,12 @@ const EN: TextosContratacion = {
   errorIdempotenciaConflicto: 'This request was already used with another quote. Try again from the quote.',
   errorDependenciaNoDisponible: 'A service needed to decide is not available. Try again in a few minutes.',
   errorServicioNoDisponible: 'The underwriting service is not available. Try again in a few minutes.',
+  errorDecisionNoAprobada: 'The underwriting decision for this quote does not allow accepting it.',
+  errorOfertaYaAceptada: 'This offer was already accepted.',
+  errorDeclaracionesIncompletas: 'Required policyholder declarations are missing.',
+  errorTextoNoVigente: 'The declarations text changed. Reload the page to see the current version.',
+  errorAceptacionNoEncontrada: 'The offer does not have a recorded acceptance yet.',
+  errorSinDecision: 'This quote has no underwriting decision. Request it from the quote.',
   errorRed: 'There is no connection with the server. Check your network and try again.',
   errorGeneral: 'We could not complete the operation. Try again.',
 };

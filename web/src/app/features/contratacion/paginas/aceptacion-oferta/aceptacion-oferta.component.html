@@ -1,0 +1,204 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaContratacion }} ›
+  @if (decision()) {
+    {{ codigo() }} ›
+  }
+  <strong>{{ t.migaAceptacion }}</strong>
+</nav>
+
+@switch (vista()) {
+  @case ('cargando') {
+    <h2>{{ t.tituloAceptacion }}</h2>
+    <p class="sub" role="status">{{ t.cargando }}</p>
+  }
+  @case ('sin-decision') {
+    <h2>{{ t.tituloAceptacion }}</h2>
+    <p #foco class="alerta alerta--error" role="alert" tabindex="-1">
+      <span aria-hidden="true">⚠</span><span>{{ t.errorSinDecision }}</span>
+    </p>
+    <div class="acciones">
+      <a class="btn btn--secundario" [routerLink]="['/perfilamiento/cotizaciones', cotizacionId()]">{{ t.volverCotizacion }}</a>
+    </div>
+  }
+  @case ('error') {
+    <h2>{{ t.tituloAceptacion }}</h2>
+    @if (carga(); as c) {
+      @if (c.estado === 'error') {
+        <div #foco class="alerta alerta--error" role="alert" tabindex="-1">
+          <span aria-hidden="true">⚠</span>
+          <p>
+            {{ c.error.mensaje }}
+            @if (c.error.correlationId) {
+              <br /><span class="seguimiento">{{ t.codigoSeguimiento(c.error.correlationId) }}</span>
+            }
+          </p>
+        </div>
+      }
+    }
+  }
+  @case ('vencida') {
+    @if (decision(); as d) {
+      <!-- HU-W15 AC2 con el lenguaje visual de C08 (HU-W04): no se ofrece aceptar; se cotiza de nuevo. -->
+      <header>
+        <h2>{{ t.vencidaTitulo }}</h2>
+        <p class="sub">{{ t.vencidaSub(codigo(), fecha(d.condiciones.vigenteHasta)) }}</p>
+      </header>
+      <div #foco class="alerta alerta--advertencia" role="alert" tabindex="-1">
+        <span aria-hidden="true">⏰</span>
+        <p><strong>{{ t.vencidaAlertaTitulo }}</strong> {{ t.vencidaAlerta }}</p>
+      </div>
+      <div class="cols">
+        <section class="card" aria-labelledby="titulo-oferta-vencida">
+          <h3 id="titulo-oferta-vencida">{{ t.datosOfertaVencida }}</h3>
+          <dl class="kv">
+            <div><dt>{{ t.kvProducto }}</dt><dd>{{ textos.producto(d.productoId) }}</dd></div>
+            @if (d.clienteNombre) {
+              <div><dt>{{ t.kvTomador }}</dt><dd>{{ d.clienteNombre }}</dd></div>
+            }
+            <div><dt>{{ t.kvSumaAsegurada }}</dt><dd>{{ monto(d.condiciones.sumaAsegurada) }}</dd></div>
+            <div><dt>{{ t.kvPrimaOfrecida }}</dt><dd class="tenue">{{ monto(d.condiciones.primaTotal) }}</dd></div>
+            <div><dt>{{ t.kvVencio }}</dt><dd>{{ fecha(d.condiciones.vigenteHasta) }}</dd></div>
+          </dl>
+        </section>
+        <div class="columna">
+          <a class="btn btn--primario btn--bloque" routerLink="/perfilamiento/nuevo">{{ t.cotizarNuevamente }}</a>
+          <a class="enlace-centro" [routerLink]="['/contratacion/decisiones', d.id]">{{ t.volverOferta }}</a>
+        </div>
+      </div>
+    }
+  }
+  @case ('confirmacion') {
+    @if (aceptacion(); as a) {
+      <header>
+        <h2>{{ t.tituloAceptacion }}</h2>
+        <p class="sub">{{ codigo() }}</p>
+      </header>
+      <app-pasos-contratacion [actual]="2" />
+      <div class="cols">
+        <section class="card" aria-labelledby="titulo-confirmacion">
+          <h3 #foco id="titulo-confirmacion" tabindex="-1">{{ t.aceptacionRegistrada }}</h3>
+          <p class="alerta alerta--ok" role="status">
+            <span aria-hidden="true">✓</span><span>{{ existente() ? t.aceptacionExistente : t.aceptacionRegistradaDetalle }}</span>
+          </p>
+          <dl class="kv">
+            <div><dt>{{ t.kvAceptadaEn }}</dt><dd>{{ fecha(a.aceptadaEn) }}</dd></div>
+            <div><dt>{{ t.identificador }}</dt><dd>{{ a.id }}</dd></div>
+            <div><dt>{{ t.kvRecaudo }}</dt><dd class="exito">{{ a.recaudoHabilitado ? t.recaudoHabilitado : t.no }}</dd></div>
+            <div><dt>{{ t.kvSiguientePaso }}</dt><dd>{{ t.pasoFirma }}</dd></div>
+          </dl>
+        </section>
+        <div class="columna">
+          <!-- DS2-22: la firma es de HU-W17; hasta que exista su ruta, el siguiente paso es solo texto. -->
+          <p class="nota">{{ t.siguienteFirmaDetalle }}</p>
+          @if (decision(); as d) {
+            <a class="enlace-centro" [routerLink]="['/contratacion/decisiones', d.id]">{{ t.volverOferta }}</a>
+          }
+        </div>
+      </div>
+    }
+  }
+  @case ('formulario') {
+    @if (decision(); as d) {
+      <header>
+        <h2 #foco tabindex="-1">{{ t.tituloAceptacion }}</h2>
+        <p class="sub">{{ t.pasoDeTres }}</p>
+      </header>
+      <app-pasos-contratacion [actual]="1" />
+      <div class="cols">
+        <div class="columna">
+          <section class="card" aria-labelledby="titulo-contrata">
+            <h3 id="titulo-contrata">{{ t.loQueSeContrata }}</h3>
+            <dl class="kv">
+              <div><dt>{{ t.kvProducto }}</dt><dd>{{ textos.producto(d.productoId) }}</dd></div>
+              @if (d.clienteNombre) {
+                <div><dt>{{ t.kvTomador }}</dt><dd>{{ d.clienteNombre }}</dd></div>
+              }
+              <div><dt>{{ t.kvSumaAsegurada }}</dt><dd>{{ monto(d.condiciones.sumaAsegurada) }}</dd></div>
+              <div><dt>{{ t.kvPrima(d.condiciones.periodicidad) }}</dt><dd>{{ monto(d.condiciones.primaTotal) }}</dd></div>
+              <div><dt>{{ t.ofertaVigenteHasta }}</dt><dd>{{ fecha(d.condiciones.vigenteHasta) }}</dd></div>
+            </dl>
+          </section>
+          <section class="card" aria-labelledby="titulo-coberturas">
+            <h3 id="titulo-coberturas">{{ t.coberturasContratadas }}</h3>
+            <table class="coberturas">
+              <thead>
+                <tr><th scope="col">{{ t.colCobertura }}</th><th scope="col">{{ t.colValorAsegurado }}</th></tr>
+              </thead>
+              <tbody>
+                @for (c of coberturas(); track c.codigo) {
+                  <tr><td>{{ c.nombre }}</td><td>{{ c.monto }}</td></tr>
+                }
+              </tbody>
+            </table>
+            @if (oferta(); as o) {
+              @if (o.exclusionesResumidas.length) {
+                <h4>{{ t.exclusionesPrincipales }}</h4>
+                <ul class="exclusiones">
+                  @for (e of o.exclusionesResumidas; track e.codigo) {
+                    <li>{{ e.descripcion }}</li>
+                  }
+                </ul>
+              }
+            }
+          </section>
+        </div>
+        <div class="columna">
+          <section class="card" aria-labelledby="titulo-declaraciones">
+            <h3 id="titulo-declaraciones">{{ t.declaracionesTitulo }}</h3>
+            <ul class="declaraciones">
+              @for (item of declaracionesF01; track item.campo) {
+                <li>
+                  <span [id]="'decl-' + item.campo">
+                    {{ textoDeclaracion(item.campo) }}
+                    @if (item.obligatoria) {
+                      <span class="obligatoria">{{ t.obligatoria }}</span>
+                    }
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    class="interruptor"
+                    [attr.aria-checked]="declaraciones()[item.campo]"
+                    [attr.aria-labelledby]="'decl-' + item.campo"
+                    [disabled]="enviando()"
+                    (click)="alternar(item.campo)"
+                  >
+                    <span class="interruptor__perilla" aria-hidden="true"></span>
+                  </button>
+                </li>
+              }
+            </ul>
+            <p class="version">{{ t.versionDeclaraciones(versionDeclaraciones) }}</p>
+          </section>
+          <button
+            type="button"
+            class="btn btn--primario btn--bloque"
+            [attr.aria-disabled]="!puedeEnviar() || enviando()"
+            [attr.aria-describedby]="idMotivo"
+            [attr.aria-busy]="enviando()"
+            (click)="enviar()"
+          >
+            {{ enviando() ? t.registrandoAceptacion : t.continuarFirma }}
+          </button>
+          <p class="motivo" [id]="idMotivo" aria-live="polite">
+            {{ puedeEnviar() ? t.declaracionesCompletas : t.motivoDeshabilitado }}
+          </p>
+          @if (errorEnvio(); as e) {
+            <div #alertaEnvio class="alerta alerta--error" role="alert" tabindex="-1">
+              <span aria-hidden="true">⚠</span>
+              <p>
+                {{ e.mensaje }}
+                @if (e.correlationId) {
+                  <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+                }
+              </p>
+            </div>
+          }
+          <a class="enlace-centro" [routerLink]="['/contratacion/decisiones', d.id]">{{ t.volverOferta }}</a>
+          <p class="nota">{{ t.notaSinDinero }}</p>
+        </div>
+      </div>
+    }
+  }
+}
