@@ -1,0 +1,7 @@
+@use '../../contraste';
+
+:host { display: block; }
+.card { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; font-size: 15px; color: var(--sv-azul-oscuro); }
+.mensaje { margin: 0; font-size: 13px; line-height: 1.6; color: var(--sv-texto); }
+.kv { margin: 0; }

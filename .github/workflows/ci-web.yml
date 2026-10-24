@@ -21,3 +21,31 @@ jobs:
       # Pruebas con cobertura y compuerta 80/75 de la feature de perfilamiento (CS-13, CS-15).
       - run: npm run test:ci
       - run: npx ng build
+
+  # HU-W14 (W14-F01): E2E con Playwright (Chromium, Firefox y WebKit; API simulada y sesión
+  # sintética) y Pact consumidor en Node. Los reportes y el pacto quedan como artefactos.
+  e2e-pact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PACT_DO_NOT_TRACK: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck:e2e
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npm run e2e
+      - run: npm run test:pact
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-y-pacto
+          path: |
+            web/playwright-report
+            web/pacts
+          retention-days: 14

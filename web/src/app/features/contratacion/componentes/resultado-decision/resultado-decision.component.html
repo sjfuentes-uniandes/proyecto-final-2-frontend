@@ -1,0 +1,20 @@
+@let t = textos.t();
+<section class="card" [attr.aria-labelledby]="idTitulo">
+  <h3 [id]="idTitulo">{{ t.resultadoTitulo }}</h3>
+  <dl class="kv">
+    <div><dt>{{ t.decision }}</dt><dd class="exito">{{ condicion() }}</dd></div>
+    <div><dt>{{ t.primaConfirmada }}</dt><dd>{{ prima() }}</dd></div>
+    @if (vigenteHasta(); as fecha) {
+      <div>
+        <dt>{{ t.ofertaVigenteHasta }}</dt>
+        <dd [class.peligro]="!comunicacion().admiteContratacion">{{ fecha }}</dd>
+      </div>
+    }
+    <div><dt>{{ t.reglasVersion }}</dt><dd>{{ decision().versionReglas }}</dd></div>
+    <div><dt>{{ t.tiempoDecision }}</dt><dd class="exito">{{ t.milisegundos(decision().duracionMs) }}</dd></div>
+    <div><dt>{{ t.identificador }}</dt><dd>{{ decision().codigo }}</dd></div>
+  </dl>
+</section>
+@if (comunicacion().admiteContratacion) {
+  <a class="btn btn--primario btn--bloque" [routerLink]="ruta()">{{ t.continuarAceptacion }}</a>
+}

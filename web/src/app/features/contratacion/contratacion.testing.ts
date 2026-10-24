@@ -1,14 +1,17 @@
 import {
+  Alternativa,
   BandejaSuscripcion,
   CasoBandeja,
+  Comunicacion,
   DecisionSuscripcion,
   ReglaEvaluada,
   ResumenBandeja,
 } from './contratacion.modelo';
 
 /**
- * Datos sintéticos de las pruebas web de HU-W13: respuestas de bff-web para los casos de
- * contracts/datos-sinteticos/cotizaciones-suscripcion.json (S01, S02, S04 y S05).
+ * Datos sintéticos de las pruebas web de HU-W13 y HU-W14: respuestas de bff-web para los casos de
+ * contracts/datos-sinteticos/cotizaciones-suscripcion.json (S01, S02, S04 y S05) y la aprobada
+ * vencida. La comunicación es la que deriva polizas (docs/hu-w14-comunicacion.md §1.1).
  */
 export const BASE = 'https://api/web/v1';
 export const URL_SUSCRIPCIONES = `${BASE}/suscripciones`;
@@ -89,6 +92,54 @@ function conReglas(cambios: Record<string, Partial<ReglaEvaluada>>): ReglaEvalua
   return REGLAS_S01.map((r) => ({ ...r, ...(cambios[r.codigo] ?? {}) }));
 }
 
+/** Las alternativas de la semilla de reglas 2026.10.1 (E03). */
+export const ALTERNATIVAS: Alternativa[] = [
+  { productoId: 'vida-senior', descriptor: { codigo: 'EDAD_MAXIMA', valor: '80' } },
+  { productoId: 'proteccion-pagos', descriptor: { codigo: 'SIN_LIMITE_EDAD', valor: null } },
+  { productoId: 'auxilio-funerario', descriptor: { codigo: 'EDAD_MAXIMA', valor: '85' } },
+];
+
+const SIN_DATOS: Pick<Comunicacion, 'vigenteHasta' | 'motivoCliente' | 'alternativas' | 'plazoRespuestaHoras'> = {
+  vigenteHasta: null,
+  motivoCliente: null,
+  alternativas: [],
+  plazoRespuestaHoras: null,
+};
+
+export const COMUNICACION_APROBADA: Comunicacion = {
+  ...SIN_DATOS,
+  condicion: 'APROBADA_SIN_AJUSTES',
+  admiteContratacion: true,
+  siguientePaso: 'ACEPTAR_OFERTA',
+  vigenteHasta: '2026-10-26T14:00:00Z',
+};
+
+export const COMUNICACION_VENCIDA: Comunicacion = {
+  ...COMUNICACION_APROBADA,
+  admiteContratacion: false,
+  siguientePaso: 'COTIZAR_NUEVAMENTE',
+};
+
+export const COMUNICACION_RECHAZADA: Comunicacion = {
+  ...SIN_DATOS,
+  condicion: 'NO_ASEGURABLE',
+  admiteContratacion: false,
+  siguientePaso: 'COTIZAR_ALTERNATIVA',
+  motivoCliente: 'EDAD_FUERA_DE_RANGO',
+  alternativas: ALTERNATIVAS,
+};
+
+export const COMUNICACION_RESERVADA: Comunicacion = { ...COMUNICACION_RECHAZADA, motivoCliente: 'NO_ELEGIBLE' };
+
+export const COMUNICACION_REVISION: Comunicacion = {
+  ...SIN_DATOS,
+  condicion: 'EN_REVISION',
+  admiteContratacion: false,
+  siguientePaso: 'ESPERAR_REVISION',
+  motivoCliente: 'SUMA_REQUIERE_REVISION',
+  plazoRespuestaHoras: 8,
+};
+
 /** S01: aprobada (E02). */
 export const DECISION_APROBADA: DecisionSuscripcion = {
   id: DECISION_APROBADA_ID,
@@ -124,6 +175,16 @@ export const DECISION_APROBADA: DecisionSuscripcion = {
   decididaEn: '2026-10-22T15:00:00Z',
   duracionMs: 41,
   clienteNombre: 'Cliente Sintético 01',
+  comunicacion: COMUNICACION_APROBADA,
+};
+
+/** S01 leída cuando su oferta ya venció: la misma decisión, sin opción de aceptar. */
+export const DECISION_APROBADA_VENCIDA: DecisionSuscripcion = {
+  ...DECISION_APROBADA,
+  id: '00000000-0000-4000-e000-000000000009',
+  codigo: 'DEC-2026-000009',
+  cotizacionId: '00000000-0000-4000-a000-000000000009',
+  comunicacion: COMUNICACION_VENCIDA,
 };
 
 /** S02: rechazada por edad (68 años, E03). */
@@ -138,6 +199,7 @@ export const DECISION_RECHAZADA: DecisionSuscripcion = {
   motivos: ['EDAD_FUERA_DE_RANGO'],
   duracionMs: 39,
   clienteNombre: 'Cliente Sintético 04',
+  comunicacion: COMUNICACION_RECHAZADA,
 };
 
 /** S04 para un asesor: rechazada por la regla reservada SUS-015, sin su valor (DS2-07). */
@@ -150,6 +212,7 @@ export const DECISION_RESERVADA: DecisionSuscripcion = {
   }),
   reglaDeterminante: 'SUS-015',
   motivos: ['NO_ELEGIBLE'],
+  comunicacion: COMUNICACION_RESERVADA,
 };
 
 /** S05: revisión por suma y confianza (E04), vista por un suscriptor. */
@@ -170,6 +233,7 @@ export const DECISION_REVISION: DecisionSuscripcion = {
   contexto: { nivelRiesgo: 'MEDIO', confianza: '0.61', fuentesConsultadas: 3, fuentesDeclaradas: 4 },
   decididaEn: '2026-10-22T12:46:00Z',
   clienteNombre: 'Cliente Sintético 15',
+  comunicacion: COMUNICACION_REVISION,
 };
 
 function caso(codigo: string, minutos: number, cambios: Partial<CasoBandeja> = {}): CasoBandeja {

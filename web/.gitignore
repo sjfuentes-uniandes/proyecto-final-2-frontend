@@ -40,3 +40,9 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Pruebas E2E y Pact (HU-W14): reportes y pactos generados
+/playwright-report
+/test-results
+/pacts
+/pact/logs

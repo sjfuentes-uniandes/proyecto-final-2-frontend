@@ -1,0 +1,9 @@
+/* Tipos de las pruebas E2E y Pact (HU-W14): corren en Node con el runner de Playwright, fuera de Angular. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["playwright.config.ts", "e2e/**/*.ts", "pact/**/*.ts"]
+}

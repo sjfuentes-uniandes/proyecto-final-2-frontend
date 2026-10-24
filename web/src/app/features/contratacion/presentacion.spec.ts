@@ -1,6 +1,14 @@
 import { TEXTOS_CONTRATACION } from './contratacion.i18n';
 import { ReglaEvaluada } from './contratacion.modelo';
-import { DECISION_RESERVADA, DECISION_REVISION, REGLAS_S01 } from './contratacion.testing';
+import {
+  COMUNICACION_APROBADA,
+  COMUNICACION_RECHAZADA,
+  COMUNICACION_REVISION,
+  COMUNICACION_VENCIDA,
+  DECISION_RESERVADA,
+  DECISION_REVISION,
+  REGLAS_S01,
+} from './contratacion.testing';
 import {
   Formatos,
   claseTono,
@@ -9,8 +17,14 @@ import {
   diaLocal,
   duracion,
   incumplidasPrimero,
+  condicionDe,
+  insigniaCondicion,
   insigniaRegla,
-  insigniaResultado,
+  insigniaSiguientePaso,
+  rutaAceptacion,
+  textoCondicion,
+  textoDescriptor,
+  textoSiguientePaso,
   tonoEnCola,
   valorCaso,
 } from './presentacion';
@@ -27,10 +41,18 @@ const regla = (codigo: string, cambios: Partial<ReglaEvaluada> = {}): ReglaEvalu
 });
 
 describe('Presentación de la suscripción (funciones puras)', () => {
-  it('insignia del resultado de la decisión', () => {
-    expect(insigniaResultado(t, 'APROBADA')).toEqual({ texto: 'Aceptado', tono: 'exito' });
-    expect(insigniaResultado(t, 'RECHAZADA')).toEqual({ texto: 'Rechazado', tono: 'peligro' });
-    expect(insigniaResultado(t, 'REVISION_REQUERIDA')).toEqual({ texto: 'En revisión', tono: 'alerta' });
+  it('insignia del encabezado por condición (HU-W14)', () => {
+    expect(insigniaCondicion(t, 'APROBADA_SIN_AJUSTES')).toEqual({ texto: 'Aceptado', tono: 'exito' });
+    expect(insigniaCondicion(t, 'NO_ASEGURABLE')).toEqual({ texto: 'Rechazado', tono: 'peligro' });
+    expect(insigniaCondicion(t, 'EN_REVISION')).toEqual({ texto: 'En revisión', tono: 'alerta' });
+  });
+
+  it('la condición del encabezado es la de la comunicación; sin ella (bff-web de W13), la del resultado', () => {
+    expect(condicionDe(DECISION_REVISION)).toBe('EN_REVISION');
+    expect(condicionDe({ ...DECISION_REVISION, comunicacion: { ...COMUNICACION_RECHAZADA } })).toBe('NO_ASEGURABLE');
+    expect(condicionDe({ ...DECISION_REVISION, comunicacion: undefined })).toBe('EN_REVISION');
+    expect(condicionDe({ ...DECISION_RESERVADA, comunicacion: null })).toBe('NO_ASEGURABLE');
+    expect(condicionDe({ ...DECISION_REVISION, resultado: 'APROBADA', comunicacion: null })).toBe('APROBADA_SIN_AJUSTES');
   });
 
   it('insignia de cada regla: Cumple, Excluyente, Excede, Por debajo, No cumple y Sin dato', () => {
@@ -113,5 +135,44 @@ describe('Presentación de la suscripción (funciones puras)', () => {
       'tag tag--error',
       'tag tag--info',
     ]);
+  });
+});
+
+describe('Presentación de la comunicación (HU-W14, funciones puras)', () => {
+  const fecha = (instante: string) => `<${instante}>`;
+
+  it('la condición de aseguramiento en palabras del cliente', () => {
+    expect(textoCondicion(t, 'APROBADA_SIN_AJUSTES')).toBe('Aceptado sin ajustes');
+    expect(textoCondicion(t, 'NO_ASEGURABLE')).toBe('No podemos asegurar esta solicitud con este producto');
+    expect(textoCondicion(t, 'EN_REVISION')).toBe('En revisión');
+  });
+
+  it('insignia del siguiente paso: revisión, vencida o ninguna', () => {
+    expect(insigniaSiguientePaso(t, COMUNICACION_REVISION)).toEqual({ texto: 'En revisión', tono: 'alerta' });
+    expect(insigniaSiguientePaso(t, COMUNICACION_VENCIDA)).toEqual({ texto: 'Oferta vencida', tono: 'peligro' });
+    expect(insigniaSiguientePaso(t, COMUNICACION_APROBADA)).toBeNull();
+    expect(insigniaSiguientePaso(t, COMUNICACION_RECHAZADA)).toBeNull();
+  });
+
+  it('texto del siguiente paso con la vigencia o el plazo', () => {
+    expect(textoSiguientePaso(t, COMUNICACION_APROBADA, fecha)).toBe(
+      'La oferta está vigente hasta el <2026-10-26T14:00:00Z> y puedes continuar a la aceptación.',
+    );
+    expect(textoSiguientePaso(t, COMUNICACION_VENCIDA, fecha)).toBe(
+      'La oferta venció el <2026-10-26T14:00:00Z> y ya no se puede aceptar. Para continuar, haz una nueva cotización.',
+    );
+    expect(textoSiguientePaso(t, COMUNICACION_RECHAZADA, fecha)).toBe('Puedes cotizar uno de los productos alternativos.');
+    expect(textoSiguientePaso(t, COMUNICACION_REVISION, fecha)).toContain('hasta 8 horas');
+    expect(textoSiguientePaso(t, { ...COMUNICACION_REVISION, plazoRespuestaHoras: null }, fecha)).toContain('Aún no tienes cobertura');
+  });
+
+  it('descriptor de la alternativa', () => {
+    expect(textoDescriptor(t, { codigo: 'EDAD_MAXIMA', valor: '80' })).toBe('hasta 80 años');
+    expect(textoDescriptor(t, { codigo: 'SIN_LIMITE_EDAD', valor: null })).toBe('sin límite de edad');
+    expect(textoDescriptor(t, { codigo: 'EDAD_MAXIMA', valor: null })).toBe('sin límite de edad');
+  });
+
+  it('la ruta de la aceptación de HU-W15 (DS2-21)', () => {
+    expect(rutaAceptacion('abc')).toEqual(['/contratacion', 'cotizaciones', 'abc', 'aceptacion']);
   });
 });

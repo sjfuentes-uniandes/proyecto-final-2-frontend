@@ -1,0 +1,14 @@
+@let t = textos.t();
+<section class="card" [attr.aria-labelledby]="idTitulo">
+  <h3 [id]="idTitulo">{{ t.alternativasTitulo }}</h3>
+  @if (filas().length) {
+    <dl class="kv">
+      @for (fila of filas(); track fila.nombre) {
+        <div><dt>{{ fila.nombre }}</dt><dd>{{ fila.descriptor }}</dd></div>
+      }
+    </dl>
+  } @else {
+    <p class="vacio">{{ t.sinAlternativas }}</p>
+  }
+  <a class="btn btn--secundario btn--bloque" routerLink="/perfilamiento/nuevo">{{ t.cotizarAlternativa }}</a>
+</section>
