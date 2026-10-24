@@ -41,7 +41,7 @@ jobs:
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run e2e
       - run: npm run test:pact
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: e2e-y-pacto
