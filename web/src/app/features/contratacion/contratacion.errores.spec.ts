@@ -24,6 +24,12 @@ describe('Errores de la contratación (por código B2, nunca por mensaje)', () =
       ROL_NO_AUTORIZADO: t.errorRolNoAutorizado,
       ACTOR_REQUERIDO: t.errorNoAutenticado,
       SOLICITUD_INVALIDA: t.errorSolicitudInvalida,
+      // HU-W15: aceptación de la oferta.
+      DECISION_NO_APROBADA: t.errorDecisionNoAprobada,
+      OFERTA_YA_ACEPTADA: t.errorOfertaYaAceptada,
+      DECLARACIONES_INCOMPLETAS: t.errorDeclaracionesIncompletas,
+      TEXTO_NO_VIGENTE: t.errorTextoNoVigente,
+      ACEPTACION_NO_ENCONTRADA: t.errorAceptacionNoEncontrada,
     };
     for (const [codigo, mensaje] of Object.entries(codigos)) {
       const error = errorContratacion(t, respuesta(409, { codigo, mensaje: 'texto del servidor', correlationId: 'corr-1' }));

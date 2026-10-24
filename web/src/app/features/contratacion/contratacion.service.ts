@@ -4,15 +4,20 @@ import { Observable } from 'rxjs';
 
 import { ConfigService } from '../../core/config/app-config';
 import {
+  Aceptacion,
   BandejaSuscripcion,
   DecisionSuscripcion,
   FiltrosBandeja,
   ListaDecisiones,
   ResumenBandeja,
+  SolicitudAceptacion,
   SolicitudSuscripcion,
 } from './contratacion.modelo';
 
-/** HU-W13: suscripción automática en bff-web (que la reenvía a polizas). Sin lógica de presentación. */
+/**
+ * HU-W13: suscripción automática en bff-web (que la reenvía a polizas); HU-W15: la aceptación de la
+ * oferta. Sin lógica de presentación.
+ */
 @Injectable({ providedIn: 'root' })
 export class ContratacionService {
   private readonly http = inject(HttpClient);
@@ -52,5 +57,20 @@ export class ContratacionService {
   resumen(desde: Date, hasta: Date): Observable<ResumenBandeja> {
     const params = new HttpParams().set('desde', desde.toISOString()).set('hasta', hasta.toISOString());
     return this.http.get<ResumenBandeja>(`${this.base}/bandeja-suscripcion/resumen`, { params });
+  }
+
+  /** HU-W15: la misma clave en un reintento devuelve la misma aceptación (200, DS2-11). */
+  registrarAceptacion(cotizacionId: string, solicitud: SolicitudAceptacion, idempotencyKey: string): Observable<Aceptacion> {
+    const headers = new HttpHeaders({ 'Idempotency-Key': idempotencyKey });
+    return this.http.post<Aceptacion>(this.urlAceptacion(cotizacionId), solicitud, { headers });
+  }
+
+  /** HU-W15: 404 ACEPTACION_NO_ENCONTRADA si la cotización aún no se aceptó. */
+  consultarAceptacion(cotizacionId: string): Observable<Aceptacion> {
+    return this.http.get<Aceptacion>(this.urlAceptacion(cotizacionId));
+  }
+
+  private urlAceptacion(cotizacionId: string): string {
+    return `${this.base}/cotizaciones/${encodeURIComponent(cotizacionId)}/aceptacion`;
   }
 }

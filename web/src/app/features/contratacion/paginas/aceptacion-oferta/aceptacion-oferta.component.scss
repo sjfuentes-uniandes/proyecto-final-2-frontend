@@ -1,0 +1,49 @@
+/* F01 · Aceptación de la oferta (HU-W15); los estilos comunes están en contratacion.scss. */
+.cols { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+
+/* Coberturas: cobertura y valor asegurado (DS2-23: sin deducible). */
+.coberturas { width: 100%; border-collapse: collapse; font-size: 13px; }
+.coberturas th {
+  padding: 10px 12px; background: var(--sv-fondo); text-align: left; font-size: 11px;
+  letter-spacing: .6px; text-transform: uppercase; color: var(--sv-texto-secundario);
+}
+.coberturas td { padding: 11px 12px; border-bottom: 1px solid var(--sv-borde); overflow-wrap: anywhere; }
+.coberturas tr:last-child td { border-bottom: 0; }
+h4 { margin: 14px 0 6px; font-size: 13px; color: var(--sv-azul-oscuro); }
+.exclusiones { margin: 0; padding-left: 18px; font-size: 13px; color: var(--sv-texto-secundario); }
+
+/* Declaraciones con interruptores (role="switch"). */
+.declaraciones { margin: 0; padding: 0; list-style: none; }
+.declaraciones li {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13px;
+}
+.declaraciones li:last-child { border-bottom: 0; }
+.obligatoria { display: block; font-size: 11.5px; color: var(--sv-texto-secundario); }
+.interruptor {
+  position: relative; flex-shrink: 0; width: 44px; height: 24px; padding: 0;
+  border: 2px solid var(--sv-texto-secundario); border-radius: 12px; background: var(--sv-blanco); cursor: pointer;
+}
+.interruptor__perilla {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--sv-texto-secundario); transition: left .15s;
+}
+/* Encendido: verde oscuro (contraste 3:1 de componentes, WCAG 1.4.11) y la perilla a la derecha. */
+.interruptor[aria-checked='true'] { border-color: #00663f; background: #00663f; }
+.interruptor[aria-checked='true'] .interruptor__perilla { left: 22px; background: var(--sv-blanco); }
+.interruptor:focus-visible { outline: 3px solid var(--sv-azul-medio); outline-offset: 2px; }
+.interruptor:disabled { cursor: progress; }
+@media (prefers-reduced-motion: reduce) { .interruptor__perilla { transition: none; } }
+.version { margin: 10px 0 0; font-size: 11.5px; color: var(--sv-texto-secundario); }
+
+/* El botón sigue enfocable mientras está inactivo, para que se anuncie el motivo. */
+.btn[aria-disabled='true'] { opacity: .6; cursor: not-allowed; }
+.btn[aria-busy='true'] { cursor: progress; }
+.motivo { margin: 0; font-size: 12px; color: var(--sv-texto-secundario); }
+.enlace-centro { align-self: center; padding: 8px; font-size: 13.5px; font-weight: 600; color: var(--sv-texto-secundario); }
+
+/* C08: aviso de oferta vencida; el naranja solo en el borde, el texto con contraste AA. */
+.alerta--advertencia { border-color: var(--sv-naranja); background: var(--sv-naranja-fondo); color: var(--sv-texto); }
+.alerta p { margin: 0; }
+.kv .tenue { color: var(--sv-texto-secundario); font-weight: 400; }
+.nota { color: var(--sv-azul); }
