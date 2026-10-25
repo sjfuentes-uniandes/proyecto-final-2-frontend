@@ -1,4 +1,7 @@
-/** Contrato de /web/v1/suscripciones y /web/v1/bandeja-suscripcion (bff-web, HU-W13 y HU-W14). */
+/**
+ * Contrato de /web/v1/suscripciones y /web/v1/bandeja-suscripcion (bff-web, HU-W13 y HU-W14) y de
+ * /web/v1/cotizaciones/{cotizacionId}/aceptacion (HU-W15).
+ */
 import { CoberturaProducto, TextoDecimal } from '../cotizacion/cotizacion.modelo';
 import { NivelRiesgo } from '../perfilamiento/perfilamiento.modelo';
 
@@ -184,4 +187,42 @@ export interface ResumenBandeja {
   tiempoMedioDecisionMs: number | null;
   fueraDelCompromiso: number;
   compromisoRevisionHoras: number;
+}
+
+/** HU-W15: aceptación de la oferta (F01), registrada por el asesor (DS2-09). */
+export type CanalAceptacion = 'PORTAL_ASESOR';
+export type SiguientePasoContratacion = 'FIRMA';
+
+/** Declaraciones del tomador (F01). Obligatorias: leidoCondiciones e informacionVeraz. */
+export interface Declaraciones {
+  leidoCondiciones: boolean;
+  informacionVeraz: boolean;
+  debitoAutomatico: boolean;
+  avisosElectronicos: boolean;
+}
+
+export interface SolicitudAceptacion {
+  decisionId: string;
+  /** Versión del texto de las declaraciones que se mostró (DS2-24). */
+  versionDeclaraciones: string;
+  declaraciones: Declaraciones;
+}
+
+/** La aceptación registrada: evidencia inmutable que habilita el recaudo. */
+export interface Aceptacion {
+  id: string;
+  cotizacionId: string;
+  ofertaId: string | null;
+  decisionId: string;
+  clienteId: string;
+  huellaCalculo: string;
+  versionDeclaraciones: string;
+  declaraciones: Declaraciones;
+  canal: CanalAceptacion;
+  actorId: string;
+  aceptadaEn: string;
+  huellaEvidencia: string;
+  /** Siempre true. */
+  recaudoHabilitado: boolean;
+  siguientePaso: SiguientePasoContratacion;
 }

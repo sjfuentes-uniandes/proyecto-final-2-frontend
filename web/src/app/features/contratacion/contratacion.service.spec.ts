@@ -5,17 +5,20 @@ import { TestBed } from '@angular/core/testing';
 import { ConfigService } from '../../core/config/app-config';
 import { ContratacionService } from './contratacion.service';
 import {
+  ACEPTACION,
   BANDEJA,
   COTIZACION_S01,
   DECISION_APROBADA,
   DECISION_APROBADA_ID,
   RESUMEN,
+  SOLICITUD_ACEPTACION,
   URL_BANDEJA,
   URL_RESUMEN,
   URL_SUSCRIPCIONES,
+  urlAceptacion,
 } from './contratacion.testing';
 
-describe('ContratacionService (HU-W13)', () => {
+describe('ContratacionService (HU-W13 y HU-W15)', () => {
   let http: HttpTestingController;
   let servicio: ContratacionService;
 
@@ -62,5 +65,20 @@ describe('ContratacionService (HU-W13)', () => {
     expect(pedido.request.params.get('desde')).toBe('2026-10-22T05:00:00.000Z');
     expect(pedido.request.params.get('hasta')).toBe('2026-10-23T05:00:00.000Z');
     pedido.flush(RESUMEN);
+  });
+
+  it('HU-W15: registra la aceptación con Idempotency-Key y la consulta', () => {
+    let recibida: unknown;
+    servicio.registrarAceptacion(COTIZACION_S01, SOLICITUD_ACEPTACION, 'clave-aceptacion').subscribe((a) => (recibida = a));
+    const post = http.expectOne(urlAceptacion(COTIZACION_S01));
+    expect(post.request.method).toBe('POST');
+    expect(post.request.headers.get('Idempotency-Key')).toBe('clave-aceptacion');
+    expect(post.request.body).toEqual(SOLICITUD_ACEPTACION);
+    post.flush(ACEPTACION, { status: 201, statusText: 'Created' });
+    expect(recibida).toEqual(ACEPTACION);
+    servicio.consultarAceptacion(COTIZACION_S01).subscribe();
+    const get = http.expectOne(urlAceptacion(COTIZACION_S01));
+    expect(get.request.method).toBe('GET');
+    get.flush(ACEPTACION);
   });
 });

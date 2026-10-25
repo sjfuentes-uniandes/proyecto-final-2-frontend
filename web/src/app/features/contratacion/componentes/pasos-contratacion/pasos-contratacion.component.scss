@@ -1,0 +1,27 @@
+/* F01: tres segmentos con su barra superior; el actual y los hechos en azul. */
+.pasos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  padding-top: 10px;
+  border-top: 4px solid var(--sv-borde);
+  font-size: 12px;
+  /* WCAG 1.4.3: --sv-texto-tenue no llega a 4,5:1 en 12 px. */
+  color: var(--sv-texto-secundario);
+}
+
+li.hecho,
+li.actual {
+  border-top-color: var(--sv-azul-medio);
+}
+
+li.actual {
+  font-weight: 700;
+  color: var(--sv-azul);
+}

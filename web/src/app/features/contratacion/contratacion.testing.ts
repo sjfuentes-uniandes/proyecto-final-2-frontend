@@ -1,17 +1,23 @@
+import { cotizacionConOferta, ofertaC01 } from '../cotizacion/cotizacion.testing';
+import { CotizacionRespuesta } from '../cotizacion/cotizacion.modelo';
 import {
+  Aceptacion,
   Alternativa,
   BandejaSuscripcion,
   CasoBandeja,
   Comunicacion,
   DecisionSuscripcion,
+  ListaDecisiones,
   ReglaEvaluada,
   ResumenBandeja,
+  SolicitudAceptacion,
 } from './contratacion.modelo';
 
 /**
- * Datos sintéticos de las pruebas web de HU-W13 y HU-W14: respuestas de bff-web para los casos de
- * contracts/datos-sinteticos/cotizaciones-suscripcion.json (S01, S02, S04 y S05) y la aprobada
- * vencida. La comunicación es la que deriva polizas (docs/hu-w14-comunicacion.md §1.1).
+ * Datos sintéticos de las pruebas web de HU-W13, HU-W14 y HU-W15: respuestas de bff-web para los casos
+ * de contracts/datos-sinteticos/cotizaciones-suscripcion.json (S01, S02, S04 y S05), la aprobada
+ * vencida y la aceptación de S01. La comunicación es la que deriva polizas
+ * (docs/hu-w14-comunicacion.md §1.1).
  */
 export const BASE = 'https://api/web/v1';
 export const URL_SUSCRIPCIONES = `${BASE}/suscripciones`;
@@ -288,3 +294,72 @@ export const RESUMEN: ResumenBandeja = {
   fueraDelCompromiso: 1,
   compromisoRevisionHoras: 8,
 };
+
+// --- HU-W15: aceptación de la oferta (F01) ------------------------------------------------------
+
+export const URL_COTIZACIONES = `${BASE}/cotizaciones`;
+export const urlAceptacion = (cotizacionId: string) => `${URL_COTIZACIONES}/${cotizacionId}/aceptacion`;
+export const ACEPTACION_ID = '00000000-0000-4000-f000-000000000001';
+
+/** La lista de decisiones de una cotización (GET /suscripciones?cotizacionId=). */
+export function listaDe(decision: DecisionSuscripcion): ListaDecisiones {
+  return {
+    items: [
+      {
+        id: decision.id,
+        codigo: decision.codigo,
+        cotizacionId: decision.cotizacionId,
+        resultado: decision.resultado,
+        versionReglas: decision.versionReglas,
+        decididaEn: decision.decididaEn,
+      },
+    ],
+  };
+}
+
+/** La cotización de S01 con su oferta de HU-W04 (C04): vigente por omisión. */
+export function cotizacionS01(diasRestantes = 7, cotizacionId = COTIZACION_S01): CotizacionRespuesta {
+  const oferta = { ...ofertaC01(diasRestantes), cotizacionId, precio: '64638' };
+  return { ...cotizacionConOferta(oferta), id: cotizacionId, primaTotal: '64638' };
+}
+
+export const SOLICITUD_ACEPTACION: SolicitudAceptacion = {
+  decisionId: DECISION_APROBADA_ID,
+  versionDeclaraciones: '2026.10.1',
+  declaraciones: { leidoCondiciones: true, informacionVeraz: true, debitoAutomatico: false, avisosElectronicos: false },
+};
+
+/** 201 (y 200 al repetir la clave): la aceptación de S01. */
+export const ACEPTACION: Aceptacion = {
+  id: ACEPTACION_ID,
+  cotizacionId: COTIZACION_S01,
+  ofertaId: null,
+  decisionId: DECISION_APROBADA_ID,
+  clienteId: '00000000-0000-4000-8000-000000000001',
+  huellaCalculo: 'sha256:calculo-s01',
+  versionDeclaraciones: '2026.10.1',
+  declaraciones: SOLICITUD_ACEPTACION.declaraciones,
+  canal: 'PORTAL_ASESOR',
+  actorId: 'sub-asesor',
+  aceptadaEn: '2026-10-24T15:00:00Z',
+  huellaEvidencia: `sha256:${'a'.repeat(64)}`,
+  recaudoHabilitado: true,
+  siguientePaso: 'FIRMA',
+};
+
+/** Cuerpos B2 de los rechazos de la aceptación. */
+export const ERRORES_ACEPTACION = {
+  ofertaVencida: { codigo: 'OFERTA_VENCIDA', mensaje: 'x', correlationId: 'corr-vencida', detalles: { accion: 'NUEVA_COTIZACION' } },
+  noAprobada: { codigo: 'DECISION_NO_APROBADA', mensaje: 'x', correlationId: 'corr-no-aprobada', detalles: {} },
+  yaAceptada: { codigo: 'OFERTA_YA_ACEPTADA', mensaje: 'x', correlationId: 'corr-ya', detalles: { aceptacionId: ACEPTACION_ID } },
+  incompletas: {
+    codigo: 'DECLARACIONES_INCOMPLETAS',
+    mensaje: 'x',
+    correlationId: 'corr-incompletas',
+    detalles: { campos: ['leidoCondiciones'] },
+  },
+  textoNoVigente: { codigo: 'TEXTO_NO_VIGENTE', mensaje: 'x', correlationId: 'corr-texto', detalles: {} },
+  conflicto: { codigo: 'IDEMPOTENCIA_CONFLICTO', mensaje: 'x', correlationId: 'corr-conflicto', detalles: {} },
+  noEncontrada: { codigo: 'ACEPTACION_NO_ENCONTRADA', mensaje: 'x', correlationId: 'corr-sin', detalles: {} },
+  servicio: { codigo: 'SERVICIO_NO_DISPONIBLE', mensaje: 'x', correlationId: 'corr-503', detalles: {} },
+} as const;
