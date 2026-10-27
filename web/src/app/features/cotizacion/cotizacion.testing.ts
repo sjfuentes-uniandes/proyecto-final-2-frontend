@@ -112,3 +112,22 @@ export function ofertaC01(diasRestantes = 7, estado: Oferta['estado'] = diasRest
 export function cotizacionConOferta(oferta: Oferta = ofertaC01()): CotizacionRespuesta {
   return { ...COTIZACION_C01, versionReglas: oferta.versionReglas, vigenteHasta: oferta.vigenteHasta, oferta };
 }
+
+/** HU-W06 (C07): la oferta de C07, provisional porque Ingresos agregados no respondió (FB-003). */
+export const FALTANTE_C07 = {
+  fuente: 'FA_INGRESOS_AGREGADOS',
+  dato: 'ingreso_mensual_estimado',
+  motivo: 'NO_DISPONIBLE',
+  regla: { id: 'FB-003', version: '2026.10.1' },
+} as const;
+
+export function cotizacionDegradada(extra: Partial<CotizacionRespuesta> = {}): CotizacionRespuesta {
+  return {
+    ...cotizacionConOferta(),
+    perfilId: '00000000-0000-4000-a000-000000000007',
+    degradada: true,
+    faltantes: [{ ...FALTANTE_C07, regla: { ...FALTANTE_C07.regla } }],
+    versionReglasFallback: '2026.10.1',
+    ...extra,
+  };
+}

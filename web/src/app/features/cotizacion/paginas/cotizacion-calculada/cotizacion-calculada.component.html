@@ -67,7 +67,11 @@
     </div>
   } @else {
     <header>
-      @if (o) {
+      @if (o && degradada()) {
+        <!-- HU-W06 (C07): oferta provisional, calculada sin el dato que faltó. -->
+        <h2>{{ t.provisionalTitulo }}</h2>
+        <p class="sub">{{ t.provisionalSub(o.codigo, c.duracionMs) }}</p>
+      } @else if (o) {
         <h2>{{ t.ofertaTitulo }}</h2>
         <p class="sub">{{ o.codigo }} · {{ t.subtituloOferta(c.duracionMs, fecha(o.vigenteHasta)) }}</p>
       } @else {
@@ -75,6 +79,13 @@
         <p class="sub">{{ t.subtituloCotizacion(c.versionReglas) }}</p>
       }
     </header>
+
+    @if (degradada()) {
+      <div class="alerta alerta--advertencia provisional" role="status">
+        <span aria-hidden="true">⚠</span>
+        <p>{{ alertaProvisional() }}</p>
+      </div>
+    }
 
     <ol class="pasos-cotizacion" [attr.aria-label]="tp.pasos">
       <li class="hecho">1 · {{ tp.paso1 }}</li>
@@ -85,6 +96,9 @@
     <div class="resultado">
       <div class="columna">
         <section class="card prima" aria-labelledby="titulo-prima">
+          @if (degradada()) {
+            <span class="tag tag--alerta">{{ t.etiquetaProvisional }}</span>
+          }
           <h3 id="titulo-prima">{{ t.primaPeriodo(c.periodicidad) }}</h3>
           <p class="monto mono">{{ monto(c.primaTotal) }}</p>
           @if (o) {
@@ -110,6 +124,35 @@
             <p class="sub">{{ t.valoresEn(c.moneda) }}</p>
           }
         </section>
+
+        @if (degradada()) {
+          <section class="card" aria-labelledby="titulo-faltantes">
+            <h3 id="titulo-faltantes">{{ t.datosFaltantes }}</h3>
+            <table class="faltantes">
+              <thead>
+                <tr>
+                  <th scope="col">{{ t.colFuente }}</th>
+                  <th scope="col">{{ t.colDato }}</th>
+                  <th scope="col">{{ t.colMotivo }}</th>
+                  <th scope="col">{{ t.colRegla }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of faltantes(); track f.fuente + f.dato) {
+                  <tr>
+                    <th scope="row">{{ nombreFuente(f.fuente) }}</th>
+                    <td>{{ textosPerfilamiento.campo(f.dato) }}</td>
+                    <td>{{ textosPerfilamiento.estadoFuente(f.motivo) }}</td>
+                    <td class="mono">{{ regla(f) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (c.versionReglasFallback) {
+              <p class="sub">{{ t.notaProvisional(c.versionReglasFallback) }}</p>
+            }
+          </section>
+        }
 
         <section class="card" aria-labelledby="titulo-desglose">
           <h3 id="titulo-desglose">{{ t.desgloseTitulo }}</h3>
@@ -203,10 +246,16 @@
           <p class="nota">{{ t.notaOferta }}</p>
         }
         <a class="btn btn--primario" [routerLink]="['/contratacion/cotizaciones', c.id, 'suscripcion']">{{
-          t.continuarSuscripcion
+          degradada() ? t.continuarProvisional : t.continuarSuscripcion
         }}</a>
+        @if (degradada() && c.perfilId) {
+          <!-- HU-W06: el perfil se recalcula en su página (HU-W12); se obtiene una cotización nueva. -->
+          <a class="btn btn--secundario recalcular-perfil" [routerLink]="['/perfilamiento', c.perfilId]">{{
+            t.recalcularDespues
+          }}</a>
+        }
         <a class="btn btn--secundario" routerLink="/perfilamiento/nuevo">{{ t.nuevaCotizacion }}</a>
-        @if (c.perfilId) {
+        @if (c.perfilId && !degradada()) {
           <a class="btn btn--secundario" [routerLink]="['/perfilamiento', c.perfilId]">{{ t.verPerfil }}</a>
         }
       </div>

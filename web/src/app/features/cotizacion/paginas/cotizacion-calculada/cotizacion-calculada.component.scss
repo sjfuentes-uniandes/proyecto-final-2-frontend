@@ -31,3 +31,10 @@
 /* El naranja solo en el borde: el texto sobre el fondo crema necesita contraste AA (axe). */
 .alerta--advertencia { border-color: var(--sv-naranja); background: var(--sv-naranja-fondo); color: var(--sv-texto); }
 .tenue { color: var(--sv-texto-secundario); }
+
+/* HU-W06: oferta provisional (C07). Contraste AA del texto de la etiqueta, como en perfilamiento. */
+.provisional { margin-top: 12px; }
+.prima .tag--alerta { color: #7a4a00; }
+.faltantes { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.faltantes th, .faltantes td { padding: 6px 8px; border-bottom: 1px solid var(--sv-borde); text-align: left; }
+.faltantes thead th { font-weight: 600; color: var(--sv-texto-secundario); }

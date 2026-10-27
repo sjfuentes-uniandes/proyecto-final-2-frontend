@@ -13,6 +13,7 @@ import {
   URL_CONDICIONES,
   URL_COTIZACIONES,
   cotizacionConOferta,
+  cotizacionDegradada,
   ofertaC01,
 } from '../../cotizacion.testing';
 import { CotizacionCalculadaComponent } from './cotizacion-calculada.component';
@@ -197,5 +198,74 @@ describe('CotizacionCalculadaComponent (HU-W03, prima calculada)', () => {
     fixture.detectChanges();
     expect(texto('header h2')).toBe('This quote is no longer valid');
     expect(texto('[role=alert]')).toContain('The offer expired today.');
+  });
+
+  describe('HU-W06 · C07: oferta con dato faltante', () => {
+    it('es provisional: dice qué fuente y qué dato faltaron, el motivo y la regla, sin valor sustituto', async () => {
+      montar({ cotizacion: cotizacionDegradada() });
+      expect(texto('header h2')).toBe('Oferta calculada con información parcial');
+      expect(texto('header .sub')).toBe('COT-2026-88214 · calculada en 155 ms pese a la falla de una fuente');
+      expect(texto('.provisional')).toContain('La fuente Ingresos agregados no respondió.');
+      expect(texto('.provisional')).toContain('sin inventar el dato que faltó');
+      expect(texto('.prima .tag--alerta')).toBe('Oferta provisional');
+      const filas = Array.from(html().querySelectorAll('.faltantes tr')).map(celdas);
+      expect(filas).toEqual([
+        'Fuente Dato Motivo Regla aplicada',
+        'Ingresos agregados Ingreso mensual estimado No disponible FB-003 · versión 2026.10.1',
+      ]);
+      expect(texto('#titulo-faltantes + table + .sub')).toContain('Las reglas de fallback 2026.10.1');
+      const continuar = html().querySelector(`a[href="/contratacion/cotizaciones/${COTIZACION_ID}/suscripcion"]`);
+      expect(continuar?.textContent?.trim()).toBe('Continuar con esta oferta');
+      const recalcular = html().querySelector('.recalcular-perfil');
+      expect(recalcular?.getAttribute('href')).toBe('/perfilamiento/00000000-0000-4000-a000-000000000007');
+      expect(recalcular?.textContent?.trim()).toBe('Recalcular el perfil después');
+      // Ningún valor para el dato faltante (6.500.000 en C01).
+      expect(html().textContent).not.toContain('6.500.000');
+      expect(await violacionesA11y(html())).toEqual([]);
+    });
+
+    it('una regla con ajuste aparece como factor del desglose; sin regla vigente se dice', () => {
+      const base = cotizacionDegradada();
+      montar({
+        cotizacion: {
+          ...base,
+          desglose: {
+            ...base.desglose,
+            factores: [...base.desglose.factores, { codigo: 'FALLBACK', valor: 'FA_INGRESOS_AGREGADOS', factor: '1.05' }],
+          },
+          faltantes: [{ fuente: 'FA_OTRA', dato: 'dato_nuevo', motivo: 'RESPUESTA_INVALIDA', regla: null }],
+        },
+      });
+      const factores = Array.from(html().querySelectorAll('.desglose tr.factor')).map(celdas);
+      expect(factores).toContain('Ajuste por dato faltante: Ingresos agregados × 1,05');
+      const filas = Array.from(html().querySelectorAll('.faltantes tbody tr')).map(celdas);
+      expect(filas).toEqual(['FA_OTRA dato_nuevo Respuesta inválida Sin regla vigente']);
+    });
+
+    it('sin los campos (cotización nominal o anterior a HU-W06) no muestra nada de C07', () => {
+      montar({ cotizacion: cotizacionConOferta() });
+      expect(html().querySelector('.provisional')).toBeNull();
+      expect(html().querySelector('.faltantes')).toBeNull();
+      expect(html().querySelector('.recalcular-perfil')).toBeNull();
+      expect(texto('header h2')).toBe('Oferta');
+    });
+
+    it('vencida, manda C08 aunque fuera provisional', () => {
+      montar({ cotizacion: cotizacionDegradada({ oferta: ofertaC01(-1) }) });
+      http.expectOne(URL_CONDICIONES).flush(CONDICIONES);
+      fixture.detectChanges();
+      expect(texto('header h2')).toBe('Esta cotización ya no está vigente');
+      expect(html().querySelector('.faltantes')).toBeNull();
+    });
+
+    it('se presenta en en-US', () => {
+      montar({ cotizacion: cotizacionDegradada() });
+      TestBed.inject(IdiomaService).cambiar('en-US');
+      fixture.detectChanges();
+      expect(texto('header h2')).toBe('Offer calculated with partial information');
+      expect(texto('.provisional')).toContain('The Aggregated income source did not respond.');
+      expect(texto('.prima .tag--alerta')).toBe('Provisional offer');
+      expect(texto('.recalcular-perfil')).toBe('Recalculate the profile later');
+    });
   });
 });

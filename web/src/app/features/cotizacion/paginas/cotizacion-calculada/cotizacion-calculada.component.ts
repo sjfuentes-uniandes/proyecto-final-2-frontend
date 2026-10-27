@@ -7,7 +7,7 @@ import { Observable, catchError, map, of, switchMap } from 'rxjs';
 import { TextosPerfilamientoService } from '../../../perfilamiento/perfilamiento.i18n';
 import { ErrorCotizacion, errorCotizacion } from '../../cotizacion.errores';
 import { TextosCotizacionService } from '../../cotizacion.i18n';
-import { CoberturaOferta, CotizacionRespuesta, PasoCotizacion } from '../../cotizacion.modelo';
+import { CoberturaOferta, CotizacionRespuesta, DatoFaltante, PasoCotizacion } from '../../cotizacion.modelo';
 import { CotizacionService } from '../../cotizacion.service';
 
 type Carga =
@@ -30,6 +30,10 @@ const DIA_MS = 24 * 60 * 60 * 1000;
  * HU-W04: con la oferta, C04 (código, precio, coberturas con su parte de la suma, exclusiones y
  * vigencia) y, vencida, C08: no se puede continuar con ella; se ofrece calcular una nueva y se
  * muestra la versión de las reglas vigente hoy (condiciones del producto).
+ *
+ * HU-W06: una oferta degradada es C07 adaptada a lo que entrega el backend: oferta provisional, qué
+ * fuente y qué dato faltaron, el motivo y la regla de fallback aplicada; nunca un valor sustituto.
+ * Se puede continuar con ella o volver al perfil para recalcularlo.
  */
 @Component({
   selector: 'app-cotizacion-calculada',
@@ -55,6 +59,11 @@ export class CotizacionCalculadaComponent {
     return c ? Math.min(100, Math.round((c.duracionMs / c.presupuestoMs) * 100)) : 0;
   });
   readonly oferta = computed(() => this.cotizacion()?.oferta ?? null);
+  /** HU-W06: oferta provisional (C07). */
+  readonly degradada = computed(() => this.cotizacion()?.degradada === true);
+  readonly faltantes = computed<DatoFaltante[]>(() => this.cotizacion()?.faltantes ?? []);
+  /** Las fuentes que faltaron, sin repetir y en el orden en que llegan. */
+  readonly fuentesFaltantes = computed(() => [...new Set(this.faltantes().map((f) => f.fuente))]);
   /** Vencida según cotizacion al responder o porque la vigencia pasó mientras se veía la página. */
   readonly vencida = computed(() => {
     const o = this.oferta();
@@ -133,8 +142,12 @@ export class CotizacionCalculadaComponent {
     return this.cotizacion()?.coberturas.find((c) => c.codigo === codigo)?.nombre ?? codigo;
   }
 
-  /** El valor del factor: el nivel de riesgo se traduce; el resto (edad, plazo) va tal cual. */
+  /** El valor del factor: el nivel de riesgo y la fuente de un ajuste de fallback se traducen; el
+   * resto (edad, plazo) va tal cual. */
   valorFactor(codigo: string, valor: string): string {
+    if (codigo === 'FALLBACK') {
+      return this.nombreFuente(valor);
+    }
     if (codigo !== 'NIVEL_RIESGO') {
       return valor;
     }
@@ -149,6 +162,7 @@ export class CotizacionCalculadaComponent {
       CATALOGO_Y_REGLAS: t.pasoCatalogo,
       CLIENTE: t.pasoCliente,
       PERFIL_RIESGO: t.pasoPerfil,
+      REGLAS_FALLBACK: t.pasoReglasFallback,
       CALCULO_PRIMA: t.pasoCalculo,
     };
     return nombres[paso.codigo] ?? paso.codigo;
@@ -163,6 +177,22 @@ export class CotizacionCalculadaComponent {
       return t.resueltoCatalogo(paso.duracionMs);
     }
     return paso.codigo === 'CALCULO_PRIMA' ? t.hechoEn(paso.duracionMs) : t.respondio(paso.duracionMs);
+  }
+
+  /** Nombre de la fuente; una que el catálogo agregue después se muestra con su código. */
+  nombreFuente(fuente: string): string {
+    return this.textosPerfilamiento.fuenteOCodigo(fuente);
+  }
+
+  /** "La fuente Ingresos agregados no respondió…" (C07). */
+  alertaProvisional(): string {
+    const nombres = this.fuentesFaltantes().map((f) => this.nombreFuente(f));
+    return this.textos.t().provisionalAlerta(this.textosPerfilamiento.lista(nombres), nombres.length);
+  }
+
+  regla(faltante: DatoFaltante): string {
+    const t = this.textos.t();
+    return faltante.regla ? t.reglaAplicada(faltante.regla.id, faltante.regla.version) : t.sinRegla;
   }
 
   ajusteNegativo(valor: string): boolean {
