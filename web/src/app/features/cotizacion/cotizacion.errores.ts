@@ -1,12 +1,22 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { TextosCotizacion } from './cotizacion.i18n';
+import { DatoFaltante } from './cotizacion.modelo';
 
 interface ErrorEstable {
   codigo?: string;
   correlationId?: string | null;
-  detalles?: { campos?: unknown };
+  detalles?: { campos?: unknown; dependencia?: unknown; decisionId?: unknown; faltantes?: unknown };
 }
+
+/** HU-W06: la cotización quedó pendiente (sin oferta) porque faltó una fuente sin fallback permitido. */
+export interface CotizacionPendiente {
+  decisionId: string;
+  faltantes: DatoFaltante[];
+}
+
+/** detalles.dependencia del 503 cuando lo que faltó es una fuente del perfil (no un servicio). */
+const DEPENDENCIA_FUENTES = 'perfil.fuentes';
 
 /** Error mostrable: el texto por código B2 (regla 19), el código de seguimiento y los campos señalados. */
 export interface ErrorCotizacion {
@@ -14,6 +24,8 @@ export interface ErrorCotizacion {
   correlationId: string | null;
   /** detalles.campos de DATOS_FUERA_DE_RANGO y similares (rutas, nunca valores). */
   campos: string[];
+  /** HU-W06: presente si la cotización quedó pendiente; hay que recalcular el perfil. */
+  pendiente?: CotizacionPendiente;
 }
 
 type ClaveError = { [K in keyof TextosCotizacion]: K extends `error${string}` ? K : never }[keyof TextosCotizacion];
@@ -46,5 +58,22 @@ export function errorCotizacion(t: TextosCotizacion, error: HttpErrorResponse): 
   const campos = Array.isArray(cuerpo?.detalles?.campos)
     ? cuerpo.detalles.campos.filter((c): c is string => typeof c === 'string')
     : [];
-  return { mensaje, correlationId, campos };
+  const pendiente = pendienteDe(cuerpo);
+  return pendiente
+    ? { mensaje: t.errorCotizacionPendiente, correlationId, campos, pendiente }
+    : { mensaje, correlationId, campos };
+}
+
+function pendienteDe(cuerpo: ErrorEstable | null): CotizacionPendiente | undefined {
+  const detalles = cuerpo?.detalles;
+  if (cuerpo?.codigo !== 'DEPENDENCIA_NO_DISPONIBLE' || detalles?.dependencia !== DEPENDENCIA_FUENTES) {
+    return undefined;
+  }
+  const faltantes = Array.isArray(detalles.faltantes) ? detalles.faltantes.filter(esFaltante) : [];
+  return { decisionId: typeof detalles.decisionId === 'string' ? detalles.decisionId : '', faltantes };
+}
+
+function esFaltante(valor: unknown): valor is DatoFaltante {
+  const f = valor as Partial<DatoFaltante> | null;
+  return typeof f?.fuente === 'string' && typeof f.dato === 'string' && typeof f.motivo === 'string';
 }

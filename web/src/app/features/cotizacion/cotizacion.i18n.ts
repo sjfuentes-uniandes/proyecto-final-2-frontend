@@ -6,7 +6,7 @@ import { pseudo } from '../perfilamiento/perfilamiento.i18n';
 type Texto = string | ((...valores: never[]) => string);
 
 /** HU-W03: textos de la cotización (mockups "Nueva cotización", "Revisa los datos" y "Calculando tu oferta").
- * HU-W04: la oferta (C04) y la oferta vencida (C08). */
+ * HU-W04: la oferta (C04) y la oferta vencida (C08). HU-W06: la oferta provisional (C07) y la pendiente. */
 const ES = {
   // Formulario (mockup 1).
   versionProducto: 'Versión del producto',
@@ -141,6 +141,27 @@ const ES = {
     'Se generará una cotización nueva con su propio identificador. La anterior queda archivada como evidencia, no se sobrescribe, y el precio resultante puede diferir del que se ofreció.',
   recalcular: 'Recalcular ahora',
 
+  // HU-W06: oferta con dato faltante (C07) y cotización pendiente.
+  provisionalTitulo: 'Oferta calculada con información parcial',
+  provisionalSub: (codigo: string, ms: number) => `${codigo} · calculada en ${ms} ms pese a la falla de una fuente`,
+  provisionalAlerta: (fuentes: string, n: number) =>
+    `${n === 1 ? 'La fuente' : 'Las fuentes'} ${fuentes} no ${n === 1 ? 'respondió' : 'respondieron'}. No es un problema de tu conexión ni del consentimiento del cliente. Calculamos el precio con las fuentes que sí respondieron, sin inventar el dato que faltó, y lo marcamos como oferta provisional.`,
+  etiquetaProvisional: 'Oferta provisional',
+  datosFaltantes: 'Datos que faltaron',
+  colFuente: 'Fuente',
+  colDato: 'Dato',
+  colMotivo: 'Motivo',
+  colRegla: 'Regla aplicada',
+  reglaAplicada: (id: string, version: string) => `${id} · versión ${version}`,
+  sinRegla: 'Sin regla vigente',
+  notaProvisional: (version: string) =>
+    `Las reglas de fallback ${version} permiten esta oferta sin el dato. Si recalculas el perfil cuando la fuente responda, obtendrás una cotización nueva.`,
+  continuarProvisional: 'Continuar con esta oferta',
+  recalcularDespues: 'Recalcular el perfil después',
+  pasoReglasFallback: 'Reglas de fallback',
+  pendienteTitulo: 'Datos que faltaron',
+  pendienteFaltante: (fuente: string, dato: string) => `${fuente}: ${dato}`,
+
   // Perfil de riesgo (D02).
   calcularPrima: 'Calcular la prima',
   calcularPrimaAyuda: 'Usa el nivel de riesgo de este perfil con los datos de la nueva cotización.',
@@ -165,6 +186,8 @@ const ES = {
   errorCotizacionNoEncontrada: 'La cotización no existe o ya no está disponible.',
   errorDependenciaNoDisponible: 'Un servicio necesario para cotizar no está disponible. Inténtalo en unos minutos.',
   errorServicioNoDisponible: 'El servicio de cotización no está disponible. Inténtalo en unos minutos.',
+  errorCotizacionPendiente:
+    'No hay una oferta definitiva: faltó información de una fuente y ninguna regla vigente permite continuar sin ella. Recalcula el perfil cuando la fuente vuelva a responder.',
 };
 
 export type TextosCotizacion = typeof ES;
@@ -294,6 +317,26 @@ const EN: TextosCotizacion = {
     'A new quote with its own identifier will be created. The previous one stays archived as evidence, it is not overwritten, and the resulting price may differ from the one offered.',
   recalcular: 'Recalculate now',
 
+  provisionalTitulo: 'Offer calculated with partial information',
+  provisionalSub: (codigo: string, ms: number) => `${codigo} · calculated in ${ms} ms despite a source failure`,
+  provisionalAlerta: (fuentes: string, n: number) =>
+    `The ${fuentes} ${n === 1 ? 'source did' : 'sources did'} not respond. This is not a problem with your connection or with the customer's consent. We calculated the price with the sources that did respond, without making up the missing data, and marked it as a provisional offer.`,
+  etiquetaProvisional: 'Provisional offer',
+  datosFaltantes: 'Missing data',
+  colFuente: 'Source',
+  colDato: 'Data',
+  colMotivo: 'Reason',
+  colRegla: 'Rule applied',
+  reglaAplicada: (id: string, version: string) => `${id} · version ${version}`,
+  sinRegla: 'No rule in force',
+  notaProvisional: (version: string) =>
+    `Fallback rules ${version} allow this offer without the data. If you recalculate the profile once the source responds, you will get a new quote.`,
+  continuarProvisional: 'Continue with this offer',
+  recalcularDespues: 'Recalculate the profile later',
+  pasoReglasFallback: 'Fallback rules',
+  pendienteTitulo: 'Missing data',
+  pendienteFaltante: (fuente: string, dato: string) => `${fuente}: ${dato}`,
+
   calcularPrima: 'Calculate the premium',
   calcularPrimaAyuda: "Uses this profile's risk level with the data from the new quote.",
   sinBorrador: 'To calculate the premium with this profile, go back to "New quote" and continue to profiling.',
@@ -317,6 +360,8 @@ const EN: TextosCotizacion = {
   errorCotizacionNoEncontrada: 'The quote does not exist or is no longer available.',
   errorDependenciaNoDisponible: 'A service needed to quote is not available. Try again in a few minutes.',
   errorServicioNoDisponible: 'The quoting service is not available. Try again in a few minutes.',
+  errorCotizacionPendiente:
+    'There is no final offer: a source did not provide its data and no rule in force allows continuing without it. Recalculate the profile once the source responds again.',
 };
 
 function pseudoLocalizar(textos: TextosCotizacion): TextosCotizacion {
@@ -336,8 +381,8 @@ export const TEXTOS_COTIZACION: Record<Idioma, TextosCotizacion> = {
 
 /** Nombres de los factores del desglose; un código nuevo de las reglas se muestra tal cual. */
 const FACTORES: Record<Exclude<Idioma, 'pseudo'>, Record<string, string>> = {
-  'es-CO': { NIVEL_RIESGO: 'Nivel de riesgo', EDAD: 'Edad', PLAZO: 'Plazo del crédito' },
-  'en-US': { NIVEL_RIESGO: 'Risk level', EDAD: 'Age', PLAZO: 'Loan term' },
+  'es-CO': { NIVEL_RIESGO: 'Nivel de riesgo', EDAD: 'Edad', PLAZO: 'Plazo del crédito', FALLBACK: 'Ajuste por dato faltante' },
+  'en-US': { NIVEL_RIESGO: 'Risk level', EDAD: 'Age', PLAZO: 'Loan term', FALLBACK: 'Missing-data adjustment' },
 };
 
 @Injectable({ providedIn: 'root' })
