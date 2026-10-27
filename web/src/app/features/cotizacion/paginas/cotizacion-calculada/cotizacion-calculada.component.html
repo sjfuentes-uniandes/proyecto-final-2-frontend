@@ -63,6 +63,8 @@
           <p class="sub">{{ t.alRecalcularTexto }}</p>
         </section>
         <a class="btn btn--primario" routerLink="/perfilamiento/nuevo">{{ t.recalcular }}</a>
+        <!-- C08: "Ver cotizaciones vigentes" abre "Cotizaciones abiertas" (vigentes por omisión). -->
+        <a class="enlace-vigentes" routerLink="/perfilamiento/cotizaciones">{{ t.verCotizacionesVigentes }}</a>
       </div>
     </div>
   } @else {

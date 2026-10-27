@@ -180,6 +180,9 @@ describe('CotizacionCalculadaComponent (HU-W03, prima calculada)', () => {
     // Una oferta vencida no se acepta: no hay paso a la suscripción.
     expect(html().querySelector('a[href*="/suscripcion"]')).toBeNull();
     expect(html().querySelector('a[href="/perfilamiento/nuevo"]')?.textContent?.trim()).toBe('Recalcular ahora');
+    // «Ver cotizaciones vigentes» abre "Cotizaciones abiertas" (vigentes por omisión).
+    expect(html().querySelector('a.enlace-vigentes')?.getAttribute('href')).toBe('/perfilamiento/cotizaciones');
+    expect(html().querySelector('a.enlace-vigentes')?.textContent?.trim()).toBe('Ver cotizaciones vigentes');
     expect(await violacionesA11y(html())).toEqual([]);
   });
 

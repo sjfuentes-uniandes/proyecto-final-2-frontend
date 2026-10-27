@@ -38,3 +38,7 @@
 .faltantes { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .faltantes th, .faltantes td { padding: 6px 8px; border-bottom: 1px solid var(--sv-borde); text-align: left; }
 .faltantes thead th { font-weight: 600; color: var(--sv-texto-secundario); }
+
+/* C08: "Ver cotizaciones vigentes", enlace de texto centrado bajo las acciones. */
+.enlace-vigentes { align-self: center; font-size: 13px; font-weight: 500; color: var(--sv-texto-secundario); }
+.enlace-vigentes:hover { text-decoration: underline; }
