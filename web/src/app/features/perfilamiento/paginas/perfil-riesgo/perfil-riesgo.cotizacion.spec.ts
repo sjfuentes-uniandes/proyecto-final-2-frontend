@@ -85,4 +85,32 @@ describe('PerfilRiesgoComponent · HU-W03 (prima con el perfil)', () => {
     botonPrima().click();
     http.expectOne(URL_COTIZACIONES).flush(COTIZACION_C01);
   }));
+
+  it('HU-W06: una cotización pendiente explica qué dato faltó; no navega a ninguna oferta', fakeAsync(() => {
+    montar(true);
+    botonPrima().click();
+    http.expectOne(URL_COTIZACIONES).flush(
+      {
+        codigo: 'DEPENDENCIA_NO_DISPONIBLE',
+        correlationId: 'c-w06',
+        detalles: {
+          dependencia: 'perfil.fuentes',
+          decisionId: 'd-1',
+          accionSugerida: 'RECALCULAR_PERFIL',
+          faltantes: [
+            { fuente: 'FA_HISTORIAL_PAGOS_12M', dato: 'moras_12m', motivo: 'TIEMPO_AGOTADO', regla: { id: 'FB-002', version: '2026.10.1' } },
+          ],
+        },
+      },
+      { status: 503, statusText: 'x' },
+    );
+    flush();
+    fixture.detectChanges();
+    const alerta = html().querySelector('[role=alert]');
+    expect(alerta?.textContent).toContain('No hay una oferta definitiva');
+    expect(alerta?.textContent).toContain('c-w06');
+    const faltantes = Array.from(html().querySelectorAll('.pendiente-faltantes li')).map((li) => li.textContent?.trim());
+    expect(faltantes).toEqual(['Historial de pagos de 12 meses: Moras en los últimos 12 meses (Sin respuesta)']);
+    expect(navegar).not.toHaveBeenCalled();
+  }));
 });
