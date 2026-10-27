@@ -155,3 +155,42 @@ export interface CotizacionRespuesta {
   faltantes?: DatoFaltante[];
   versionReglasFallback?: string | null;
 }
+
+/** "Cotizaciones abiertas": una fila del listado (ResumenCotizacionVista de bff-web). */
+export interface ResumenCotizacion {
+  cotizacionId: string;
+  /** COT-AAAA-NNNNN. */
+  codigo: string;
+  clienteId: string;
+  /** Lo compone bff-web desde clientes; null si no respondió a tiempo. */
+  clienteNombre: string | null;
+  socioId: string | null;
+  productoId: string;
+  versionProducto: string;
+  moneda: string;
+  periodicidad: string;
+  sumaAsegurada: TextoDecimal;
+  /** El precio de la oferta (prima total). */
+  prima: TextoDecimal;
+  /** null: cotizada sin perfil. */
+  nivelRiesgo: NivelRiesgo | null;
+  degradada: boolean;
+  creadaEn: string;
+  vigenteHasta: string;
+  /** El de la oferta en el instante de la consulta. */
+  estado: EstadoOferta;
+}
+
+export interface ListadoCotizaciones {
+  items: ResumenCotizacion[];
+  siguienteCursor: string | null;
+  total: number;
+}
+
+/** Sin `estado`: todas. `q` busca por parte del código COT-AAAA-NNNNN. */
+export interface FiltrosCotizaciones {
+  estado?: EstadoOferta;
+  q?: string;
+  limite?: number;
+  cursor?: string;
+}

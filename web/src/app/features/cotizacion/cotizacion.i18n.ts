@@ -6,7 +6,8 @@ import { pseudo } from '../perfilamiento/perfilamiento.i18n';
 type Texto = string | ((...valores: never[]) => string);
 
 /** HU-W03: textos de la cotización (mockups "Nueva cotización", "Revisa los datos" y "Calculando tu oferta").
- * HU-W04: la oferta (C04) y la oferta vencida (C08). HU-W06: la oferta provisional (C07) y la pendiente. */
+ * HU-W04: la oferta (C04) y la oferta vencida (C08). HU-W06: la oferta provisional (C07) y la pendiente.
+ * "Cotizaciones abiertas": el listado de las cotizaciones con oferta. */
 const ES = {
   // Formulario (mockup 1).
   versionProducto: 'Versión del producto',
@@ -166,6 +167,37 @@ const ES = {
   calcularPrima: 'Calcular la prima',
   calcularPrimaAyuda: 'Usa el nivel de riesgo de este perfil con los datos de la nueva cotización.',
   sinBorrador: 'Para calcular la prima con este perfil, vuelve a "Nueva cotización" y continúa al perfilamiento.',
+
+  // "Cotizaciones abiertas": listado de las cotizaciones con oferta (patrón de J01).
+  abiertasTitulo: 'Cotizaciones abiertas',
+  abiertasEncontradas: (n: string, total: number) =>
+    total === 1 ? '1 cotización encontrada' : `${n} cotizaciones encontradas`,
+  filtros: 'Filtros de las cotizaciones',
+  buscar: 'Buscar',
+  buscarAyuda: 'Código de la cotización (COT-2026-00005)',
+  filtroEstado: 'Estado',
+  estadoVigentes: 'Vigentes',
+  estadoVencidas: 'Vencidas',
+  estadoTodas: 'Todas',
+  limpiar: 'Limpiar',
+  colCotizacion: 'Cotización',
+  colCliente: 'Cliente',
+  colProducto: 'Producto',
+  colPrimaMensual: 'Prima mensual',
+  colVigenteHasta: 'Vigente hasta',
+  colEstado: 'Estado',
+  verDetalle: 'Ver detalle',
+  verDetalleDe: (codigo: string) => `Ver detalle de ${codigo}`,
+  clienteNoDisponible: 'Nombre no disponible',
+  tagVigente: 'Vigente',
+  tagVencida: 'Vencida',
+  tagProvisional: 'Provisional',
+  sinPerfilCorto: 'Sin perfil',
+  cargandoCotizaciones: 'Cargando las cotizaciones…',
+  sinCotizaciones: 'No hay cotizaciones con estos filtros.',
+  cargarMas: 'Cargar más',
+  verCotizacionesVigentes: 'Ver cotizaciones vigentes',
+  errorCursorInvalido: 'La página pedida ya no es válida. Vuelve a buscar.',
 
   codigoSeguimiento: (id: string) => `Código de seguimiento: ${id}`,
   errorGeneral: 'No fue posible calcular la prima. Inténtalo de nuevo.',
@@ -340,6 +372,35 @@ const EN: TextosCotizacion = {
   calcularPrima: 'Calculate the premium',
   calcularPrimaAyuda: "Uses this profile's risk level with the data from the new quote.",
   sinBorrador: 'To calculate the premium with this profile, go back to "New quote" and continue to profiling.',
+
+  abiertasTitulo: 'Open quotes',
+  abiertasEncontradas: (n: string, total: number) => (total === 1 ? '1 quote found' : `${n} quotes found`),
+  filtros: 'Quote filters',
+  buscar: 'Search',
+  buscarAyuda: 'Quote code (COT-2026-00005)',
+  filtroEstado: 'Status',
+  estadoVigentes: 'In force',
+  estadoVencidas: 'Expired',
+  estadoTodas: 'All',
+  limpiar: 'Clear',
+  colCotizacion: 'Quote',
+  colCliente: 'Customer',
+  colProducto: 'Product',
+  colPrimaMensual: 'Monthly premium',
+  colVigenteHasta: 'Valid until',
+  colEstado: 'Status',
+  verDetalle: 'View details',
+  verDetalleDe: (codigo: string) => `View details of ${codigo}`,
+  clienteNoDisponible: 'Name not available',
+  tagVigente: 'In force',
+  tagVencida: 'Expired',
+  tagProvisional: 'Interim',
+  sinPerfilCorto: 'No profile',
+  cargandoCotizaciones: 'Loading quotes…',
+  sinCotizaciones: 'There are no quotes with these filters.',
+  cargarMas: 'Load more',
+  verCotizacionesVigentes: 'View quotes in force',
+  errorCursorInvalido: 'The requested page is no longer valid. Search again.',
 
   codigoSeguimiento: (id: string) => `Tracking code: ${id}`,
   errorGeneral: 'We could not calculate the premium. Please try again.',

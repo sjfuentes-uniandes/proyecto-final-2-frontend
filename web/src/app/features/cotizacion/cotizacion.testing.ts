@@ -1,4 +1,4 @@
-import { CondicionesProducto, CotizacionRespuesta, Oferta } from './cotizacion.modelo';
+import { CondicionesProducto, CotizacionRespuesta, ListadoCotizaciones, Oferta, ResumenCotizacion } from './cotizacion.modelo';
 
 /** Datos sintéticos de las pruebas web de HU-W03: las respuestas de bff-web para C01 (01 §3.5). */
 export const URL_CONDICIONES = 'https://api/web/v1/productos/vida-hipotecario/condiciones';
@@ -131,3 +131,35 @@ export function cotizacionDegradada(extra: Partial<CotizacionRespuesta> = {}): C
     ...extra,
   };
 }
+
+/** "Cotizaciones abiertas": una fila del listado de bff-web (C01, perfil BAJO, oferta vigente). */
+export function resumenCotizacion(n: number, cambios: Partial<ResumenCotizacion> = {}): ResumenCotizacion {
+  return {
+    cotizacionId: `00000000-0000-4000-d000-${String(n).padStart(12, '0')}`,
+    codigo: `COT-2026-${String(n).padStart(5, '0')}`,
+    clienteId: '00000000-0000-4000-8000-000000000001',
+    clienteNombre: 'Cliente Prueba 01',
+    socioId: null,
+    productoId: 'vida-hipotecario',
+    versionProducto: '2026.09.1',
+    moneda: 'COP',
+    periodicidad: 'MENSUAL',
+    sumaAsegurada: '180000000',
+    prima: '33264',
+    nivelRiesgo: 'BAJO',
+    degradada: false,
+    creadaEn: '2026-10-25T15:00:00Z',
+    vigenteHasta: '2026-11-01T15:00:00Z',
+    estado: 'VIGENTE',
+    ...cambios,
+  };
+}
+
+export const LISTADO: ListadoCotizaciones = {
+  items: [
+    resumenCotizacion(5),
+    resumenCotizacion(4, { clienteNombre: null, nivelRiesgo: null, degradada: true, prima: '42504' }),
+  ],
+  siguienteCursor: 'cursor-2',
+  total: 3,
+};
