@@ -7,6 +7,7 @@ import {
   CasoBandeja,
   Comunicacion,
   DecisionSuscripcion,
+  EstadoRecaudo,
   ListaDecisiones,
   ReglaEvaluada,
   ResumenBandeja,
@@ -16,7 +17,7 @@ import {
 /**
  * Datos sintéticos de las pruebas web de HU-W13, HU-W14 y HU-W15: respuestas de bff-web para los casos
  * de contracts/datos-sinteticos/cotizaciones-suscripcion.json (S01, S02, S04 y S05), la aprobada
- * vencida y la aceptación de S01. La comunicación es la que deriva polizas
+ * vencida, la aceptación de S01 y su recaudo (HU-W16). La comunicación es la que deriva polizas
  * (docs/hu-w14-comunicacion.md §1.1).
  */
 export const BASE = 'https://api/web/v1';
@@ -362,4 +363,41 @@ export const ERRORES_ACEPTACION = {
   conflicto: { codigo: 'IDEMPOTENCIA_CONFLICTO', mensaje: 'x', correlationId: 'corr-conflicto', detalles: {} },
   noEncontrada: { codigo: 'ACEPTACION_NO_ENCONTRADA', mensaje: 'x', correlationId: 'corr-sin', detalles: {} },
   servicio: { codigo: 'SERVICIO_NO_DISPONIBLE', mensaje: 'x', correlationId: 'corr-503', detalles: {} },
+} as const;
+
+// --- HU-W16: estado del recaudo de la prima (paso 3, solo lectura) -------------------------------
+
+export const urlRecaudo = (cotizacionId: string) => `${URL_COTIZACIONES}/${cotizacionId}/recaudo`;
+
+/** 200 PENDIENTE: la prima de la aceptación de S01; `actualizadoEn` = `aceptadaEn`. */
+export const RECAUDO_PENDIENTE: EstadoRecaudo = {
+  estado: 'PENDIENTE',
+  claveRecaudo: ACEPTACION_ID,
+  monto: '64638',
+  moneda: 'COP',
+  transaccionId: null,
+  motivo: null,
+  actualizadoEn: ACEPTACION.aceptadaEn,
+};
+
+export const RECAUDO_CONFIRMADO: EstadoRecaudo = {
+  ...RECAUDO_PENDIENTE,
+  estado: 'CONFIRMADO',
+  transaccionId: 'TX-SINTETICA-0001',
+  actualizadoEn: '2026-10-24T15:00:01Z',
+};
+
+export const RECAUDO_RECHAZADO: EstadoRecaudo = {
+  ...RECAUDO_PENDIENTE,
+  estado: 'RECHAZADO',
+  motivo: 'FONDOS_INSUFICIENTES',
+  actualizadoEn: '2026-10-24T15:00:01Z',
+};
+
+/** Cuerpos B2 que bff-web promete en GET …/recaudo (lista blanca de la 16.14 más su 503). */
+export const ERRORES_RECAUDO = {
+  noEncontrada: { codigo: 'ACEPTACION_NO_ENCONTRADA', mensaje: 'x', correlationId: 'corr-sin', detalles: {} },
+  servicio: { codigo: 'SERVICIO_NO_DISPONIBLE', mensaje: 'x', correlationId: 'corr-503', detalles: {} },
+  rol: { codigo: 'ROL_NO_AUTORIZADO', mensaje: 'x', correlationId: 'corr-rol', detalles: {} },
+  actor: { codigo: 'ACTOR_REQUERIDO', mensaje: 'x', correlationId: 'corr-actor', detalles: {} },
 } as const;

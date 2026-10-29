@@ -5,15 +5,20 @@ import {
   Aceptacion,
   Comunicacion,
   DecisionSuscripcion,
+  EstadoRecaudo,
   ReglaEvaluada,
   SolicitudAceptacion,
 } from '../src/app/features/contratacion/contratacion.modelo';
 import {
   ACEPTACION,
+  COTIZACION_S01,
   DECISION_APROBADA,
   DECISION_RECHAZADA,
   DECISION_RESERVADA,
   DECISION_REVISION,
+  RECAUDO_CONFIRMADO,
+  RECAUDO_PENDIENTE,
+  RECAUDO_RECHAZADO,
   SOLICITUD_ACEPTACION,
 } from '../src/app/features/contratacion/contratacion.testing';
 import { ACEPTA_JSON, nuevoPacto } from './pacto';
@@ -23,7 +28,8 @@ const { boolean, eachLike, equal, integer, like, regex, uuid } = MatchersV3;
 /**
  * Pact consumidor de contratación. HU-W14 (W14-F06): lo que el portal necesita de
  * GET /v1/suscripciones/{decisionId} de bff-web para comunicar la decisión. HU-W15 (W15-F07): el
- * registro de la aceptación (POST /v1/cotizaciones/{cotizacionId}/aceptacion), al final del archivo. La `comunicacion` se
+ * registro de la aceptación (POST /v1/cotizaciones/{cotizacionId}/aceptacion). HU-W16 (16.15): el estado
+ * del recaudo (GET /v1/cotizaciones/{cotizacionId}/recaudo), al final del archivo. La `comunicacion` se
  * compara exacta (es con lo único que el portal decide qué mostrar); el resto de la decisión, por
  * tipo. Los estados del proveedor llevan el caso sintético (S01, S02, S04, S06) para que bff-web los
  * reproduzca con polizas y clientes simulados (fase C).
@@ -278,3 +284,69 @@ for (const caso of ACEPTACIONES) {
       });
   });
 }
+
+// --- HU-W16 (16.15): estado del recaudo de la prima (paso 3, solo lectura) -------------------------
+
+/**
+ * Lo que promete bff-web en la 16.14 y nada más: los tres estados y el 404 (sin 5xx, que no son una
+ * promesa del proveedor). `estado` se compara exacto: con él el portal decide qué mostrar y si sigue
+ * consultando; lo demás, por tipo o patrón, no con los valores del simulador. `transaccionId` y
+ * `motivo` son null salvo en su estado (Pact no expresa «null o texto»).
+ */
+function estadoRecaudo(r: EstadoRecaudo) {
+  return {
+    estado: equal(r.estado),
+    claveRecaudo: uuid(r.claveRecaudo),
+    monto: regex(/^-?\d+(\.\d+)?$/, r.monto),
+    moneda: regex(/^[A-Z]{3}$/, r.moneda),
+    transaccionId: r.transaccionId === null ? null : like(r.transaccionId),
+    motivo: r.motivo === null ? null : regex(/^[A-Z][A-Z0-9_]*$/, r.motivo),
+    actualizadoEn: instante(r.actualizadoEn),
+  };
+}
+
+const urlRecaudo = (cotizacionId: string) => `/v1/cotizaciones/${cotizacionId}/recaudo`;
+
+const RECAUDOS: { estado: string; recaudo: EstadoRecaudo }[] = [
+  { estado: 'la aceptación tiene el recaudo pendiente', recaudo: RECAUDO_PENDIENTE },
+  { estado: 'la aceptación tiene el recaudo confirmado', recaudo: RECAUDO_CONFIRMADO },
+  { estado: 'la aceptación tiene el recaudo rechazado', recaudo: RECAUDO_RECHAZADO },
+];
+
+for (const { estado, recaudo } of RECAUDOS) {
+  test(`recaudo · 200 ${recaudo.estado}: ${estado}`, async () => {
+    await pacto
+      .addInteraction()
+      .given(estado, { cotizacionId: COTIZACION_S01 })
+      .uponReceiving(`la consulta del recaudo de la prima · ${recaudo.estado}`)
+      .withRequest('GET', urlRecaudo(COTIZACION_S01), (pedido) => pedido.headers(ACEPTA_JSON))
+      .willRespondWith(200, (respuesta) =>
+        respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(estadoRecaudo(recaudo)),
+      )
+      .executeTest(async (servidor) => {
+        const respuesta = await fetch(`${servidor.url}${urlRecaudo(COTIZACION_S01)}`, { headers: ACEPTA_JSON });
+        expect(respuesta.status).toBe(200);
+        const cuerpo = (await respuesta.json()) as EstadoRecaudo;
+        expect(cuerpo.estado).toBe(recaudo.estado);
+        expect(cuerpo.monto).toMatch(/^\d+$/);
+        expect(cuerpo.transaccionId === null).toBe(recaudo.estado !== 'CONFIRMADO');
+        expect(cuerpo.motivo === null).toBe(recaudo.estado !== 'RECHAZADO');
+      });
+  });
+}
+
+test('recaudo · 404 ACEPTACION_NO_ENCONTRADA: la cotización no tiene aceptación', async () => {
+  await pacto
+    .addInteraction()
+    .given('la cotización no tiene aceptación', { cotizacionId: COTIZACION_S01 })
+    .uponReceiving('la consulta del recaudo de una cotización sin aceptación')
+    .withRequest('GET', urlRecaudo(COTIZACION_S01), (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(404, (respuesta) =>
+      respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(error('ACEPTACION_NO_ENCONTRADA', {})),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${urlRecaudo(COTIZACION_S01)}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(404);
+      expect((await respuesta.json()).codigo).toBe('ACEPTACION_NO_ENCONTRADA');
+    });
+});

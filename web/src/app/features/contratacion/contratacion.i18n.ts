@@ -18,7 +18,8 @@ const NUMEROS_EN = ['', 'One', 'Two', 'Three'];
 
 /**
  * HU-W13: textos de la suscripción automática (mockups E01 a E04); HU-W14: su comunicación (E02, E03);
- * HU-W15: la aceptación de la oferta (F01) y la oferta vencida con el lenguaje de C08.
+ * HU-W15: la aceptación de la oferta (F01) y la oferta vencida con el lenguaje de C08; HU-W16: el recaudo
+ * de la prima (paso 3, de solo lectura).
  */
 const ES = {
   // Menú lateral y migas.
@@ -123,21 +124,26 @@ const ES = {
   declAvisosElectronicos: 'Acepto recibir avisos electrónicos',
   obligatoria: 'Obligatoria',
   versionDeclaraciones: (version: string) => `Texto de las declaraciones, versión ${version}`,
-  continuarFirma: 'Continuar a la firma',
+  // HU-W16 (ADR 0013): aceptar inicia el primer cobro, sin firma del tomador.
+  continuarFirma: 'Aceptar la oferta',
   registrandoAceptacion: 'Registrando la aceptación…',
   motivoDeshabilitado: 'Para continuar, activa «He leído las condiciones generales» y «La información declarada es veraz».',
-  declaracionesCompletas: 'Las declaraciones obligatorias están completas: puedes continuar a la firma.',
+  declaracionesCompletas: 'Las declaraciones obligatorias están completas: puedes aceptar la oferta.',
   volverOferta: 'Volver a la oferta',
   notaSinDinero:
-    'Hasta este punto no se ha movido dinero ni se ha emitido nada. La póliza solo existe cuando la firma y el recaudo se completan.',
+    'Al aceptar la oferta se inicia el cobro del primer recaudo de la prima, sin esperar una firma del tomador. Hasta ahora no se ha movido dinero ni se ha emitido la póliza.',
   aceptacionRegistrada: 'Aceptación registrada',
-  aceptacionRegistradaDetalle: 'La aceptación quedó registrada como evidencia y el recaudo de la prima está habilitado.',
+  aceptacionRegistradaDetalle: 'La aceptación quedó registrada como evidencia y se inició el cobro del primer recaudo de la prima.',
   aceptacionExistente: 'Esta oferta ya tenía una aceptación registrada; esta es su evidencia.',
   kvAceptadaEn: 'Fecha y hora',
   kvRecaudo: 'Recaudo de la prima',
   recaudoHabilitado: 'Habilitado',
   kvSiguientePaso: 'Siguiente paso',
-  siguienteFirmaDetalle: 'El siguiente paso es la firma electrónica del tomador. Estará disponible en esta sección.',
+  // HU-W16 (ADR 0013): tras la aceptación viene el recaudo; la firma del tomador no tiene historia.
+  siguienteRecaudoDetalle:
+    'El cobro de la prima empezó al registrar la aceptación. La firma electrónica del tomador no está disponible en esta versión.',
+  verRecaudo: 'Ver el recaudo de la prima',
+  noDisponible: 'no disponible',
   vencidaTitulo: 'Esta oferta ya no está vigente',
   vencidaSub: (codigo: string, fecha: string) => `${codigo} · venció el ${fecha}`,
   vencidaAlertaTitulo: 'La oferta venció y no puede aceptarse.',
@@ -145,6 +151,33 @@ const ES = {
   datosOfertaVencida: 'Datos de la oferta vencida',
   kvPrimaOfrecida: 'Prima ofrecida entonces',
   kvVencio: 'Venció el',
+
+  // HU-W16: recaudo de la prima (paso 3, de solo lectura; ADR 0013).
+  migaRecaudo: 'Recaudo',
+  tituloRecaudo: 'Primer recaudo de la prima',
+  pasoTresDeTres: 'Paso 3 de 3 · recaudo de la prima',
+  primerCobro: 'Primer cobro',
+  kvReferenciaCobro: 'Referencia única del cobro',
+  kvEstadoRecaudo: 'Estado',
+  kvTransaccion: 'Número de transacción',
+  kvMotivoRechazo: 'Motivo del rechazo',
+  kvActualizadoEn: 'Última actualización',
+  recaudoPendiente: 'Pendiente de confirmación',
+  recaudoConfirmado: 'Recaudo confirmado',
+  recaudoRechazado: 'Recaudo rechazado',
+  recaudoPendienteDetalle:
+    'El cobro empezó al registrar la aceptación. Esperamos la confirmación del proveedor de pagos; si no responde a tiempo, la conciliación puede tardar unos minutos.',
+  recaudoConfirmadoDetalle: 'El proveedor de pagos confirmó el primer cobro de la prima.',
+  recaudoRechazadoDetalle: 'El proveedor de pagos rechazó el primer cobro de la prima.',
+  recaudoConsultando: 'Consultamos el estado automáticamente.',
+  recaudoSinSondeo: 'Ya no consultamos el estado automáticamente. Usa «Actualizar» para ver si cambió.',
+  actualizar: 'Actualizar',
+  actualizando: 'Actualizando…',
+  anuncioRecaudo: (estado: string) => `Estado del recaudo: ${estado}`,
+  anuncioSiguePendiente: 'El recaudo sigue pendiente de confirmación.',
+  recaudoNoActualizado: 'No pudimos actualizar el estado; se muestra el último conocido.',
+  volverAceptacion: 'Volver a la aceptación',
+  motivoRecaudoDesconocido: 'El proveedor de pagos no informó un motivo que podamos mostrar.',
 
   // Tabla de reglas.
   colRegla: 'Regla',
@@ -244,6 +277,7 @@ const ES = {
   errorDeclaracionesIncompletas: 'Faltan declaraciones obligatorias del tomador.',
   errorTextoNoVigente: 'El texto de las declaraciones cambió. Recarga la página para ver la versión vigente.',
   errorAceptacionNoEncontrada: 'La oferta aún no tiene una aceptación registrada.',
+  errorRecaudoNoDisponible: 'El estado del recaudo no está disponible en este momento. Inténtalo en unos minutos.',
   errorSinDecision: 'Esta cotización no tiene una decisión de suscripción. Solicítala desde la cotización.',
   errorRed: 'No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.',
   errorGeneral: 'No pudimos completar la operación. Inténtalo de nuevo.',
@@ -347,21 +381,24 @@ const EN: TextosContratacion = {
   declAvisosElectronicos: 'I agree to receive electronic notices',
   obligatoria: 'Required',
   versionDeclaraciones: (version: string) => `Declarations text, version ${version}`,
-  continuarFirma: 'Continue to signature',
+  continuarFirma: 'Accept the offer',
   registrandoAceptacion: 'Recording the acceptance…',
   motivoDeshabilitado: 'To continue, turn on “I have read the general terms” and “The information I declared is true”.',
-  declaracionesCompletas: 'The required declarations are complete: you can continue to signature.',
+  declaracionesCompletas: 'The required declarations are complete: you can accept the offer.',
   volverOferta: 'Back to the offer',
   notaSinDinero:
-    'No money has moved and nothing has been issued yet. The policy only exists once the signature and the collection are complete.',
+    'Accepting the offer starts the first premium charge, without waiting for a signature from the policyholder. So far no money has moved and no policy has been issued.',
   aceptacionRegistrada: 'Acceptance recorded',
-  aceptacionRegistradaDetalle: 'The acceptance was recorded as evidence and premium collection is enabled.',
+  aceptacionRegistradaDetalle: 'The acceptance was recorded as evidence and the first premium charge has started.',
   aceptacionExistente: 'This offer already had a recorded acceptance; this is its evidence.',
   kvAceptadaEn: 'Date and time',
   kvRecaudo: 'Premium collection',
   recaudoHabilitado: 'Enabled',
   kvSiguientePaso: 'Next step',
-  siguienteFirmaDetalle: 'The next step is the policyholder’s electronic signature. It will be available in this section.',
+  siguienteRecaudoDetalle:
+    'The premium charge started when the acceptance was recorded. The policyholder’s electronic signature is not available in this version.',
+  verRecaudo: 'View the premium collection',
+  noDisponible: 'not available',
   vencidaTitulo: 'This offer is no longer valid',
   vencidaSub: (codigo: string, fecha: string) => `${codigo} · expired on ${fecha}`,
   vencidaAlertaTitulo: 'The offer expired and cannot be accepted.',
@@ -369,6 +406,32 @@ const EN: TextosContratacion = {
   datosOfertaVencida: 'Expired offer details',
   kvPrimaOfrecida: 'Premium offered then',
   kvVencio: 'Expired on',
+
+  migaRecaudo: 'Collection',
+  tituloRecaudo: 'First premium collection',
+  pasoTresDeTres: 'Step 3 of 3 · premium collection',
+  primerCobro: 'First charge',
+  kvReferenciaCobro: 'Unique charge reference',
+  kvEstadoRecaudo: 'Status',
+  kvTransaccion: 'Transaction number',
+  kvMotivoRechazo: 'Rejection reason',
+  kvActualizadoEn: 'Last updated',
+  recaudoPendiente: 'Pending confirmation',
+  recaudoConfirmado: 'Collection confirmed',
+  recaudoRechazado: 'Collection rejected',
+  recaudoPendienteDetalle:
+    'The charge started when the acceptance was recorded. We are waiting for the payment provider to confirm it; if it does not answer in time, reconciliation may take a few minutes.',
+  recaudoConfirmadoDetalle: 'The payment provider confirmed the first premium charge.',
+  recaudoRechazadoDetalle: 'The payment provider rejected the first premium charge.',
+  recaudoConsultando: 'We check the status automatically.',
+  recaudoSinSondeo: 'We no longer check the status automatically. Use “Refresh” to see whether it changed.',
+  actualizar: 'Refresh',
+  actualizando: 'Refreshing…',
+  anuncioRecaudo: (estado: string) => `Collection status: ${estado}`,
+  anuncioSiguePendiente: 'The collection is still pending confirmation.',
+  recaudoNoActualizado: 'We could not refresh the status; showing the last known one.',
+  volverAceptacion: 'Back to acceptance',
+  motivoRecaudoDesconocido: 'The payment provider did not report a reason we can show.',
 
   colRegla: 'Rule',
   colCondicion: 'Condition',
@@ -464,6 +527,7 @@ const EN: TextosContratacion = {
   errorDeclaracionesIncompletas: 'Required policyholder declarations are missing.',
   errorTextoNoVigente: 'The declarations text changed. Reload the page to see the current version.',
   errorAceptacionNoEncontrada: 'The offer does not have a recorded acceptance yet.',
+  errorRecaudoNoDisponible: 'The collection status is not available right now. Try again in a few minutes.',
   errorSinDecision: 'This quote has no underwriting decision. Request it from the quote.',
   errorRed: 'There is no connection with the server. Check your network and try again.',
   errorGeneral: 'We could not complete the operation. Try again.',
@@ -490,6 +554,8 @@ type Catalogo = {
   /** HU-W14: el motivo explicado al cliente. Sin cifras de las reglas ni menciones a listas (R-65). */
   explicaciones: Record<MotivoCliente, string>;
   niveles: Record<NivelRiesgo, string>;
+  /** HU-W16: motivos de rechazo del recaudo (códigos del proveedor que entrega dinero). */
+  motivosRecaudo: Record<string, string>;
 };
 
 /** Nombres que no vienen en el contrato: productos (el contrato solo da el id), motivos y explicaciones. */
@@ -517,6 +583,7 @@ const CATALOGO: Record<Exclude<Idioma, 'pseudo'>, Catalogo> = {
       PERFIL_REQUIERE_REVISION: 'Necesitamos revisar con más detalle la información de tu perfil.',
     },
     niveles: { BAJO: 'Bajo', MEDIO: 'Medio', ALTO: 'Alto' },
+    motivosRecaudo: { FONDOS_INSUFICIENTES: 'Fondos insuficientes' },
   },
   'en-US': {
     productos: {
@@ -541,6 +608,7 @@ const CATALOGO: Record<Exclude<Idioma, 'pseudo'>, Catalogo> = {
       PERFIL_REQUIERE_REVISION: 'We need to take a closer look at your profile information.',
     },
     niveles: { BAJO: 'Low', MEDIO: 'Medium', ALTO: 'High' },
+    motivosRecaudo: { FONDOS_INSUFICIENTES: 'Insufficient funds' },
   },
 };
 
@@ -576,6 +644,15 @@ export class TextosContratacionService {
 
   nivel(nivel: NivelRiesgo): string {
     return this.marcar(this.catalogo().niveles[nivel] ?? nivel);
+  }
+
+  /**
+   * HU-W16: el motivo del rechazo del recaudo. MOTIVO_NO_INFORMADO (el que pone dinero cuando el
+   * proveedor no da un código) y cualquier código sin texto usan el genérico.
+   */
+  motivoRecaudo(motivo: string | null): string {
+    const motivos = this.catalogo().motivosRecaudo;
+    return motivo !== null && Object.hasOwn(motivos, motivo) ? this.marcar(motivos[motivo]) : this.t().motivoRecaudoDesconocido;
   }
 
   /** Un monto (texto decimal exacto: solo se formatea). */

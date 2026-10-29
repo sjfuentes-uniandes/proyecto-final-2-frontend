@@ -14,7 +14,10 @@ describe('ContratacionLayoutComponent (E01 a E04 y F01)', () => {
     TestBed.configureTestingModule({
       imports: [ContratacionLayoutComponent],
       providers: [
-        provideRouter([{ path: 'contratacion/cotizaciones/:cotizacionId/aceptacion', component: PaginaVaciaComponent }]),
+        provideRouter([
+          { path: 'contratacion/cotizaciones/:cotizacionId/aceptacion', component: PaginaVaciaComponent },
+          { path: 'contratacion/cotizaciones/:cotizacionId/recaudo', component: PaginaVaciaComponent },
+        ]),
         proveerAuthFalso(),
       ],
     }),
@@ -65,5 +68,17 @@ describe('ContratacionLayoutComponent (E01 a E04 y F01)', () => {
     expect(emision?.getAttribute('href')).toBe('/contratacion/cotizaciones/cot-1/aceptacion');
     expect(emision?.classList).toContain('side__item--activo');
     expect(html.querySelector('.side__item--off')?.textContent).not.toContain('Emisión');
+  });
+
+  it('HU-W16: en el recaudo (paso 3) «Emisión» también queda activo y enlaza a la página actual', async () => {
+    await iniciarSesion({ name: 'Carlos Portillo', 'cognito:groups': ['asesores'] });
+    const { fixture, html } = crear();
+    await TestBed.inject(Router).navigateByUrl('/contratacion/cotizaciones/cot-1/recaudo');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const emision = Array.from(html.querySelectorAll('a.side__item')).find((a) => a.textContent?.includes('Emisión'));
+    expect(emision?.getAttribute('href')).toBe('/contratacion/cotizaciones/cot-1/recaudo');
+    expect(emision?.classList).toContain('side__item--activo');
   });
 });

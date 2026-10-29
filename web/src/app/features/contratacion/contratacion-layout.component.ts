@@ -7,12 +7,12 @@ import { SesionService } from '../../core/auth/sesion.service';
 import { GrupoSeccion, ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 import { TextosContratacionService } from './contratacion.i18n';
 
-/** HU-W15: la aceptación de la oferta (F01) es el primer paso de la emisión. */
-const RUTA_ACEPTACION = /^\/contratacion\/cotizaciones\/[^/?#]+\/aceptacion/;
+/** HU-W15: la aceptación de la oferta (F01) es el primer paso de la emisión; HU-W16: el recaudo, el tercero. */
+const RUTA_EMISION = /^\/contratacion\/cotizaciones\/[^/?#]+\/(aceptacion|recaudo)/;
 
 /**
  * Menú lateral de E01 a E04 (CONTRATACIÓN): la bandeja solo para suscriptores. En la aceptación (F01,
- * HU-W15) «Emisión» queda activo y enlaza a la página actual; fuera de ella sigue pendiente hasta que
+ * HU-W15) y en el recaudo (HU-W16) «Emisión» queda activo y enlaza a la página actual; fuera de ella sigue pendiente hasta que
  * HU-W17 tenga su página. «Cotizaciones» abre "Cotizaciones abiertas" (solo el grupo asesores, como su
  * ruta); Pólizas (HU-W18) llega en otra historia.
  */
@@ -38,9 +38,9 @@ export class ContratacionLayoutComponent {
   readonly grupos = computed<GrupoSeccion[]>(() => {
     const t = this.textos.t();
     this.sesion.claims();
-    const aceptacion = RUTA_ACEPTACION.exec(this.url())?.[0];
-    const emision: ItemSeccion = aceptacion
-      ? { etiqueta: t.menuEmision, icono: '✎', ruta: aceptacion }
+    const paso = RUTA_EMISION.exec(this.url())?.[0];
+    const emision: ItemSeccion = paso
+      ? { etiqueta: t.menuEmision, icono: '✎', ruta: paso }
       : { etiqueta: t.menuEmision, icono: '✎', pendiente: t.proximamente };
     const bandeja: ItemSeccion[] = this.sesion.tieneGrupo('suscriptores')
       ? [{ etiqueta: t.menuBandeja, icono: '⚖', ruta: 'bandeja' }]

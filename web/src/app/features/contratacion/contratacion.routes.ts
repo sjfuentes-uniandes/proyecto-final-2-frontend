@@ -39,6 +39,13 @@ export const routes: Routes = [
           import('./paginas/aceptacion-oferta/aceptacion-oferta.component').then((m) => m.AceptacionOfertaComponent),
       },
       {
+        // HU-W16 (paso 3, solo lectura): desde «Ver el recaudo de la prima» de la confirmación de F01.
+        path: 'cotizaciones/:cotizacionId/recaudo',
+        title: 'Recaudo de la prima · Solventa',
+        canActivate: [requiereGrupo('asesores')],
+        loadComponent: () => import('./paginas/recaudo-prima/recaudo-prima.component').then((m) => m.RecaudoPrimaComponent),
+      },
+      {
         path: 'decisiones/:decisionId',
         title: 'Decisión de suscripción · Solventa',
         loadComponent: () =>

@@ -7,6 +7,7 @@ import {
   Aceptacion,
   BandejaSuscripcion,
   DecisionSuscripcion,
+  EstadoRecaudo,
   FiltrosBandeja,
   ListaDecisiones,
   ResumenBandeja,
@@ -16,7 +17,7 @@ import {
 
 /**
  * HU-W13: suscripción automática en bff-web (que la reenvía a polizas); HU-W15: la aceptación de la
- * oferta. Sin lógica de presentación.
+ * oferta; HU-W16: el estado del recaudo de la prima. Sin lógica de presentación.
  */
 @Injectable({ providedIn: 'root' })
 export class ContratacionService {
@@ -68,6 +69,11 @@ export class ContratacionService {
   /** HU-W15: 404 ACEPTACION_NO_ENCONTRADA si la cotización aún no se aceptó. */
   consultarAceptacion(cotizacionId: string): Observable<Aceptacion> {
     return this.http.get<Aceptacion>(this.urlAceptacion(cotizacionId));
+  }
+
+  /** HU-W16: el primer cobro de la prima, de solo lectura; 404 ACEPTACION_NO_ENCONTRADA sin aceptación. */
+  consultarRecaudo(cotizacionId: string): Observable<EstadoRecaudo> {
+    return this.http.get<EstadoRecaudo>(`${this.base}/cotizaciones/${encodeURIComponent(cotizacionId)}/recaudo`);
   }
 
   private urlAceptacion(cotizacionId: string): string {

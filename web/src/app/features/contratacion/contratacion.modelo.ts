@@ -226,3 +226,22 @@ export interface Aceptacion {
   recaudoHabilitado: boolean;
   siguientePaso: SiguientePasoContratacion;
 }
+
+/** HU-W16: el primer cobro de la prima, de solo lectura (ADR 0013, decisión 9). */
+export type SituacionRecaudo = 'PENDIENTE' | 'CONFIRMADO' | 'RECHAZADO';
+
+export interface EstadoRecaudo {
+  /** PENDIENTE mientras dinero no publica un estado final. */
+  estado: SituacionRecaudo;
+  /** El id de la aceptación. */
+  claveRecaudo: string;
+  /** Texto decimal: lo cobrado si está CONFIRMADO; si no, la prima de la oferta aceptada. */
+  monto: string;
+  moneda: string;
+  /** Solo en CONFIRMADO. */
+  transaccionId: string | null;
+  /** Código del rechazo; solo en RECHAZADO. */
+  motivo: string | null;
+  /** Cuándo dinero resolvió el cobro; si está PENDIENTE, cuándo se aceptó. */
+  actualizadoEn: string;
+}

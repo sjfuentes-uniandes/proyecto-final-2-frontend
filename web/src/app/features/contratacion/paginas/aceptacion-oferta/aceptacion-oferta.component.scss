@@ -47,3 +47,5 @@ h4 { margin: 14px 0 6px; font-size: 13px; color: var(--sv-azul-oscuro); }
 .alerta p { margin: 0; }
 .kv .tenue { color: var(--sv-texto-secundario); font-weight: 400; }
 .nota { color: var(--sv-azul); }
+/* HU-W16: el aviso de que aceptar inicia el cobro; el tono oscuro de _contraste (WCAG 1.4.3). */
+.nota--alerta { color: #7a4a00; }

@@ -10,15 +10,17 @@ import {
   COTIZACION_S01,
   DECISION_APROBADA,
   DECISION_APROBADA_ID,
+  RECAUDO_PENDIENTE,
   RESUMEN,
   SOLICITUD_ACEPTACION,
   URL_BANDEJA,
   URL_RESUMEN,
   URL_SUSCRIPCIONES,
   urlAceptacion,
+  urlRecaudo,
 } from './contratacion.testing';
 
-describe('ContratacionService (HU-W13 y HU-W15)', () => {
+describe('ContratacionService (HU-W13, HU-W15 y HU-W16)', () => {
   let http: HttpTestingController;
   let servicio: ContratacionService;
 
@@ -80,5 +82,16 @@ describe('ContratacionService (HU-W13 y HU-W15)', () => {
     const get = http.expectOne(urlAceptacion(COTIZACION_S01));
     expect(get.request.method).toBe('GET');
     get.flush(ACEPTACION);
+  });
+
+  it('HU-W16: consulta el estado del recaudo por cotización, sin cuerpo ni clave', () => {
+    let recibido: unknown;
+    servicio.consultarRecaudo('cot/1').subscribe((r) => (recibido = r));
+    const get = http.expectOne(urlRecaudo('cot%2F1'));
+    expect(get.request.method).toBe('GET');
+    expect(get.request.body).toBeNull();
+    expect(get.request.headers.has('Idempotency-Key')).toBeFalse();
+    get.flush(RECAUDO_PENDIENTE);
+    expect(recibido).toEqual(RECAUDO_PENDIENTE);
   });
 });

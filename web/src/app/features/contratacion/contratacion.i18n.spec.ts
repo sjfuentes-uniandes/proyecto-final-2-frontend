@@ -80,4 +80,31 @@ describe('Textos de la contratación (HU-W13: es-CO, en-US y pseudo-localizació
     expect(textos.nivel('ALTO')).toMatch(/^⟦/);
     expect(textos.locale()).toBe('es-CO');
   });
+
+  it('HU-W16: el motivo del rechazo del recaudo por código; uno desconocido o no informado, el genérico', () => {
+    const textos = TestBed.inject(TextosContratacionService);
+    const generico = 'El proveedor de pagos no informó un motivo que podamos mostrar.';
+    expect(textos.motivoRecaudo('FONDOS_INSUFICIENTES')).toBe('Fondos insuficientes');
+    expect(textos.motivoRecaudo('MOTIVO_NO_INFORMADO')).toBe(generico);
+    expect(textos.motivoRecaudo('CODIGO_QUE_NO_EXISTE')).toBe(generico);
+    expect(textos.motivoRecaudo('toString')).toBe(generico);
+    expect(textos.motivoRecaudo(null)).toBe(generico);
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    expect(textos.motivoRecaudo('FONDOS_INSUFICIENTES')).toBe('Insufficient funds');
+    expect(textos.motivoRecaudo('MOTIVO_NO_INFORMADO')).toBe('The payment provider did not report a reason we can show.');
+    TestBed.inject(IdiomaService).cambiar('pseudo');
+    expect(textos.motivoRecaudo('FONDOS_INSUFICIENTES')).toMatch(/^⟦/);
+    expect(textos.motivoRecaudo('OTRO')).toMatch(/^⟦/);
+  });
+
+  it('HU-W16: el monto del primer cobro (texto, sin aritmética) y su fecha según el idioma', () => {
+    const textos = TestBed.inject(TextosContratacionService);
+    expect(textos.monto('64638', 'COP').replace(/\s/g, ' ')).toBe('$ 64.638');
+    const fechaEs = textos.fechaHora('2026-10-24T15:00:01Z');
+    expect(fechaEs).toMatch(/24.*2026/);
+    expect(fechaEs).not.toMatch(/Oct/);
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    expect(textos.monto('64638', 'COP').replace(/\s/g, ' ')).toBe('COP 64,638');
+    expect(textos.fechaHora('2026-10-24T15:00:01Z')).toMatch(/^Oct 24, 2026/);
+  });
 });
