@@ -17,6 +17,16 @@ export const routes: Routes = [
           import('./paginas/nuevo-perfilamiento/nuevo-perfilamiento.component').then((m) => m.NuevoPerfilamientoComponent),
       },
       {
+        // "Cotizaciones abiertas": las cotizaciones con oferta, para volver a una ya calculada.
+        path: 'cotizaciones',
+        pathMatch: 'full',
+        title: 'Cotizaciones abiertas · Solventa',
+        loadComponent: () =>
+          import('../cotizacion/paginas/cotizaciones-abiertas/cotizaciones-abiertas.component').then(
+            (m) => m.CotizacionesAbiertasComponent,
+          ),
+      },
+      {
         // HU-W03: prima calculada (paso 3); la oferta completa es de HU-W04.
         path: 'cotizaciones/:cotizacionId',
         title: 'Cotización · Solventa',

@@ -22,7 +22,7 @@ export class ConsentimientosLayoutComponent {
         titulo: t.grupoContratacion,
         items: [
           { etiqueta: t.menuNuevaCotizacion, icono: '$', ruta: '/perfilamiento/nuevo' },
-          { etiqueta: t.menuCotizacionesAbiertas, icono: '📄', pendiente: t.proximamente },
+          { etiqueta: t.menuCotizacionesAbiertas, icono: '📄', ruta: '/perfilamiento/cotizaciones' },
           { etiqueta: t.menuSuscripcion, icono: '⚖', pendiente: t.proximamente },
           { etiqueta: t.menuEmision, icono: '✎', pendiente: t.proximamente },
         ],

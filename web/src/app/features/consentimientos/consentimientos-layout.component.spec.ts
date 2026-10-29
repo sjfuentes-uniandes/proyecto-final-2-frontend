@@ -21,6 +21,7 @@ describe('ConsentimientosLayoutComponent', () => {
     const enlaces = Array.from(html.querySelectorAll<HTMLAnchorElement>('a.side__item'));
     expect(enlaces.map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
       ['$Nueva cotización', '/perfilamiento/nuevo'],
+      ['📄Cotizaciones abiertas', '/perfilamiento/cotizaciones'],
       ['👤Consentimientos', '/consentimientos'],
       ['📊Perfilamiento', '/perfilamiento/nuevo'],
     ]);

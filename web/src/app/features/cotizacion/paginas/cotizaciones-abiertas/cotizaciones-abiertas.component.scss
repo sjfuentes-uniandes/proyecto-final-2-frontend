@@ -1,0 +1,29 @@
+/* "Cotizaciones abiertas": el patrón del listado de pólizas (J01) con las clases globales (card, fld, data, tag). */
+@use '../../../contratacion/contraste';
+
+:host { display: flex; flex-direction: column; gap: 12px; }
+h2 { margin: 0 0 4px; font-size: 22px; color: var(--sv-azul-oscuro); }
+.sub { margin: 0; font-size: 13px; color: var(--sv-texto-secundario); }
+.crumb { color: var(--sv-texto-secundario); }
+.h-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+.filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 18px; }
+.filtros .fld { margin: 0; }
+.btn--enlace { border: 0; background: none; font-weight: 500; color: var(--sv-texto-secundario); }
+.btn--enlace:hover { text-decoration: underline; }
+
+.alerta p { margin: 0; }
+.seguimiento { font-size: 12px; }
+
+.tabla { padding: 0; overflow-x: auto; }
+.tabla .sub { padding: 18px; }
+.codigo { padding: 16px 14px; border-bottom: 1px solid var(--sv-borde); background: none; font-size: 13px; letter-spacing: 0;
+  text-transform: none; color: var(--sv-azul); }
+.num { text-align: right; }
+.detalle { display: block; margin-top: 2px; font-size: 12px; color: var(--sv-texto-secundario); }
+.estados { white-space: nowrap; }
+.estados .tag + .tag { margin-left: 6px; }
+.tag--neutro { border: 1px solid var(--sv-borde); background: var(--sv-fondo); color: var(--sv-texto-secundario); }
+.abrir { font-weight: 600; color: var(--sv-azul); white-space: nowrap; }
+.mas { margin: 12px 14px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

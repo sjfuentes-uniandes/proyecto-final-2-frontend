@@ -13,7 +13,8 @@ const RUTA_ACEPTACION = /^\/contratacion\/cotizaciones\/[^/?#]+\/aceptacion/;
 /**
  * Menú lateral de E01 a E04 (CONTRATACIÓN): la bandeja solo para suscriptores. En la aceptación (F01,
  * HU-W15) «Emisión» queda activo y enlaza a la página actual; fuera de ella sigue pendiente hasta que
- * HU-W17 tenga su página. Cotizaciones y Pólizas (HU-W18) llegan en otras historias.
+ * HU-W17 tenga su página. «Cotizaciones» abre "Cotizaciones abiertas" (solo el grupo asesores, como su
+ * ruta); Pólizas (HU-W18) llega en otra historia.
  */
 @Component({
   selector: 'app-contratacion-layout',
@@ -48,7 +49,9 @@ export class ContratacionLayoutComponent {
       {
         titulo: t.grupoContratacion,
         items: [
-          { etiqueta: t.menuCotizaciones, icono: '$', pendiente: t.proximamente },
+          this.sesion.tieneGrupo('asesores')
+            ? { etiqueta: t.menuCotizaciones, icono: '$', ruta: '/perfilamiento/cotizaciones' }
+            : { etiqueta: t.menuCotizaciones, icono: '$', pendiente: t.proximamente },
           ...bandeja,
           { etiqueta: t.menuDecisiones, icono: '⚖', ruta: 'decisiones' },
           emision,

@@ -72,12 +72,23 @@
   @if (errorCotizacion(); as e) {
     <div class="alerta alerta--error" role="alert" tabindex="-1" #alertaCotizacion>
       <span aria-hidden="true">⚠</span>
-      <p>
-        {{ e.mensaje }}
-        @if (e.correlationId) {
-          <br /><span class="seguimiento">{{ tc.codigoSeguimiento(e.correlationId) }}</span>
+      <div>
+        <p>
+          {{ e.mensaje }}
+          @if (e.correlationId) {
+            <br /><span class="seguimiento">{{ tc.codigoSeguimiento(e.correlationId) }}</span>
+          }
+        </p>
+        @if (e.pendiente?.faltantes?.length) {
+          <!-- HU-W06: cotización pendiente; qué faltó, sin valores. Se recalcula con el botón del perfil. -->
+          <p class="pendiente-titulo"><strong>{{ tc.pendienteTitulo }}</strong></p>
+          <ul class="pendiente-faltantes">
+            @for (f of e.pendiente?.faltantes; track f.fuente + f.dato) {
+              <li>{{ tc.pendienteFaltante(textos.fuenteOCodigo(f.fuente), textos.campo(f.dato)) }} ({{ textos.estadoFuente(f.motivo) }})</li>
+            }
+          </ul>
         }
-      </p>
+      </div>
     </div>
   }
 

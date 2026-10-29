@@ -22,7 +22,7 @@ export class PerfilamientoLayoutComponent {
         titulo: t.grupoContratacion,
         items: [
           { etiqueta: t.menuNuevaCotizacion, icono: '$', ruta: 'nuevo' },
-          { etiqueta: t.menuCotizacionesAbiertas, icono: '📄', pendiente: t.proximamente },
+          { etiqueta: t.menuCotizacionesAbiertas, icono: '📄', ruta: '/perfilamiento/cotizaciones' },
           // HU-W13: la suscripción y la emisión viven en Contratación.
           { etiqueta: t.menuSuscripcion, icono: '⚖', ruta: '/contratacion' },
           { etiqueta: t.menuEmision, icono: '✎', ruta: '/contratacion' },

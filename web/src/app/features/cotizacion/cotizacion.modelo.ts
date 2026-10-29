@@ -1,4 +1,4 @@
-/** Contrato de /web/v1/cotizaciones y /web/v1/productos/{id}/condiciones (bff-web, HU-W03 y HU-W04). */
+/** Contrato de /web/v1/cotizaciones y /web/v1/productos/{id}/condiciones (bff-web, HU-W03, HU-W04 y HU-W06). */
 import { NivelRiesgo } from '../perfilamiento/perfilamiento.modelo';
 
 /** Montos y tasas viajan como texto decimal (exactos): se formatean, no se operan. */
@@ -107,6 +107,18 @@ export interface Oferta {
   estado: EstadoOferta;
 }
 
+/** HU-W06: por qué no se obtuvo la fuente (estado del linaje del perfil). */
+export type MotivoFalla = 'TIEMPO_AGOTADO' | 'NO_DISPONIBLE' | 'RESPUESTA_INVALIDA';
+
+/** HU-W06: un dato que no se obtuvo. Solo su nombre: el valor no existe y no se inventa. */
+export interface DatoFaltante {
+  fuente: string;
+  dato: string;
+  motivo: MotivoFalla;
+  /** Regla de fallback aplicada; null si la fuente no tenía regla vigente. */
+  regla: { id: string; version: string } | null;
+}
+
 export interface CotizacionRespuesta {
   id: string;
   clienteId: string;
@@ -138,4 +150,47 @@ export interface CotizacionRespuesta {
   vigenteHasta?: string | null;
   /** HU-W04: null en las cotizaciones anteriores a la oferta. */
   oferta?: Oferta | null;
+  /** HU-W06 (C07): oferta provisional; una fuente opcional faltó y una regla permitió degradar. */
+  degradada?: boolean;
+  faltantes?: DatoFaltante[];
+  versionReglasFallback?: string | null;
+}
+
+/** "Cotizaciones abiertas": una fila del listado (ResumenCotizacionVista de bff-web). */
+export interface ResumenCotizacion {
+  cotizacionId: string;
+  /** COT-AAAA-NNNNN. */
+  codigo: string;
+  clienteId: string;
+  /** Lo compone bff-web desde clientes; null si no respondió a tiempo. */
+  clienteNombre: string | null;
+  socioId: string | null;
+  productoId: string;
+  versionProducto: string;
+  moneda: string;
+  periodicidad: string;
+  sumaAsegurada: TextoDecimal;
+  /** El precio de la oferta (prima total). */
+  prima: TextoDecimal;
+  /** null: cotizada sin perfil. */
+  nivelRiesgo: NivelRiesgo | null;
+  degradada: boolean;
+  creadaEn: string;
+  vigenteHasta: string;
+  /** El de la oferta en el instante de la consulta. */
+  estado: EstadoOferta;
+}
+
+export interface ListadoCotizaciones {
+  items: ResumenCotizacion[];
+  siguienteCursor: string | null;
+  total: number;
+}
+
+/** Sin `estado`: todas. `q` busca por parte del código COT-AAAA-NNNNN. */
+export interface FiltrosCotizaciones {
+  estado?: EstadoOferta;
+  q?: string;
+  limite?: number;
+  cursor?: string;
 }

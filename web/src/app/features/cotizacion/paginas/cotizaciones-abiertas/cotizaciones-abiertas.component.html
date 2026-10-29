@@ -1,0 +1,87 @@
+@let t = textos.t();
+@let tp = textosPerfilamiento.t();
+<nav class="crumb" [attr.aria-label]="tp.migas">{{ tp.inicio }} › {{ tp.grupoContratacion }} › <strong>{{ t.abiertasTitulo }}</strong></nav>
+
+<div class="h-row">
+  <header>
+    <h2>{{ t.abiertasTitulo }}</h2>
+    <p class="sub" aria-live="polite">{{ t.abiertasEncontradas(textosContratacion.entero(total()), total()) }}</p>
+  </header>
+  <a class="btn btn--secundario" routerLink="/perfilamiento/nuevo">{{ tp.menuNuevaCotizacion }}</a>
+</div>
+
+<form class="card filtros" [attr.aria-label]="t.filtros" (submit)="$event.preventDefault(); buscar(busqueda.value, filtroEstado.value)">
+  <label class="fld fld--ancho">
+    {{ t.buscar }}
+    <input #busqueda class="inp" type="search" maxlength="64" [value]="q()" [placeholder]="t.buscarAyuda" />
+  </label>
+  <label class="fld">
+    {{ t.filtroEstado }}
+    <select #filtroEstado class="inp">
+      @for (e of estados; track e) {
+        <option [value]="e" [selected]="estado() === e">{{ nombreEstado(e) }}</option>
+      }
+    </select>
+  </label>
+  <button class="btn btn--primario" type="submit">{{ t.buscar }}</button>
+  <button class="btn btn--enlace" type="button" (click)="limpiar()">{{ t.limpiar }}</button>
+</form>
+
+@if (error(); as e) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <p>
+      {{ e.mensaje }}
+      @if (e.correlationId) {
+        <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+      }
+    </p>
+  </div>
+}
+
+<section class="card tabla" [attr.aria-label]="t.abiertasTitulo" [attr.aria-busy]="cargando()">
+  @if (cargando() && cotizaciones().length === 0) {
+    <p class="sub" role="status">{{ t.cargandoCotizaciones }}</p>
+  } @else if (filas().length === 0) {
+    <p class="sub vacia">{{ t.sinCotizaciones }}</p>
+  } @else {
+    <table class="data">
+      <thead>
+        <tr>
+          <th scope="col">{{ t.colCotizacion }}</th>
+          <th scope="col">{{ t.colCliente }}</th>
+          <th scope="col">{{ t.colProducto }}</th>
+          <th scope="col" class="num">{{ t.colPrimaMensual }}</th>
+          <th scope="col">{{ t.colVigenteHasta }}</th>
+          <th scope="col">{{ t.colEstado }}</th>
+          <th scope="col"><span class="sr-only">{{ t.verDetalle }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila.cotizacionId) {
+          <tr>
+            <th scope="row" class="codigo">{{ fila.codigo }}</th>
+            <td>{{ fila.cliente }}</td>
+            <td>{{ fila.producto }} <span class="detalle">{{ fila.nivel }}</span></td>
+            <td class="mono num">{{ fila.prima }}</td>
+            <td>{{ fila.vigenteHasta }}</td>
+            <td class="estados">
+              <span [class]="fila.claseEstado">{{ fila.estado }}</span>
+              @if (fila.provisional) {
+                {{ ' ' }}<span class="tag tag--alerta">{{ t.tagProvisional }}</span>
+              }
+            </td>
+            <td>
+              <a class="abrir" [routerLink]="['/perfilamiento/cotizaciones', fila.cotizacionId]" [attr.aria-label]="t.verDetalleDe(fila.codigo)">
+                {{ t.verDetalle }}
+              </a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (cursor()) {
+      <button class="btn btn--secundario mas" type="button" [disabled]="cargando()" (click)="cargarMas()">{{ t.cargarMas }}</button>
+    }
+  }
+</section>

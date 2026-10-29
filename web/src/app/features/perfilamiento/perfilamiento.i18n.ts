@@ -502,6 +502,12 @@ export class TextosPerfilamientoService {
     return this.marcar(this.catalogo().fuentes[fuente]);
   }
 
+  /** HU-W06: una fuente que llega como texto (faltantes de la cotización); si el portal no la
+   * conoce, se muestra su código. */
+  fuenteOCodigo(codigo: string): string {
+    return this.marcar(this.buscar(this.catalogo().fuentes, codigo));
+  }
+
   motivo(motivo: MotivoDato): string {
     return this.marcar(this.catalogo().motivos[motivo]);
   }

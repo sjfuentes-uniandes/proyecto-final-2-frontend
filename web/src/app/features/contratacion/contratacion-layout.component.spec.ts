@@ -40,10 +40,14 @@ describe('ContratacionLayoutComponent (E01 a E04 y F01)', () => {
     expect(await violacionesA11y(html)).toEqual([]);
   });
 
-  it('para un asesor no muestra la bandeja y cambia de idioma sin recargar', async () => {
+  it('para un asesor no muestra la bandeja, enlaza «Cotizaciones» al listado y cambia de idioma sin recargar', async () => {
     await iniciarSesion({ name: 'Carlos Portillo', 'cognito:groups': ['asesores'] });
     const { fixture, html } = crear();
-    expect(Array.from(html.querySelectorAll('a.side__item')).map((a) => a.textContent?.trim())).toEqual(['⚖Decisiones']);
+    const enlaces = Array.from(html.querySelectorAll<HTMLAnchorElement>('a.side__item'));
+    expect(enlaces.map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
+      ['$Cotizaciones', '/perfilamiento/cotizaciones'],
+      ['⚖Decisiones', '/decisiones'],
+    ]);
     TestBed.inject(IdiomaService).cambiar('en-US');
     fixture.detectChanges();
     expect(Array.from(html.querySelectorAll('h5')).map((h) => h.textContent)).toEqual(['Contracting', 'Inquiries']);

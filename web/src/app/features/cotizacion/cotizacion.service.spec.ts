@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { ConfigService } from '../../core/config/app-config';
 import { BorradorCotizacionService } from './borrador-cotizacion.service';
 import { CotizacionService } from './cotizacion.service';
-import { CONDICIONES, COTIZACION_C01, COTIZACION_ID, URL_CONDICIONES, URL_COTIZACIONES } from './cotizacion.testing';
+import { CONDICIONES, COTIZACION_C01, COTIZACION_ID, LISTADO, URL_CONDICIONES, URL_COTIZACIONES } from './cotizacion.testing';
 
 describe('CotizacionService (HU-W03)', () => {
   let http: HttpTestingController;
@@ -56,5 +56,16 @@ describe('CotizacionService (HU-W03)', () => {
     expect(borradores.obtener('perfil-1')).toEqual(borrador);
     expect(borradores.obtener('perfil-2')).toBeNull();
     expect(JSON.stringify({ ...sessionStorage, ...localStorage })).not.toContain('1990-04-18');
+  });
+
+  it('lista las cotizaciones abiertas solo con los filtros dados', () => {
+    let recibido: unknown;
+    servicio.listar({ estado: 'VENCIDA', q: '', limite: 20, cursor: undefined }).subscribe((l) => (recibido = l));
+    const pedido = http.expectOne((r) => r.url === URL_COTIZACIONES);
+    expect(pedido.request.method).toBe('GET');
+    expect(pedido.request.params.keys()).toEqual(['estado', 'limite']);
+    expect(pedido.request.params.get('estado')).toBe('VENCIDA');
+    pedido.flush(LISTADO);
+    expect(recibido).toEqual(LISTADO);
   });
 });

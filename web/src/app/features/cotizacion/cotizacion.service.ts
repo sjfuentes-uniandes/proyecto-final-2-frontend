@@ -1,9 +1,15 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { ConfigService } from '../../core/config/app-config';
-import { CondicionesProducto, CotizacionRespuesta, SolicitudCotizacion } from './cotizacion.modelo';
+import {
+  CondicionesProducto,
+  CotizacionRespuesta,
+  FiltrosCotizaciones,
+  ListadoCotizaciones,
+  SolicitudCotizacion,
+} from './cotizacion.modelo';
 
 /** HU-W03: cálculo de la prima en bff-web (que lo reenvía a cotizacion). */
 @Injectable({ providedIn: 'root' })
@@ -28,5 +34,16 @@ export class CotizacionService {
 
   obtener(id: string): Observable<CotizacionRespuesta> {
     return this.http.get<CotizacionRespuesta>(`${this.base}/cotizaciones/${encodeURIComponent(id)}`);
+  }
+
+  /** "Cotizaciones abiertas": las cotizaciones con oferta, de la más reciente a la más antigua. */
+  listar(filtros: FiltrosCotizaciones): Observable<ListadoCotizaciones> {
+    let params = new HttpParams();
+    for (const [clave, valor] of Object.entries(filtros)) {
+      if (valor !== undefined && valor !== '') {
+        params = params.set(clave, String(valor));
+      }
+    }
+    return this.http.get<ListadoCotizaciones>(`${this.base}/cotizaciones`, { params });
   }
 }
