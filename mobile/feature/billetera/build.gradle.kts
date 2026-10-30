@@ -45,6 +45,7 @@ kover {
 
 dependencies {
     implementation(project(":core:network"))
+    implementation(project(":core:auth"))
     implementation(project(":core:designsystem"))
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.coroutines.android)
