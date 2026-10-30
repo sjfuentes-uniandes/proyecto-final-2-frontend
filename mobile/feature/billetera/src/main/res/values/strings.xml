@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="es">
+    <!-- Comunes -->
+    <string name="billetera_cargando">Cargando…</string>
+    <string name="billetera_reintentar">Reintentar</string>
+    <string name="billetera_volver">Volver</string>
+    <string name="billetera_monto">$ %1$s %2$s</string>
+
+    <!-- Estado de la póliza: el texto lo identifica; el color solo refuerza -->
+    <string name="billetera_estado_activa">ACTIVA</string>
+    <string name="billetera_estado_vencida">VENCIDA</string>
+    <string name="billetera_estado_activa_descripcion">Estado: activa</string>
+    <string name="billetera_estado_vencida_descripcion">Estado: vencida</string>
+
+    <!-- Lista (Mi Billetera) -->
+    <string name="billetera_titulo">Mi Billetera</string>
+    <string name="billetera_subtitulo">Tus pólizas y su cobertura</string>
+    <string name="billetera_privacidad_acceso">Consentimientos y privacidad</string>
+    <string name="billetera_vacia">Aún no tienes pólizas. Cuando contrates un seguro, aparecerá aquí.</string>
+    <string name="billetera_error_sin_conexion">No hay conexión. Revisa tu red e inténtalo de nuevo.</string>
+    <string name="billetera_error_generico">No pudimos cargar tus pólizas. Inténtalo de nuevo.</string>
+    <string name="billetera_poliza_numero">Póliza %1$s</string>
+    <string name="billetera_suma_asegurada">Suma asegurada: %1$s</string>
+    <plurals name="billetera_total_coberturas">
+        <item quantity="one">%1$d cobertura</item>
+        <item quantity="other">%1$d coberturas</item>
+    </plurals>
+    <string name="billetera_ver_detalle">Ver detalle completo</string>
+    <string name="billetera_abrir_poliza">Abrir detalle de la póliza</string>
+
+    <!-- Detalle (Carné digital) -->
+    <string name="detalle_titulo">Carné digital</string>
+    <string name="detalle_error_sin_conexion">No hay conexión. Revisa tu red e inténtalo de nuevo.</string>
+    <string name="detalle_error_generico">No pudimos cargar la póliza. Inténtalo de nuevo.</string>
+    <string name="detalle_no_autorizada">No tienes acceso a esta póliza.</string>
+    <string name="detalle_no_encontrada">No encontramos esta póliza.</string>
+    <string name="detalle_seccion_seguro">Seguro asociado</string>
+    <string name="detalle_seccion_credencial">Credencial</string>
+    <string name="detalle_seccion_coberturas">Coberturas vigentes</string>
+    <string name="detalle_seccion_valores">Valores</string>
+    <string name="detalle_seccion_vigencia">Vigencia</string>
+    <string name="detalle_producto_ramo">%1$s · %2$s</string>
+    <string name="detalle_numero_poliza">Póliza %1$s</string>
+    <string name="detalle_credencial_numero">Credencial %1$s</string>
+    <string name="detalle_credencial_huella">Huella: %1$s</string>
+    <string name="detalle_credencial_firma">Firma verificable: %1$s</string>
+    <string name="detalle_cobertura_obligatoria">Obligatoria</string>
+    <string name="detalle_suma_asegurada">Suma asegurada</string>
+    <string name="detalle_prima">Prima</string>
+    <string name="detalle_prima_periodicidad">%1$s · %2$s</string>
+    <string name="detalle_vigencia_inicio">Inicio: %1$s</string>
+    <string name="detalle_vigencia_fin">Fin: %1$s</string>
+</resources>
