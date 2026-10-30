@@ -2,6 +2,8 @@ package com.solventa.core.network
 
 import com.solventa.core.network.modelo.ConsentimientoDto
 import com.solventa.core.network.modelo.HistorialDto
+import com.solventa.core.network.modelo.PolizaDetalleDto
+import com.solventa.core.network.modelo.PolizaResumenDto
 import com.solventa.core.network.modelo.SesionDto
 import com.solventa.core.network.modelo.SolicitudOtorgarDto
 import com.solventa.core.network.modelo.TextoVigenteDto
@@ -37,6 +39,13 @@ interface BffMovilApi {
 
     @POST("v1/registro/validaciones")
     suspend fun validarRegistroLocal(@Body solicitud: ValidacionRegistroSolicitud): Response<ValidacionRegistroDto>
+
+    /** HU-M10: pólizas del titular del token (incluidas las vencidas); ninguna ruta lleva `clienteId`. */
+    @GET("v1/polizas")
+    suspend fun polizas(): Response<List<PolizaResumenDto>>
+
+    @GET("v1/polizas/{poliza_id}")
+    suspend fun poliza(@Path("poliza_id") polizaId: String): Response<PolizaDetalleDto>
 
     @GET("health")
     suspend fun health(): Response<Map<String, String>>
