@@ -138,6 +138,12 @@ export class PerfilRiesgoComponent {
       next: (nuevo) => {
         this.recalculando.set(false);
         this.claveRecalculo = null;
+        // El recálculo crea un perfil con otro id y los mismos datos declarados: el borrador de
+        // "Nueva cotización" pasa al perfil nuevo para que "Calcular la prima" siga disponible.
+        const borrador = this.borrador();
+        if (borrador) {
+          this.borradores.guardar(nuevo.id, borrador);
+        }
         void this.router.navigate(['/perfilamiento', nuevo.id, 'actualizacion']);
       },
       error: (e: HttpErrorResponse) => {
