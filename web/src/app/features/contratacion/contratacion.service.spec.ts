@@ -10,6 +10,8 @@ import {
   COTIZACION_S01,
   DECISION_APROBADA,
   DECISION_APROBADA_ID,
+  ENLACE_DOCUMENTO,
+  POLIZA_ACTIVA,
   RECAUDO_PENDIENTE,
   RESUMEN,
   SOLICITUD_ACEPTACION,
@@ -17,10 +19,12 @@ import {
   URL_RESUMEN,
   URL_SUSCRIPCIONES,
   urlAceptacion,
+  urlDocumento,
+  urlPoliza,
   urlRecaudo,
 } from './contratacion.testing';
 
-describe('ContratacionService (HU-W13, HU-W15 y HU-W16)', () => {
+describe('ContratacionService (HU-W13, HU-W15, HU-W16 y HU-W17)', () => {
   let http: HttpTestingController;
   let servicio: ContratacionService;
 
@@ -93,5 +97,27 @@ describe('ContratacionService (HU-W13, HU-W15 y HU-W16)', () => {
     expect(get.request.headers.has('Idempotency-Key')).toBeFalse();
     get.flush(RECAUDO_PENDIENTE);
     expect(recibido).toEqual(RECAUDO_PENDIENTE);
+  });
+
+  it('HU-W17: consulta la póliza por cotización, sin cuerpo ni clave', () => {
+    let recibida: unknown;
+    servicio.consultarPoliza('cot/1').subscribe((p) => (recibida = p));
+    const get = http.expectOne(urlPoliza('cot%2F1'));
+    expect(get.request.method).toBe('GET');
+    expect(get.request.body).toBeNull();
+    expect(get.request.headers.has('Idempotency-Key')).toBeFalse();
+    get.flush(POLIZA_ACTIVA);
+    expect(recibida).toEqual(POLIZA_ACTIVA);
+  });
+
+  it('HU-W17: pide la URL del documento por póliza, sin cuerpo ni clave', () => {
+    let recibido: unknown;
+    servicio.documentoPoliza('pol/1').subscribe((e) => (recibido = e));
+    const get = http.expectOne(urlDocumento('pol%2F1'));
+    expect(get.request.method).toBe('GET');
+    expect(get.request.body).toBeNull();
+    expect(get.request.headers.has('Idempotency-Key')).toBeFalse();
+    get.flush(ENLACE_DOCUMENTO);
+    expect(recibido).toEqual(ENLACE_DOCUMENTO);
   });
 });

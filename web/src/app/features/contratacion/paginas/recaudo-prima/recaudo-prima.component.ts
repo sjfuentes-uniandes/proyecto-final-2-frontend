@@ -99,6 +99,8 @@ export class RecaudoPrimaComponent implements OnInit {
     return anunciado === 'SIGUE_PENDIENTE' ? t.anuncioSiguePendiente : t.anuncioRecaudo(this.textoEstado(anunciado));
   });
   readonly rutaAceptacion = computed(() => ['/contratacion/cotizaciones', this.cotizacionId(), 'aceptacion']);
+  /** HU-W17: la póliza solo existe con el recaudo confirmado (AC2). */
+  readonly rutaEmision = computed(() => ['/contratacion/cotizaciones', this.cotizacionId(), 'emision']);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.consulta?.unsubscribe());

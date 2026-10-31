@@ -7,14 +7,18 @@ import { SesionService } from '../../core/auth/sesion.service';
 import { GrupoSeccion, ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 import { TextosContratacionService } from './contratacion.i18n';
 
-/** HU-W15: la aceptación de la oferta (F01) es el primer paso de la emisión; HU-W16: el recaudo, el tercero. */
-const RUTA_EMISION = /^\/contratacion\/cotizaciones\/[^/?#]+\/(aceptacion|recaudo)/;
+/**
+ * HU-W15: la aceptación de la oferta (F01) es el primer paso de la emisión; HU-W16: el recaudo, el
+ * tercero; HU-W17: la emisión y la póliza emitida.
+ */
+const RUTA_EMISION = /^\/contratacion\/cotizaciones\/[^/?#]+\/(aceptacion|recaudo|emision)/;
 
 /**
  * Menú lateral de E01 a E04 (CONTRATACIÓN): la bandeja solo para suscriptores. En la aceptación (F01,
- * HU-W15) y en el recaudo (HU-W16) «Emisión» queda activo y enlaza a la página actual; fuera de ella sigue pendiente hasta que
- * HU-W17 tenga su página. «Cotizaciones» abre "Cotizaciones abiertas" (solo el grupo asesores, como su
- * ruta); Pólizas (HU-W18) llega en otra historia.
+ * HU-W15), el recaudo (HU-W16) y la emisión (HU-W17) «Emisión» queda activo y enlaza a la página
+ * actual; fuera de ellas queda pendiente, porque la emisión es de una cotización y no hay un listado.
+ * «Cotizaciones» abre "Cotizaciones abiertas" (solo el grupo asesores, como su ruta); Pólizas (HU-W18)
+ * llega en otra historia.
  */
 @Component({
   selector: 'app-contratacion-layout',

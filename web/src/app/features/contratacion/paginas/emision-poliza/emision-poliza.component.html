@@ -1,0 +1,173 @@
+@let t = textos.t();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaContratacion }} ›
+  <strong>{{ emitiendo() ? t.migaProcesando : t.migaEmision }}</strong>
+</nav>
+<!-- El paso a ACTIVA, para el lector de pantalla; el foco pasa al título de la vista nueva. -->
+<p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
+
+<ng-template #lineaDeTiempo>
+  <section class="card" aria-labelledby="titulo-avance">
+    <h3 id="titulo-avance">{{ t.avanceProceso }}</h3>
+    <!-- Solo los pasos reales, con su hora (ADR 0014, decisión 8); el estado va en texto, no solo en color. -->
+    <ol class="hitos">
+      @for (h of hitos(); track h.clave) {
+        <li [class]="'hito hito--' + h.estado" [attr.aria-current]="h.estado === 'en-curso' ? 'step' : null">
+          <span class="hito__marca" aria-hidden="true"></span>
+          <span class="hito__texto">
+            <span class="hito__nombre">{{ nombreHito(h) }}</span>
+            <span class="hito__detalle">
+              <span class="hito__estado">{{ estadoHito(h) }}</span>
+              @if (h.cuando) {
+                · <time [attr.datetime]="h.cuando">{{ textos.fechaHora(h.cuando, true) }}</time>
+              }
+            </span>
+          </span>
+        </li>
+      }
+    </ol>
+  </section>
+</ng-template>
+
+@switch (carga().estado) {
+  @case ('cargando') {
+    <h2>{{ t.tituloEmision }}</h2>
+    <p class="sub" role="status">{{ t.cargando }}</p>
+  }
+  @case ('error') {
+    <h2>{{ t.tituloEmision }}</h2>
+    @if (error(); as e) {
+      <div #foco class="alerta alerta--error" role="alert" tabindex="-1">
+        <span aria-hidden="true">⚠</span>
+        <p>
+          {{ e.mensaje }}
+          @if (e.correlationId) {
+            <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+          }
+        </p>
+      </div>
+      <div class="acciones">
+        @if (e.codigo === 'POLIZA_NO_ENCONTRADA') {
+          <a class="btn btn--secundario" [routerLink]="rutaRecaudo()">{{ t.verRecaudo }}</a>
+        } @else if (e.codigo === 'ACEPTACION_NO_ENCONTRADA') {
+          <a class="btn btn--secundario" [routerLink]="rutaAceptacion()">{{ t.volverAceptacion }}</a>
+        } @else if (e.reintentable) {
+          <button type="button" class="btn btn--primario" (click)="cargar()">{{ t.reintentar }}</button>
+        }
+      </div>
+    }
+  }
+  @case ('listo') {
+    @if (poliza(); as p) {
+      @if (p.estado === 'EMITIENDO') {
+        <!-- W17-2 adaptada: sin presupuesto del recorrido ni nota de compensación, y sin prometer tiempos. -->
+        <header>
+          <h2 #foco tabindex="-1">{{ t.tituloEmitiendo }}</h2>
+          <p class="sub">{{ t.emitiendoSub }}</p>
+        </header>
+        <div class="cols">
+          <section class="card progreso" aria-labelledby="titulo-progreso">
+            <div class="spinner" aria-hidden="true"></div>
+            <h3 id="titulo-progreso">{{ t.coordinando }}</h3>
+            <progress [value]="hechos()" [max]="totalHitos" [attr.aria-label]="t.avanceEmision"></progress>
+            <p class="avance">{{ t.pasosCompletados(hechos(), totalHitos) }}</p>
+            @if (agotado()) {
+              <p class="nota">{{ t.emisionSinSondeo }}</p>
+              <button type="button" class="btn btn--secundario btn--bloque" [attr.aria-busy]="actualizando()" (click)="actualizar()">
+                {{ actualizando() ? t.actualizando : t.actualizar }}
+              </button>
+            } @else {
+              <p class="nota">{{ t.emisionConsultando }}</p>
+            }
+            @if (errorActualizacion(); as e) {
+              <div class="alerta alerta--advertencia" role="status">
+                <span aria-hidden="true">⚠</span>
+                <p>
+                  {{ t.emisionNoActualizada }} {{ e.mensaje }}
+                  @if (e.correlationId) {
+                    <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+                  }
+                </p>
+              </div>
+            }
+          </section>
+          <ng-container [ngTemplateOutlet]="lineaDeTiempo" />
+        </div>
+      } @else {
+        <!-- W17-4 adaptada: el estado real («Activa»), sin titular, canal, aviso, conciliación ni siniestros. -->
+        <header class="h-row">
+          <div>
+            <h2 #foco tabindex="-1">{{ t.tituloPolizaEmitida }} <span class="tag tag--ok">{{ t.estadoActiva }}</span></h2>
+            <p class="sub">{{ p.numero }}</p>
+          </div>
+          <div class="descarga">
+            <button
+              #botonDescarga
+              type="button"
+              class="btn btn--primario"
+              aria-describedby="descarga-misma-pestana"
+              [disabled]="descargando()"
+              [attr.aria-busy]="descargando()"
+              (click)="descargar()"
+            >
+              {{ descargando() ? t.preparandoDescarga : t.descargarPoliza }}
+            </button>
+            <p id="descarga-misma-pestana" class="sub">{{ t.descargaMismaPestana }}</p>
+          </div>
+        </header>
+        @if (errorDescarga(); as e) {
+          <div class="alerta alerta--error descarga-error" role="alert">
+            <span aria-hidden="true">⚠</span>
+            <p>
+              {{ e.mensaje }}
+              @if (e.correlationId) {
+                <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+              }
+            </p>
+            @if (e.reintentable) {
+              <button type="button" class="btn btn--secundario" (click)="descargar()">{{ t.reintentar }}</button>
+            }
+          </div>
+        }
+        <div class="alerta alerta--ok">
+          <span aria-hidden="true">✓</span>
+          <p>{{ t.polizaActivaDetalle(textos.fecha(p.vigencia.desde)) }}</p>
+        </div>
+        <div class="cols">
+          <ng-container [ngTemplateOutlet]="lineaDeTiempo" />
+          <div class="columna">
+            <section id="datos-poliza" class="card" aria-labelledby="titulo-datos">
+              <h3 id="titulo-datos">{{ t.datosPoliza }}</h3>
+              <dl class="kv">
+                <div><dt>{{ t.kvNumero }}</dt><dd>{{ p.numero }}</dd></div>
+                <div><dt>{{ t.kvRamo }}</dt><dd>{{ p.ramo.nombre }}</dd></div>
+                <div><dt>{{ t.kvProducto }}</dt><dd>{{ t.productoVersion(textos.producto(p.producto.id), p.producto.version) }}</dd></div>
+                <div><dt>{{ t.kvSumaAsegurada }}</dt><dd>{{ textos.monto(p.sumaAsegurada, p.moneda) }}</dd></div>
+                <div><dt>{{ t.kvPrima(p.periodicidad) }}</dt><dd>{{ textos.monto(p.prima, p.moneda) }}</dd></div>
+                <div><dt>{{ t.kvMoneda }}</dt><dd>{{ p.moneda }}</dd></div>
+                <div><dt>{{ t.kvVigencia }}</dt><dd>{{ t.rangoFechas(textos.fecha(p.vigencia.desde), textos.fecha(p.vigencia.hasta)) }}</dd></div>
+              </dl>
+            </section>
+            <section class="card" aria-labelledby="titulo-coberturas">
+              <h3 id="titulo-coberturas">{{ t.coberturasPoliza }}</h3>
+              <ul class="coberturas">
+                @for (c of p.coberturas; track c.codigo) {
+                  <li>{{ c.nombre }} <span class="marca">{{ c.obligatoria ? t.obligatoria : t.coberturaOpcional }}</span></li>
+                }
+              </ul>
+            </section>
+            @if (p.firma; as f) {
+              <section id="firma-poliza" class="card" aria-labelledby="titulo-firma">
+                <h3 id="titulo-firma">{{ t.firmaSolventa }}</h3>
+                <dl class="kv">
+                  <div><dt>{{ t.kvFirmaId }}</dt><dd class="referencia">{{ f.firmaId }}</dd></div>
+                  <div><dt>{{ t.kvSelloTiempo }}</dt><dd>{{ textos.fechaHora(f.selloTiempo, true) }}</dd></div>
+                </dl>
+              </section>
+            }
+          </div>
+        </div>
+      }
+    }
+  }
+}

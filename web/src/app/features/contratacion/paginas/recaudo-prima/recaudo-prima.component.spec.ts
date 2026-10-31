@@ -21,6 +21,7 @@ import { ESPERAS_SONDEO_MS, TOPE_SONDEO_MS } from './sondeo-recaudo';
 
 const URL = urlRecaudo(COTIZACION_S01);
 const ACEPTACION = `/contratacion/cotizaciones/${COTIZACION_S01}/aceptacion`;
+const EMISION = `/contratacion/cotizaciones/${COTIZACION_S01}/emision`;
 
 describe('RecaudoPrimaComponent (paso 3, HU-W16)', () => {
   let fixture: ComponentFixture<RecaudoPrimaComponent>;
@@ -101,8 +102,9 @@ describe('RecaudoPrimaComponent (paso 3, HU-W16)', () => {
     fixture.destroy();
   });
 
-  it('CONFIRMADO: el número de transacción y el estado confirmado', async () => {
+  it('CONFIRMADO: el número de transacción, el estado confirmado y el enlace a la emisión (HU-W17)', async () => {
     montar(RECAUDO_CONFIRMADO);
+    expect(enlaces()).toEqual([`Ver la emisión → ${EMISION}`, `Volver a la aceptación → ${ACEPTACION}`]);
     expect(kv().slice(0, 3)).toEqual([
       `Referencia única del cobro: ${ACEPTACION_ID}`,
       'Estado: Recaudo confirmado',
@@ -125,6 +127,8 @@ describe('RecaudoPrimaComponent (paso 3, HU-W16)', () => {
     expect(kv().join()).not.toContain('Número de transacción');
     expect(html().querySelector('.kv dd.peligro')).not.toBeNull();
     expect(texto('.columna')).toContain('El proveedor de pagos rechazó el primer cobro de la prima.');
+    // Sin recaudo confirmado no hay póliza (AC2 de HU-W17): no se ofrece la emisión.
+    expect(enlaces()).toEqual([`Volver a la aceptación → ${ACEPTACION}`]);
     expect(await violacionesA11y(html())).toEqual([]);
   });
 
@@ -158,6 +162,7 @@ describe('RecaudoPrimaComponent (paso 3, HU-W16)', () => {
     expect(kv()[1]).toBe('Estado: Recaudo confirmado');
     expect(anuncio()).toBe('Estado del recaudo: Recaudo confirmado');
     expect(document.activeElement).toBe(titulo);
+    expect(enlaces()[0]).toBe(`Ver la emisión → ${EMISION}`);
 
     tick(TOPE_SONDEO_MS);
     http.expectNone(URL);
@@ -306,7 +311,7 @@ describe('RecaudoPrimaComponent (paso 3, HU-W16)', () => {
       'Transaction number: TX-SINTETICA-0001',
     ]);
     expect(valores[3]).toMatch(/^Last updated: Oct 24, 2026/);
-    expect(enlaces()).toEqual([`Back to acceptance → ${ACEPTACION}`]);
+    expect(enlaces()).toEqual([`View the issuance → ${EMISION}`, `Back to acceptance → ${ACEPTACION}`]);
     expect(await violacionesA11y(html())).toEqual([]);
   });
 

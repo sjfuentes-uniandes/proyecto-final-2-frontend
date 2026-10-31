@@ -19,7 +19,8 @@ const NUMEROS_EN = ['', 'One', 'Two', 'Three'];
 /**
  * HU-W13: textos de la suscripción automática (mockups E01 a E04); HU-W14: su comunicación (E02, E03);
  * HU-W15: la aceptación de la oferta (F01) y la oferta vencida con el lenguaje de C08; HU-W16: el recaudo
- * de la prima (paso 3, de solo lectura).
+ * de la prima (paso 3, de solo lectura); HU-W17: la emisión y la póliza emitida (W17-2 y W17-4, adaptadas a
+ * la ADR 0014).
  */
 const ES = {
   // Menú lateral y migas.
@@ -178,6 +179,49 @@ const ES = {
   recaudoNoActualizado: 'No pudimos actualizar el estado; se muestra el último conocido.',
   volverAceptacion: 'Volver a la aceptación',
   motivoRecaudoDesconocido: 'El proveedor de pagos no informó un motivo que podamos mostrar.',
+  verEmision: 'Ver la emisión',
+
+  // HU-W17: emisión (W17-2) y póliza emitida (W17-4), solo con los pasos reales (ADR 0014, decisión 8).
+  migaProcesando: 'Procesando',
+  migaEmision: 'Emisión',
+  tituloEmision: 'Emisión de la póliza',
+  tituloEmitiendo: 'Estamos emitiendo la póliza',
+  emitiendoSub: 'La emisión sigue en Solventa aunque cierres esta ventana o pierdas la conexión.',
+  coordinando: 'Coordinando con los servicios',
+  avanceEmision: 'Avance de la emisión',
+  pasosCompletados: (hechos: number, total: number) => `${hechos} de ${total} pasos completados`,
+  avanceProceso: 'Avance del proceso',
+  hitoAceptada: 'Oferta aceptada',
+  hitoRecaudada: 'Prima recaudada',
+  hitoFirmada: 'Documento firmado por Solventa',
+  hitoEmitida: 'Póliza emitida',
+  hitoHecho: 'Completado',
+  hitoEnCurso: 'En curso',
+  hitoPendiente: 'Pendiente',
+  emisionConsultando: 'Consultamos el avance automáticamente.',
+  emisionSinSondeo: 'Ya no consultamos el avance automáticamente. Usa «Actualizar» para ver si cambió.',
+  emisionNoActualizada: 'No pudimos actualizar el avance; se muestra el último conocido.',
+  anuncioPolizaEmitida: (numero: string) => `Póliza emitida: ${numero}`,
+  anuncioSigueEmitiendo: 'La póliza sigue en emisión.',
+  tituloPolizaEmitida: 'Póliza emitida',
+  estadoActiva: 'Activa',
+  polizaActivaDetalle: (desde: string) =>
+    `La prima fue recaudada, Solventa firmó el documento y la póliza está activa. Su vigencia empieza el ${desde}.`,
+  datosPoliza: 'Datos de la póliza',
+  kvNumero: 'Número',
+  kvRamo: 'Ramo',
+  productoVersion: (nombre: string, version: string) => `${nombre} · versión ${version}`,
+  kvMoneda: 'Moneda',
+  kvVigencia: 'Vigencia',
+  rangoFechas: (desde: string, hasta: string) => `${desde} – ${hasta}`,
+  coberturasPoliza: 'Coberturas',
+  coberturaOpcional: 'Opcional',
+  firmaSolventa: 'Documento firmado electrónicamente por Solventa',
+  kvFirmaId: 'Identificador de la firma',
+  kvSelloTiempo: 'Sello de tiempo',
+  descargarPoliza: 'Descargar la póliza',
+  preparandoDescarga: 'Preparando la descarga…',
+  descargaMismaPestana: 'Descarga el PDF sin salir del portal.',
 
   // Tabla de reglas.
   colRegla: 'Regla',
@@ -278,6 +322,10 @@ const ES = {
   errorTextoNoVigente: 'El texto de las declaraciones cambió. Recarga la página para ver la versión vigente.',
   errorAceptacionNoEncontrada: 'La oferta aún no tiene una aceptación registrada.',
   errorRecaudoNoDisponible: 'El estado del recaudo no está disponible en este momento. Inténtalo en unos minutos.',
+  errorPolizaNoEncontrada: 'La póliza aún no existe porque el recaudo de la prima no está confirmado.',
+  errorPolizaNoActiva: 'La póliza todavía se está emitiendo: su documento estará disponible cuando quede activa.',
+  errorPolizaNoDisponible: 'La póliza no está disponible en este momento. Inténtalo en unos minutos.',
+  errorDocumentoNoDisponible: 'El documento de la póliza no está disponible en este momento. Inténtalo de nuevo.',
   errorSinDecision: 'Esta cotización no tiene una decisión de suscripción. Solicítala desde la cotización.',
   errorRed: 'No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.',
   errorGeneral: 'No pudimos completar la operación. Inténtalo de nuevo.',
@@ -432,6 +480,48 @@ const EN: TextosContratacion = {
   recaudoNoActualizado: 'We could not refresh the status; showing the last known one.',
   volverAceptacion: 'Back to acceptance',
   motivoRecaudoDesconocido: 'The payment provider did not report a reason we can show.',
+  verEmision: 'View the issuance',
+
+  migaProcesando: 'Processing',
+  migaEmision: 'Issuance',
+  tituloEmision: 'Policy issuance',
+  tituloEmitiendo: 'We are issuing the policy',
+  emitiendoSub: 'Issuance continues at Solventa even if you close this window or lose the connection.',
+  coordinando: 'Coordinating with the services',
+  avanceEmision: 'Issuance progress',
+  pasosCompletados: (hechos: number, total: number) => `${hechos} of ${total} steps completed`,
+  avanceProceso: 'Process progress',
+  hitoAceptada: 'Offer accepted',
+  hitoRecaudada: 'Premium collected',
+  hitoFirmada: 'Document signed by Solventa',
+  hitoEmitida: 'Policy issued',
+  hitoHecho: 'Completed',
+  hitoEnCurso: 'In progress',
+  hitoPendiente: 'Pending',
+  emisionConsultando: 'We check the progress automatically.',
+  emisionSinSondeo: 'We no longer check the progress automatically. Use “Refresh” to see whether it changed.',
+  emisionNoActualizada: 'We could not refresh the progress; showing the last known one.',
+  anuncioPolizaEmitida: (numero: string) => `Policy issued: ${numero}`,
+  anuncioSigueEmitiendo: 'The policy is still being issued.',
+  tituloPolizaEmitida: 'Policy issued',
+  estadoActiva: 'Active',
+  polizaActivaDetalle: (desde: string) =>
+    `The premium was collected, Solventa signed the document and the policy is active. Its coverage starts on ${desde}.`,
+  datosPoliza: 'Policy details',
+  kvNumero: 'Number',
+  kvRamo: 'Line of business',
+  productoVersion: (nombre: string, version: string) => `${nombre} · version ${version}`,
+  kvMoneda: 'Currency',
+  kvVigencia: 'Coverage period',
+  rangoFechas: (desde: string, hasta: string) => `${desde} – ${hasta}`,
+  coberturasPoliza: 'Coverages',
+  coberturaOpcional: 'Optional',
+  firmaSolventa: 'Document electronically signed by Solventa',
+  kvFirmaId: 'Signature ID',
+  kvSelloTiempo: 'Timestamp',
+  descargarPoliza: 'Download the policy',
+  preparandoDescarga: 'Preparing the download…',
+  descargaMismaPestana: 'Downloads the PDF without leaving the portal.',
 
   colRegla: 'Rule',
   colCondicion: 'Condition',
@@ -528,6 +618,10 @@ const EN: TextosContratacion = {
   errorTextoNoVigente: 'The declarations text changed. Reload the page to see the current version.',
   errorAceptacionNoEncontrada: 'The offer does not have a recorded acceptance yet.',
   errorRecaudoNoDisponible: 'The collection status is not available right now. Try again in a few minutes.',
+  errorPolizaNoEncontrada: 'The policy does not exist yet because the premium collection is not confirmed.',
+  errorPolizaNoActiva: 'The policy is still being issued: its document will be available once it is active.',
+  errorPolizaNoDisponible: 'The policy is not available right now. Try again in a few minutes.',
+  errorDocumentoNoDisponible: 'The policy document is not available right now. Try again.',
   errorSinDecision: 'This quote has no underwriting decision. Request it from the quote.',
   errorRed: 'There is no connection with the server. Check your network and try again.',
   errorGeneral: 'We could not complete the operation. Try again.',
@@ -683,8 +777,20 @@ export class TextosContratacionService {
     return new Intl.NumberFormat(this.locale(), { style: 'percent', maximumFractionDigits: 1 }).format(fraccion);
   }
 
-  /** Fecha y hora en la zona del navegador (regla 21). */
-  fechaHora(instante: string): string {
-    return new Intl.DateTimeFormat(this.locale(), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(instante));
+  /**
+   * HU-W17: un día civil (`aaaa-mm-dd`, como la vigencia) con día, mes y año en dos y cuatro cifras
+   * (25/10/2026). Se formatea en UTC para que la zona del navegador no lo corra al día anterior.
+   */
+  fecha(dia: string): string {
+    return new Intl.DateTimeFormat(this.locale(), { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(
+      new Date(`${dia}T00:00:00Z`),
+    );
+  }
+
+  /** Fecha y hora en la zona del navegador (regla 21); con segundos para los pasos de la emisión (HU-W17). */
+  fechaHora(instante: string, segundos = false): string {
+    return new Intl.DateTimeFormat(this.locale(), { dateStyle: 'medium', timeStyle: segundos ? 'medium' : 'short' }).format(
+      new Date(instante),
+    );
   }
 }

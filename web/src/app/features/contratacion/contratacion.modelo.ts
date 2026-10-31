@@ -245,3 +245,38 @@ export interface EstadoRecaudo {
   /** Cuándo dinero resolvió el cobro; si está PENDIENTE, cuándo se aceptó. */
   actualizadoEn: string;
 }
+
+/** HU-W17: la póliza de la oferta aceptada (ADR 0014). Una por aceptación. */
+export type EstadoPoliza = 'EMITIENDO' | 'ACTIVA';
+
+export interface Poliza {
+  polizaId: string;
+  estado: EstadoPoliza;
+  /** Reservado al crear la póliza (`100-2026-000001`): no cambia. */
+  numero: string;
+  producto: { id: string; version: string };
+  ramo: { codigo: string; nombre: string };
+  /** La instantánea de la oferta aceptada. */
+  coberturas: CoberturaProducto[];
+  /** Fechas (`aaaa-mm-dd`) inclusivas en America/Bogota. */
+  vigencia: { desde: string; hasta: string };
+  sumaAsegurada: TextoDecimal;
+  prima: TextoDecimal;
+  moneda: string;
+  periodicidad: string;
+  aceptadaEn: string;
+  /** Cuándo dinero confirmó el recaudo. */
+  recaudadaEn: string;
+  /** Nulo mientras se emite. */
+  emitidaEn: string | null;
+  /** Nulo hasta que se sube el PDF. */
+  documento: { huella: string; versionId: string } | null;
+  /** Nula hasta que Solventa firma la huella del PDF. */
+  firma: { firmaId: string; selloTiempo: string } | null;
+}
+
+/** URL prefirmada de la versión registrada del PDF; vence pronto (`venceEn`): no se guarda. */
+export interface EnlaceDocumento {
+  url: string;
+  venceEn: string;
+}

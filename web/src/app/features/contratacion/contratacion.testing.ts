@@ -7,8 +7,10 @@ import {
   CasoBandeja,
   Comunicacion,
   DecisionSuscripcion,
+  EnlaceDocumento,
   EstadoRecaudo,
   ListaDecisiones,
+  Poliza,
   ReglaEvaluada,
   ResumenBandeja,
   SolicitudAceptacion,
@@ -397,6 +399,65 @@ export const RECAUDO_RECHAZADO: EstadoRecaudo = {
 /** Cuerpos B2 que bff-web promete en GET …/recaudo (lista blanca de la 16.14 más su 503). */
 export const ERRORES_RECAUDO = {
   noEncontrada: { codigo: 'ACEPTACION_NO_ENCONTRADA', mensaje: 'x', correlationId: 'corr-sin', detalles: {} },
+  servicio: { codigo: 'SERVICIO_NO_DISPONIBLE', mensaje: 'x', correlationId: 'corr-503', detalles: {} },
+  rol: { codigo: 'ROL_NO_AUTORIZADO', mensaje: 'x', correlationId: 'corr-rol', detalles: {} },
+  actor: { codigo: 'ACTOR_REQUERIDO', mensaje: 'x', correlationId: 'corr-actor', detalles: {} },
+} as const;
+
+// --- HU-W17: la póliza (emisión y póliza emitida) --------------------------------------------------
+
+export const POLIZA_ID = '00000000-0000-4000-9000-000000000001';
+export const urlPoliza = (cotizacionId: string) => `${URL_COTIZACIONES}/${cotizacionId}/poliza`;
+export const urlDocumento = (polizaId: string) => `${BASE}/polizas/${polizaId}/documento`;
+
+/**
+ * 200 EMITIENDO: la póliza de S01 (la aceptación y el recaudo confirmado de arriba), sin documento
+ * ni firma; los mismos datos que siembra el estado de proveedor de bff-web (17.11).
+ */
+export const POLIZA_EMITIENDO: Poliza = {
+  polizaId: POLIZA_ID,
+  estado: 'EMITIENDO',
+  numero: '100-2026-000001',
+  producto: { id: 'vida-hipotecario', version: '2026.09.1' },
+  ramo: { codigo: '100', nombre: 'Vida hipotecario' },
+  coberturas: [
+    { codigo: 'MUERTE', nombre: 'Muerte por cualquier causa', obligatoria: true },
+    { codigo: 'INCAPACIDAD_TOTAL_PERMANENTE', nombre: 'Incapacidad total y permanente', obligatoria: true },
+  ],
+  vigencia: { desde: '2026-10-25', hasta: '2027-10-24' },
+  sumaAsegurada: '180000000',
+  prima: '64638',
+  moneda: 'COP',
+  periodicidad: 'MENSUAL',
+  aceptadaEn: ACEPTACION.aceptadaEn,
+  recaudadaEn: RECAUDO_CONFIRMADO.actualizadoEn,
+  emitidaEn: null,
+  documento: null,
+  firma: null,
+};
+
+/** EMITIENDO con el documento subido y firmado: falta pasar a ACTIVA. */
+export const POLIZA_FIRMADA: Poliza = {
+  ...POLIZA_EMITIENDO,
+  documento: { huella: `sha256:${'b'.repeat(64)}`, versionId: 'v-sintetica-0001' },
+  firma: { firmaId: 'FIR-SINT-C01', selloTiempo: '2026-10-24T15:00:02Z' },
+};
+
+export const POLIZA_ACTIVA: Poliza = { ...POLIZA_FIRMADA, estado: 'ACTIVA', emitidaEn: '2026-10-24T15:00:03Z' };
+
+/** URL sintética con la forma de una prefirmada de S3 por `versionId`. */
+export const ENLACE_DOCUMENTO: EnlaceDocumento = {
+  url:
+    `https://polizas-documentos.s3.amazonaws.com/polizas/${POLIZA_ID}/100-2026-000001.pdf?versionId=v-sintetica-0001` +
+    '&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=300&X-Amz-Signature=sintetica',
+  venceEn: '2026-10-24T15:05:03Z',
+};
+
+/** Cuerpos B2 que bff-web promete en GET …/poliza y …/documento (lista blanca por ruta, 17.11). */
+export const ERRORES_POLIZA = {
+  sinPoliza: { codigo: 'POLIZA_NO_ENCONTRADA', mensaje: 'x', correlationId: 'corr-sin-poliza', detalles: {} },
+  sinAceptacion: { codigo: 'ACEPTACION_NO_ENCONTRADA', mensaje: 'x', correlationId: 'corr-sin', detalles: {} },
+  noActiva: { codigo: 'POLIZA_NO_ACTIVA', mensaje: 'x', correlationId: 'corr-409', detalles: {} },
   servicio: { codigo: 'SERVICIO_NO_DISPONIBLE', mensaje: 'x', correlationId: 'corr-503', detalles: {} },
   rol: { codigo: 'ROL_NO_AUTORIZADO', mensaje: 'x', correlationId: 'corr-rol', detalles: {} },
   actor: { codigo: 'ACTOR_REQUERIDO', mensaje: 'x', correlationId: 'corr-actor', detalles: {} },

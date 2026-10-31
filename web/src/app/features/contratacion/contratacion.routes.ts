@@ -46,6 +46,13 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/recaudo-prima/recaudo-prima.component').then((m) => m.RecaudoPrimaComponent),
       },
       {
+        // HU-W17 (W17-2 y W17-4): desde «Ver la emisión» del recaudo confirmado.
+        path: 'cotizaciones/:cotizacionId/emision',
+        title: 'Emisión de la póliza · Solventa',
+        canActivate: [requiereGrupo('asesores')],
+        loadComponent: () => import('./paginas/emision-poliza/emision-poliza.component').then((m) => m.EmisionPolizaComponent),
+      },
+      {
         path: 'decisiones/:decisionId',
         title: 'Decisión de suscripción · Solventa',
         loadComponent: () =>

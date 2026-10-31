@@ -7,9 +7,11 @@ import {
   Aceptacion,
   BandejaSuscripcion,
   DecisionSuscripcion,
+  EnlaceDocumento,
   EstadoRecaudo,
   FiltrosBandeja,
   ListaDecisiones,
+  Poliza,
   ResumenBandeja,
   SolicitudAceptacion,
   SolicitudSuscripcion,
@@ -17,7 +19,8 @@ import {
 
 /**
  * HU-W13: suscripción automática en bff-web (que la reenvía a polizas); HU-W15: la aceptación de la
- * oferta; HU-W16: el estado del recaudo de la prima. Sin lógica de presentación.
+ * oferta; HU-W16: el estado del recaudo de la prima; HU-W17: la póliza y la URL de su documento. Sin
+ * lógica de presentación.
  */
 @Injectable({ providedIn: 'root' })
 export class ContratacionService {
@@ -74,6 +77,16 @@ export class ContratacionService {
   /** HU-W16: el primer cobro de la prima, de solo lectura; 404 ACEPTACION_NO_ENCONTRADA sin aceptación. */
   consultarRecaudo(cotizacionId: string): Observable<EstadoRecaudo> {
     return this.http.get<EstadoRecaudo>(`${this.base}/cotizaciones/${encodeURIComponent(cotizacionId)}/recaudo`);
+  }
+
+  /** HU-W17: 404 POLIZA_NO_ENCONTRADA mientras el recaudo no está confirmado; ACEPTACION_NO_ENCONTRADA sin aceptación. */
+  consultarPoliza(cotizacionId: string): Observable<Poliza> {
+    return this.http.get<Poliza>(`${this.base}/cotizaciones/${encodeURIComponent(cotizacionId)}/poliza`);
+  }
+
+  /** HU-W17: una URL prefirmada nueva en cada pedido (vence en 300 s); 409 POLIZA_NO_ACTIVA mientras se emite. */
+  documentoPoliza(polizaId: string): Observable<EnlaceDocumento> {
+    return this.http.get<EnlaceDocumento>(`${this.base}/polizas/${encodeURIComponent(polizaId)}/documento`);
   }
 
   private urlAceptacion(cotizacionId: string): string {

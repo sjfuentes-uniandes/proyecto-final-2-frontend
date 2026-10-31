@@ -84,6 +84,9 @@
               </p>
             </div>
           }
+          @if (r.estado === 'CONFIRMADO') {
+            <a class="btn btn--primario btn--bloque" [routerLink]="rutaEmision()">{{ t.verEmision }}</a>
+          }
           <a class="enlace-centro" [routerLink]="rutaAceptacion()">{{ t.volverAceptacion }}</a>
         </div>
       </div>
