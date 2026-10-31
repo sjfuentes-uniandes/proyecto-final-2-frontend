@@ -17,6 +17,7 @@ import {
   POLIZA_EMITIENDO,
   POLIZA_FIRMADA,
   POLIZA_ID,
+  TITULAR_NOMBRE,
   urlDocumento,
   urlPoliza,
 } from '../../contratacion.testing';
@@ -28,8 +29,10 @@ const URL = urlPoliza(COTIZACION_S01);
 const URL_DOCUMENTO = urlDocumento(POLIZA_ID);
 const RECAUDO = `/contratacion/cotizaciones/${COTIZACION_S01}/recaudo`;
 const ACEPTACION = `/contratacion/cotizaciones/${COTIZACION_S01}/aceptacion`;
-/** Lo que W17-2 y W17-4 muestran y la ADR 0014 deja fuera. */
-const FUERA_DE_ALCANCE = /Condiciones firmadas|Aviso|Conciliaci|compensa|Presupuesto|Siniestros|\bVigente\b|Canal|titular/i;
+/** Lo que W17-2 y W17-4 muestran y la ADR 0014 deja fuera (el titular lo muestra «Póliza emitida» desde la 17.12b). */
+const FUERA_DE_ALCANCE = /Condiciones firmadas|Aviso|Conciliaci|compensa|Presupuesto|Siniestros|\bVigente\b|Canal/i;
+/** Ni la etiqueta del titular ni un relleno en su lugar. */
+const SIN_TITULAR = /Titular|Policyholder|No disponible|Not available/i;
 
 describe('EmisionPolizaComponent (W17-2 y W17-4, HU-W17)', () => {
   let fixture: ComponentFixture<EmisionPolizaComponent>;
@@ -119,6 +122,7 @@ describe('EmisionPolizaComponent (W17-2 y W17-4, HU-W17)', () => {
     expect(limpio(html().querySelector('.hitos li[aria-current=step] .hito__nombre'))).toBe('Documento firmado por Solventa');
     expect(texto('.progreso')).toContain('Consultamos el avance automáticamente.');
     expect(html().textContent).not.toMatch(FUERA_DE_ALCANCE);
+    expect(html().textContent).not.toMatch(SIN_TITULAR);
     // Sin prometer tiempos.
     expect(html().textContent).not.toMatch(/segundo|1,5|1,28/);
     expect(botones()).toHaveSize(0);
@@ -142,18 +146,30 @@ describe('EmisionPolizaComponent (W17-2 y W17-4, HU-W17)', () => {
     fixture.destroy();
   });
 
-  it('ACTIVA: encabezado con el número, la insignia «Activa», los datos, las coberturas, la firma y la línea de tiempo', async () => {
+  it('EMITIENDO no muestra el titular aunque llegara un nombre', () => {
+    montar({ ...POLIZA_FIRMADA, titularNombre: TITULAR_NOMBRE });
+    expect(html().textContent).not.toContain(TITULAR_NOMBRE);
+    expect(html().textContent).not.toMatch(SIN_TITULAR);
+    fixture.destroy();
+  });
+
+  it('ACTIVA: encabezado con el número y el titular, la insignia «Activa», los datos, las coberturas, la firma y la línea de tiempo', async () => {
     montar(POLIZA_ACTIVA);
     expect(texto('nav.crumb')).toBe('Inicio › Contratación › Emisión');
     expect(titulo()).toBe('Póliza emitida');
     expect(texto('h2 .tag.tag--ok')).toBe('Activa');
     expect(document.activeElement).toBe(html().querySelector('h2'));
-    expect(texto('header .sub')).toBe('100-2026-000001');
+    // Como el mockup W17-4: el número y el nombre; el separador no se lee y el nombre lleva su etiqueta para el lector de pantalla.
+    expect(texto('header .sub')).toBe(`100-2026-000001 · Titular: ${TITULAR_NOMBRE}`);
+    expect(html().querySelector('header .sub .separador')?.getAttribute('aria-hidden')).toBe('true');
+    expect(texto('header .sub .sr-only')).toBe('Titular:');
+    expect(texto('header .sub .titular')).toBe(TITULAR_NOMBRE);
     expect(texto('.alerta--ok p')).toBe(
       'La prima fue recaudada, Solventa firmó el documento y la póliza está activa. Su vigencia empieza el 25/10/2026.',
     );
     expect(kv('#datos-poliza')).toEqual([
       'Número: 100-2026-000001',
+      `Titular: ${TITULAR_NOMBRE}`,
       'Ramo: Vida hipotecario',
       'Producto: Vida hipotecario · versión 2026.09.1',
       'Suma asegurada: $ 180.000.000',
@@ -188,6 +204,31 @@ describe('EmisionPolizaComponent (W17-2 y W17-4, HU-W17)', () => {
     expect(await violacionesA11y(html())).toEqual([]);
   });
 
+  it('ACTIVA sin titularNombre: ni en el encabezado ni en los datos, y sin texto de relleno', async () => {
+    montar({ ...POLIZA_ACTIVA, titularNombre: null });
+    expect(texto('header .sub')).toBe('100-2026-000001');
+    expect(html().querySelector('header .sub .separador')).toBeNull();
+    expect(kv('#datos-poliza')).toEqual([
+      'Número: 100-2026-000001',
+      'Ramo: Vida hipotecario',
+      'Producto: Vida hipotecario · versión 2026.09.1',
+      'Suma asegurada: $ 180.000.000',
+      'Prima mensual: $ 64.638',
+      'Moneda: COP',
+      'Vigencia: 25/10/2026 – 24/10/2027',
+    ]);
+    expect(html().textContent).not.toMatch(SIN_TITULAR);
+    expect(await violacionesA11y(html())).toEqual([]);
+  });
+
+  it('ACTIVA: el nombre del titular tal cual llega, sin transformarlo', () => {
+    const nombre = 'josé MARÍA d’Ávila-Núñez <b>';
+    montar({ ...POLIZA_ACTIVA, titularNombre: nombre });
+    expect(texto('header .sub .titular')).toBe(nombre);
+    expect(kv('#datos-poliza')[1]).toBe(`Titular: ${nombre}`);
+    expect(html().querySelector('#datos-poliza b')).toBeNull();
+  });
+
   it('ACTIVA: cada cobertura con su marca de obligatoria u opcional, con texto', () => {
     montar({
       ...POLIZA_ACTIVA,
@@ -198,7 +239,7 @@ describe('EmisionPolizaComponent (W17-2 y W17-4, HU-W17)', () => {
 
   it('ACTIVA con prima anual: «Prima anual»', () => {
     montar({ ...POLIZA_ACTIVA, periodicidad: 'ANUAL' });
-    expect(kv('#datos-poliza')[4]).toBe('Prima anual: $ 64.638');
+    expect(kv('#datos-poliza')[5]).toBe('Prima anual: $ 64.638');
   });
 
   it('ACTIVA no vuelve a consultar', fakeAsync(() => {
@@ -483,8 +524,10 @@ describe('EmisionPolizaComponent (W17-2 y W17-4, HU-W17)', () => {
     expect(texto('nav.crumb')).toBe('Home › Contracting › Issuance');
     expect(titulo()).toBe('Policy issued');
     expect(texto('h2 .tag')).toBe('Active');
+    expect(texto('header .sub')).toBe(`100-2026-000001 · Policyholder: ${TITULAR_NOMBRE}`);
     expect(kv('#datos-poliza')).toEqual([
       'Number: 100-2026-000001',
+      `Policyholder: ${TITULAR_NOMBRE}`,
       'Line of business: Vida hipotecario',
       'Product: Mortgage life · version 2026.09.1',
       'Sum insured: COP 180,000,000',
@@ -514,9 +557,14 @@ describe('EmisionPolizaComponent (W17-2 y W17-4, HU-W17)', () => {
     crear();
     TestBed.inject(IdiomaService).cambiar('pseudo');
     responder(POLIZA_ACTIVA);
-    for (const selector of ['h2', 'h2 .tag', '.alerta--ok p', '#titulo-avance', '#titulo-datos', '#datos-poliza dt', '#titulo-coberturas', '.coberturas li .marca', '#titulo-firma', '#firma-poliza dt', 'button', '.descarga .sub']) {
+    for (const selector of ['h2', 'h2 .tag', '.alerta--ok p', '#titulo-avance', '#titulo-datos', '#datos-poliza dt', '#titulo-coberturas', '.coberturas li .marca', '#titulo-firma', '#firma-poliza dt', 'button', '.descarga .sub', 'header .sub .sr-only']) {
       expect(texto(selector)).withContext(selector).toMatch(/^⟦/);
     }
+    // La etiqueta se marca; el nombre, que es un dato, no.
+    const titular = kv('#datos-poliza')[1];
+    expect(titular).toMatch(/^⟦.*⟧: /);
+    expect(titular).toMatch(new RegExp(`: ${TITULAR_NOMBRE}$`));
+    expect(texto('header .sub .titular')).toBe(TITULAR_NOMBRE);
     expect(await violacionesA11y(html())).toEqual([]);
   });
 });

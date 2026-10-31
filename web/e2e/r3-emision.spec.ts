@@ -9,6 +9,7 @@ import {
   POLIZA_FIRMADA,
   POLIZA_ID,
   RECAUDO_CONFIRMADO,
+  TITULAR_NOMBRE,
 } from '../src/app/features/contratacion/contratacion.testing';
 import { API, ASESOR, prepararPortal, simular, violacionesGraves } from './soporte/portal';
 import { focoVisible, tabularHasta } from './soporte/teclado';
@@ -17,7 +18,7 @@ import { focoVisible, tabularHasta } from './soporte/teclado';
  * E2E-W17-01 · R3 emisión (HU-W17, W17-2 y W17-4 adaptadas a la ADR 0014) con la API simulada, en es-CO
  * y en-US: del recaudo confirmado a «Ver la emisión»; «Emitiendo» y luego «Póliza emitida» por el
  * sondeo, con el cambio anunciado y el foco en el título nuevo; «Descargar la póliza» descarga la URL
- * prefirmada en la misma pestaña, sin salir del portal (S3 interceptado como adjunto: sin red real, ADR
+ * prefirmada en la misma pestaña, sin salir del portal; el titular en «Póliza emitida» (17.12b) (S3 interceptado como adjunto: sin red real, ADR
  * 0014 decisión 12); la cotización sin póliza; el documento 409; axe sin violaciones críticas ni serias, el teclado y la pseudolocalización.
  */
 
@@ -33,6 +34,7 @@ const TEXTOS = {
     firma: 'Documento firmado por Solventa',
     enCurso: 'En curso',
     vigencia: '25/10/2026 – 24/10/2027',
+    titular: 'Titular',
     descargar: 'Descargar la póliza',
   },
   'en-US': {
@@ -44,6 +46,7 @@ const TEXTOS = {
     firma: 'Document signed by Solventa',
     enCurso: 'In progress',
     vigencia: '10/25/2026 – 10/24/2027',
+    titular: 'Policyholder',
     descargar: 'Download the policy',
   },
 } as const satisfies Record<Idioma, Record<string, string>>;
@@ -118,6 +121,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
     await expect(page.getByRole('heading', { level: 2, name: t.emitiendo })).toBeFocused();
     await expect(page.locator('.hitos li[aria-current=step] .hito__nombre')).toHaveText(t.firma);
     await expect(page.locator('.hitos li[aria-current=step] .hito__estado')).toHaveText(t.enCurso);
+    await expect(page.getByText(TITULAR_NOMBRE)).toHaveCount(0);
     await expect(page.locator('progress')).toHaveAttribute('value', '2');
     await expect(page.locator('.side__item--activo')).toContainText(idioma === 'es-CO' ? 'Emisión' : 'Issuance');
     expect(await violacionesGraves(page, testInfo, `axe-emitiendo-${idioma}`)).toEqual([]);
@@ -129,6 +133,11 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
     await expect(page.locator('p[aria-live=polite]')).toHaveText(t.anuncio);
     await expect(titulo.locator('.tag')).toHaveText(t.activa);
     await expect(valor(page, idioma === 'es-CO' ? 'Vigencia' : 'Coverage period')).toHaveText(t.vigencia);
+    // El titular, como en el mockup W17-4: junto al número y como dato con su etiqueta.
+    await expect(page.locator('header .sub .titular')).toHaveText(TITULAR_NOMBRE);
+    await expect(page.locator('header .sub .titular')).toBeVisible();
+    await expect(valor(page, t.titular)).toHaveText(TITULAR_NOMBRE);
+    await expect(page.locator('#datos-poliza .kv div').filter({ hasText: t.titular }).locator('dt')).toHaveText(t.titular);
     await expect(page.locator('.hitos li')).toHaveCount(4);
     await expect(page.locator('.hitos li[aria-current]')).toHaveCount(0);
     expect(consultas).toHaveLength(3);

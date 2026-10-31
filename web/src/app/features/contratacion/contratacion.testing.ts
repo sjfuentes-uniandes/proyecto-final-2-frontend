@@ -434,6 +434,7 @@ export const POLIZA_EMITIENDO: Poliza = {
   emitidaEn: null,
   documento: null,
   firma: null,
+  titularNombre: null,
 };
 
 /** EMITIENDO con el documento subido y firmado: falta pasar a ACTIVA. */
@@ -443,7 +444,15 @@ export const POLIZA_FIRMADA: Poliza = {
   firma: { firmaId: 'FIR-SINT-C01', selloTiempo: '2026-10-24T15:00:02Z' },
 };
 
-export const POLIZA_ACTIVA: Poliza = { ...POLIZA_FIRMADA, estado: 'ACTIVA', emitidaEn: '2026-10-24T15:00:03Z' };
+/** El nombre que bff-web compone desde clientes en el estado de proveedor de la póliza activa (17.11c). */
+export const TITULAR_NOMBRE = 'Natalia González Ruiz';
+
+export const POLIZA_ACTIVA: Poliza = {
+  ...POLIZA_FIRMADA,
+  estado: 'ACTIVA',
+  emitidaEn: '2026-10-24T15:00:03Z',
+  titularNombre: TITULAR_NOMBRE,
+};
 
 /** URL sintética con la forma de una prefirmada de S3 por `versionId`. */
 export const ENLACE_DOCUMENTO: EnlaceDocumento = {

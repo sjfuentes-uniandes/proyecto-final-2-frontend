@@ -273,6 +273,8 @@ export interface Poliza {
   documento: { huella: string; versionId: string } | null;
   /** Nula hasta que Solventa firma la huella del PDF. */
   firma: { firmaId: string; selloTiempo: string } | null;
+  /** El nombre del titular según clientes, solo con la póliza ACTIVA; nulo mientras se emite o si bff-web no lo obtiene. */
+  titularNombre: string | null;
 }
 
 /** URL prefirmada de la versión registrada del PDF; vence pronto (`venceEn`): no se guarda. */

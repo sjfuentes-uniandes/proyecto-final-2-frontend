@@ -94,11 +94,19 @@
           <ng-container [ngTemplateOutlet]="lineaDeTiempo" />
         </div>
       } @else {
-        <!-- W17-4 adaptada: el estado real («Activa»), sin titular, canal, aviso, conciliación ni siniestros. -->
+        <!-- W17-4 adaptada: el estado real («Activa»), sin canal, aviso, conciliación ni siniestros. -->
+        <!-- El titular, solo si bff-web lo dio: si es null, se omite (ni relleno ni «No disponible»). -->
         <header class="h-row">
           <div>
             <h2 #foco tabindex="-1">{{ t.tituloPolizaEmitida }} <span class="tag tag--ok">{{ t.estadoActiva }}</span></h2>
-            <p class="sub">{{ p.numero }}</p>
+            <p class="sub">
+              {{ p.numero }}
+              @if (p.titularNombre; as titular) {
+                <span class="separador" aria-hidden="true"> · </span>
+                <span class="sr-only">{{ t.kvTitular }}: </span>
+                <span class="titular">{{ titular }}</span>
+              }
+            </p>
           </div>
           <div class="descarga">
             <button
@@ -140,6 +148,9 @@
               <h3 id="titulo-datos">{{ t.datosPoliza }}</h3>
               <dl class="kv">
                 <div><dt>{{ t.kvNumero }}</dt><dd>{{ p.numero }}</dd></div>
+                @if (p.titularNombre; as titular) {
+                  <div><dt>{{ t.kvTitular }}</dt><dd>{{ titular }}</dd></div>
+                }
                 <div><dt>{{ t.kvRamo }}</dt><dd>{{ p.ramo.nombre }}</dd></div>
                 <div><dt>{{ t.kvProducto }}</dt><dd>{{ t.productoVersion(textos.producto(p.producto.id), p.producto.version) }}</dd></div>
                 <div><dt>{{ t.kvSumaAsegurada }}</dt><dd>{{ textos.monto(p.sumaAsegurada, p.moneda) }}</dd></div>

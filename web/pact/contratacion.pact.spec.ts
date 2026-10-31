@@ -361,10 +361,10 @@ test('recaudo · 404 ACEPTACION_NO_ENCONTRADA: la cotización no tiene aceptaci�
 // --- HU-W17 (17.12): la póliza y la URL de su documento ---------------------------------------------
 
 /**
- * Lo que promete bff-web en la 17.11, con los estados de proveedor de `_sembrar` (sin 5xx ni
- * `titularNombre`). `estado` se compara exacto: con él el portal elige la vista y si sigue consultando.
- * `emitidaEn`, `documento` y `firma` son null en EMITIENDO y presentes en ACTIVA (Pact no expresa «null
- * u objeto»). Lo demás, por tipo o patrón, no con los valores del simulador.
+ * Lo que promete bff-web en la 17.11 y la 17.11c, con los estados de proveedor de `_sembrar` (sin 5xx).
+ * `estado` se compara exacto: con él el portal elige la vista y si sigue consultando.
+ * `emitidaEn`, `documento`, `firma` y `titularNombre` son null en EMITIENDO y presentes en ACTIVA (Pact
+ * no expresa «null u objeto»). Lo demás, por tipo o patrón, no con los valores del simulador.
  */
 function poliza(p: Poliza) {
   return {
@@ -387,6 +387,7 @@ function poliza(p: Poliza) {
         ? null
         : { huella: regex(/^sha256:[0-9a-f]{64}$/, p.documento.huella), versionId: like(p.documento.versionId) },
     firma: p.firma === null ? null : { firmaId: like(p.firma.firmaId), selloTiempo: instante(p.firma.selloTiempo) },
+    titularNombre: p.titularNombre === null ? null : like(p.titularNombre),
   };
 }
 
@@ -416,7 +417,7 @@ for (const { estado, poliza: p } of POLIZAS) {
         expect(cuerpo.vigencia.desde).toMatch(FECHA);
         expect(cuerpo.coberturas.length).toBeGreaterThan(0);
         expect(cuerpo.firma === null).toBe(p.estado === 'EMITIENDO');
-        expect(cuerpo).not.toHaveProperty('titularNombre');
+        expect(cuerpo.titularNombre).toBe(p.titularNombre);
       });
   });
 }
