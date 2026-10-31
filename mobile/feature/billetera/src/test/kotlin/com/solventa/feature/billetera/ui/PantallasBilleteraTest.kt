@@ -109,6 +109,20 @@ class PantallasBilleteraTest {
     }
 
     @Test
+    @Config(qualifiers = "es-rCO-w411dp-h2000dp")
+    fun `la lista se lee en orden - titulo y luego las tarjetas en el orden recibido`() {
+        lista(BilleteraUiState.Contenido(listOf(Muestras.activa, Muestras.vencida)))
+
+        val orden = listOf(
+            compose.onNodeWithText("Mi Billetera").top(),
+            compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa")).top(),
+            compose.onNodeWithTag(EtiquetasPrueba.poliza("id-vencida")).top(),
+        )
+        assertEquals(orden.sorted(), orden)
+        assertEquals(3, orden.toSet().size)
+    }
+
+    @Test
     fun `la lista vacia muestra el mensaje y ninguna tarjeta`() {
         lista(BilleteraUiState.Vacia)
 

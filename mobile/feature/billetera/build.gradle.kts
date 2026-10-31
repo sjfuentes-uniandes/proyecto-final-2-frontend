@@ -9,10 +9,36 @@ plugins {
 android {
     namespace = "com.solventa.feature.billetera"
 
+    defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
     testOptions {
         // Robolectric necesita los recursos fusionados para resolver cadenas por idioma.
         unitTests.isIncludeAndroidResources = true
         unitTests.all { it.useJUnitPlatform() }
+
+        // Matriz de dispositivos de la estrategia: API 26 (mínimo), 31 y 34 (N-1). Se ejecutan con
+        // `:feature:billetera:<nombre>DebugAndroidTest`; Gradle descarga la imagen la primera vez.
+        managedDevices {
+            localDevices {
+                create("api26") {
+                    device = "Pixel 6"
+                    apiLevel = 26
+                    systemImageSource = "aosp"
+                }
+                create("api31") {
+                    device = "Pixel 6"
+                    apiLevel = 31
+                    systemImageSource = "aosp"
+                }
+                create("api34") {
+                    device = "Pixel 6"
+                    apiLevel = 34
+                    systemImageSource = "aosp"
+                }
+            }
+        }
     }
 }
 
@@ -68,4 +94,11 @@ dependencies {
     testRuntimeOnly(libs.junit5.vintage.engine)
     testRuntimeOnly(libs.junit5.platform.launcher)
     testImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // Pruebas instrumentadas (R6): Compose UI Test y MockWebServer, sin dependencias nuevas.
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.okhttp.mockwebserver)
+    androidTestImplementation(libs.kotlin.test)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

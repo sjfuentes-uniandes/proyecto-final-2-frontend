@@ -93,6 +93,15 @@ class PantallasBilleteraFuenteGrandeTest {
     }
 
     @Test
+    fun `el detalle al 200 por ciento no encontrado muestra su mensaje completo sin reintento`() {
+        compose.montar(FUENTE_200) { DetallePolizaScreen(DetallePolizaUiState.NoEncontrada, {}, {}) }
+
+        compose.onNodeWithText("No encontramos esta póliza.").assertTextoCompleto()
+        compose.onAllNodesWithText("Reintentar").assertCountEquals(0)
+        compose.onNodeWithContentDescription("Volver").assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
     fun `el detalle al 200 por ciento conserva el area tactil de volver y del reintento`() {
         compose.montar(FUENTE_200) { DetallePolizaScreen(DetallePolizaUiState.Error, {}, {}) }
 
