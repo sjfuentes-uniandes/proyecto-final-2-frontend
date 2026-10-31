@@ -23,6 +23,7 @@
     <string name="billetera_suma_asegurada">Suma asegurada: %1$s</string>
     <plurals name="billetera_total_coberturas">
         <item quantity="one">%1$d cobertura</item>
+        <item quantity="many">%1$d coberturas</item>
         <item quantity="other">%1$d coberturas</item>
     </plurals>
     <string name="billetera_ver_detalle">Ver detalle completo</string>
