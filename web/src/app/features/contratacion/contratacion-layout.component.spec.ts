@@ -103,8 +103,10 @@ describe('ContratacionLayoutComponent (E01 a E04 y F01)', () => {
     const emision = Array.from(html.querySelectorAll('a.side__item')).find((a) => a.textContent?.includes('Emisión'));
     expect(emision?.getAttribute('href')).toBe('/contratacion/cotizaciones/cot-1/emision');
     expect(emision?.classList).toContain('side__item--activo');
-    // Pólizas (consulta, HU-W18) sigue pendiente: es de otra historia.
-    expect(Array.from(html.querySelectorAll('.side__item--off')).map((p) => p.textContent?.trim())).toEqual(['📄Pólizas']);
+    // Pólizas (consulta, HU-W18) está activa para el grupo asesores: ya no queda ningún ítem pendiente.
+    expect(html.querySelectorAll('.side__item--off').length).toBe(0);
+    const polizas = Array.from(html.querySelectorAll('a.side__item')).find((a) => a.textContent?.includes('Pólizas'));
+    expect(polizas?.getAttribute('href')).toBe('/consulta/polizas');
     expect(await violacionesA11y(html)).toEqual([]);
   });
 });
