@@ -1,0 +1,17 @@
+/* Paso 3 · Recaudo de la prima (HU-W16); los estilos comunes están en contratacion.scss. */
+.cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+/* «Primer cobro» del mockup W16: el monto destacado. */
+.monto { margin: 0 0 14px; font-size: 28px; font-weight: 700; color: var(--sv-azul-oscuro); }
+.referencia { overflow-wrap: anywhere; }
+
+.alerta--advertencia { border-color: var(--sv-naranja); background: var(--sv-naranja-fondo); color: var(--sv-texto); }
+.alerta p { margin: 0; }
+.nota { color: var(--sv-azul); }
+.btn[aria-busy='true'] { cursor: progress; }
+.enlace-centro { align-self: center; padding: 8px; font-size: 13.5px; font-weight: 600; color: var(--sv-texto-secundario); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}

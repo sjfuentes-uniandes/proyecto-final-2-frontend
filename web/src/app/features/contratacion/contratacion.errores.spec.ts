@@ -60,4 +60,20 @@ describe('Errores de la contratación (por código B2, nunca por mensaje)', () =
     });
     expect(errorContratacion(t, respuesta(418, { codigo: 'OTRO' })).mensaje).toBe(t.errorGeneral);
   });
+
+  it('HU-W17: traduce los códigos de la póliza (texto en es-CO y en-US)', () => {
+    const en = TEXTOS_CONTRATACION['en-US'];
+    expect(errorContratacion(t, respuesta(404, { codigo: 'POLIZA_NO_ENCONTRADA' })).mensaje).toBe(
+      'La póliza aún no existe porque el recaudo de la prima no está confirmado.',
+    );
+    expect(errorContratacion(t, respuesta(409, { codigo: 'POLIZA_NO_ACTIVA' })).mensaje).toBe(
+      'La póliza todavía se está emitiendo: su documento estará disponible cuando quede activa.',
+    );
+    expect(errorContratacion(en, respuesta(404, { codigo: 'POLIZA_NO_ENCONTRADA' })).mensaje).toBe(
+      'The policy does not exist yet because the premium collection is not confirmed.',
+    );
+    expect(errorContratacion(en, respuesta(409, { codigo: 'POLIZA_NO_ACTIVA' })).mensaje).toBe(
+      'The policy is still being issued: its document will be available once it is active.',
+    );
+  });
 });

@@ -130,10 +130,21 @@ describe('AceptacionOfertaComponent (F01, HU-W15)', () => {
       'Acepto recibir avisos electrónicos',
     ]);
     expect(texto('.version')).toBe('Texto de las declaraciones, versión 2026.10.1');
-    expect(boton().textContent?.trim()).toBe('Continuar a la firma');
+    expect(boton().textContent?.trim()).toBe('Aceptar la oferta');
     expect(boton().getAttribute('aria-disabled')).toBe('true');
-    expect(document.getElementById(boton().getAttribute('aria-describedby') ?? '')?.textContent).toContain('activa «He leído');
-    expect(texto('p.nota')).toContain('no se ha movido dinero ni se ha emitido nada');
+    // HU-W16 (ADR 0013): antes de aceptar, el aviso de que aceptar inicia el cobro; el botón lo describe.
+    const [aviso, motivo] = (boton().getAttribute('aria-describedby') ?? '').split(' ').map((id) => document.getElementById(id));
+    expect(aviso?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Al aceptar la oferta se inicia el cobro del primer recaudo de la prima, sin esperar una firma del tomador. Hasta ahora no se ha movido dinero ni se ha emitido la póliza.',
+    );
+    expect(aviso?.matches('p.nota')).toBeTrue();
+    expect(aviso!.compareDocumentPosition(boton()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(motivo?.textContent).toContain('activa «He leído');
+    expect(texto('p.nota')).toContain('no se ha movido dinero ni se ha emitido');
+    // Ningún texto de F01, salvo el indicador de pasos, habla de una firma que haya que esperar.
+    const sinIndicador = html().cloneNode(true) as HTMLElement;
+    sinIndicador.querySelector('app-pasos-contratacion')?.remove();
+    expect(sinIndicador.textContent?.replace(/sin esperar una firma del tomador/, '')).not.toMatch(/\bfirma/i);
     expect(enlaces()).toContain(`Volver a la oferta → /contratacion/decisiones/${DECISION_APROBADA.id}`);
     expect(html().textContent).not.toMatch(/carencia|deducible|Inicio de vigencia/i);
     expect(await violacionesA11y(html())).toEqual([]);
@@ -154,7 +165,7 @@ describe('AceptacionOfertaComponent (F01, HU-W15)', () => {
     interruptores()[1].click();
     fixture.detectChanges();
     expect(boton().getAttribute('aria-disabled')).toBe('false');
-    expect(texto('p.motivo')).toBe('Las declaraciones obligatorias están completas: puedes continuar a la firma.');
+    expect(texto('p.motivo')).toBe('Las declaraciones obligatorias están completas: puedes aceptar la oferta.');
     interruptores()[3].click();
     fixture.detectChanges();
     expect(interruptores()[3].getAttribute('aria-checked')).toBe('false');
@@ -182,17 +193,25 @@ describe('AceptacionOfertaComponent (F01, HU-W15)', () => {
     fixture.detectChanges();
     expect(texto('#titulo-confirmacion')).toBe('Aceptación registrada');
     expect(document.activeElement?.id).toBe('titulo-confirmacion');
-    expect(texto('.alerta--ok')).toContain('el recaudo de la prima está habilitado');
+    expect(texto('.alerta--ok span:last-child')).toBe(
+      'La aceptación quedó registrada como evidencia y se inició el cobro del primer recaudo de la prima.',
+    );
     expect(html().querySelector('.alerta--ok')?.getAttribute('role')).toBe('status');
     const valores = kv();
     expect(valores[0]).toMatch(/^Fecha y hora: .*2026/);
     expect(valores.slice(1)).toEqual([
       `Identificador: ${ACEPTACION.id}`,
       'Recaudo de la prima: Habilitado',
-      'Siguiente paso: Firma electrónica',
+      'Siguiente paso: Recaudo de la prima',
     ]);
-    expect(texto('p.nota')).toContain('firma electrónica del tomador');
-    expect(html().querySelector('app-pasos-contratacion [aria-current=step]')?.textContent?.trim()).toBe('2 · Firma electrónica');
+    // HU-W16 (ADR 0013): el recaudo sigue a la aceptación; la firma del tomador no tiene historia.
+    expect(texto('p.nota')).toBe(
+      'El cobro de la prima empezó al registrar la aceptación. La firma electrónica del tomador no está disponible en esta versión.',
+    );
+    expect(html().querySelector('app-pasos-contratacion [aria-current=step]')?.textContent?.trim()).toBe('3 · Recaudo de la prima');
+    expect(texto('app-pasos-contratacion li.no-disponible')).toBe('2 · Firma electrónica (no disponible)');
+    expect(html().querySelector('app-pasos-contratacion li.hecho:not(:first-child)')).toBeNull();
+    expect(enlaces()).toContain(`Ver el recaudo de la prima → /contratacion/cotizaciones/${COTIZACION_S01}/recaudo`);
     expect(html().querySelector('a[href*="firma"]')).toBeNull();
     expect(clave()).toBeNull();
     expect(await violacionesA11y(html())).toEqual([]);
@@ -342,7 +361,11 @@ describe('AceptacionOfertaComponent (F01, HU-W15)', () => {
     TestBed.inject(IdiomaService).cambiar('en-US');
     fixture.detectChanges();
     expect(texto('h2')).toBe('Review and accept the offer');
-    expect(boton().textContent?.trim()).toBe('Continue to signature');
+    expect(boton().textContent?.trim()).toBe('Accept the offer');
+    expect(texto('p.nota')).toBe(
+      'Accepting the offer starts the first premium charge, without waiting for a signature from the policyholder. So far no money has moved and no policy has been issued.',
+    );
+    expect(texto('p.motivo')).toBe('To continue, turn on “I have read the general terms” and “The information I declared is true”.');
     expect(kv()[3]).toBe('Monthly premium: COP 64,638');
     expect(await violacionesA11y(html())).toEqual([]);
     activarObligatorias();

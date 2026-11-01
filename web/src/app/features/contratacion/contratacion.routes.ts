@@ -39,6 +39,20 @@ export const routes: Routes = [
           import('./paginas/aceptacion-oferta/aceptacion-oferta.component').then((m) => m.AceptacionOfertaComponent),
       },
       {
+        // HU-W16 (paso 3, solo lectura): desde «Ver el recaudo de la prima» de la confirmación de F01.
+        path: 'cotizaciones/:cotizacionId/recaudo',
+        title: 'Recaudo de la prima · Solventa',
+        canActivate: [requiereGrupo('asesores')],
+        loadComponent: () => import('./paginas/recaudo-prima/recaudo-prima.component').then((m) => m.RecaudoPrimaComponent),
+      },
+      {
+        // HU-W17 (W17-2 y W17-4): desde «Ver la emisión» del recaudo confirmado.
+        path: 'cotizaciones/:cotizacionId/emision',
+        title: 'Emisión de la póliza · Solventa',
+        canActivate: [requiereGrupo('asesores')],
+        loadComponent: () => import('./paginas/emision-poliza/emision-poliza.component').then((m) => m.EmisionPolizaComponent),
+      },
+      {
         path: 'decisiones/:decisionId',
         title: 'Decisión de suscripción · Solventa',
         loadComponent: () =>

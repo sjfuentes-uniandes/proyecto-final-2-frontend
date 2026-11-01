@@ -4,13 +4,16 @@ import { IdiomaService } from '../../../../core/i18n/idioma.service';
 import { violacionesA11y } from '../../../../testing';
 import { PasosContratacionComponent } from './pasos-contratacion.component';
 
-describe('PasosContratacionComponent (F01, HU-W15)', () => {
+describe('PasosContratacionComponent (F01, HU-W15; F03, HU-W16)', () => {
   afterEach(() => TestBed.inject(IdiomaService).cambiar('es-CO'));
 
-  function crear(actual?: number) {
+  function crear(actual?: number, noDisponibles?: number[]) {
     const fixture = TestBed.createComponent(PasosContratacionComponent);
     if (actual !== undefined) {
       fixture.componentRef.setInput('actual', actual);
+    }
+    if (noDisponibles !== undefined) {
+      fixture.componentRef.setInput('noDisponibles', noDisponibles);
     }
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
@@ -41,5 +44,25 @@ describe('PasosContratacionComponent (F01, HU-W15)', () => {
       '2 · Electronic signature',
       '3 · Premium collection',
     ]);
+  });
+
+  it('HU-W16: un paso no disponible nunca queda hecho ni actual y lo dice con texto, no solo con color', async () => {
+    const { fixture, html, pasos } = crear(3, [2]);
+    expect(pasos().map((p) => p.className)).toEqual(['hecho', 'no-disponible', 'actual']);
+    expect(pasos().map((p) => p.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      '1 · Aceptación',
+      '2 · Firma electrónica (no disponible)',
+      '3 · Recaudo de la prima',
+    ]);
+    expect(pasos().map((p) => p.getAttribute('aria-current'))).toEqual([null, null, 'step']);
+    expect(await violacionesA11y(html)).toEqual([]);
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    fixture.detectChanges();
+    expect(pasos()[1].textContent?.replace(/\s+/g, ' ').trim()).toBe('2 · Electronic signature (not available)');
+    // Aunque sea el actual, un paso no disponible no se marca como paso en curso.
+    fixture.componentRef.setInput('actual', 2);
+    fixture.detectChanges();
+    expect(pasos().map((p) => p.className)).toEqual(['hecho', 'no-disponible', '']);
+    expect(html.querySelector('[aria-current]')).toBeNull();
   });
 });

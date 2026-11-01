@@ -80,4 +80,58 @@ describe('Textos de la contratación (HU-W13: es-CO, en-US y pseudo-localizació
     expect(textos.nivel('ALTO')).toMatch(/^⟦/);
     expect(textos.locale()).toBe('es-CO');
   });
+
+  it('HU-W16: el motivo del rechazo del recaudo por código; uno desconocido o no informado, el genérico', () => {
+    const textos = TestBed.inject(TextosContratacionService);
+    const generico = 'El proveedor de pagos no informó un motivo que podamos mostrar.';
+    expect(textos.motivoRecaudo('FONDOS_INSUFICIENTES')).toBe('Fondos insuficientes');
+    expect(textos.motivoRecaudo('MOTIVO_NO_INFORMADO')).toBe(generico);
+    expect(textos.motivoRecaudo('CODIGO_QUE_NO_EXISTE')).toBe(generico);
+    expect(textos.motivoRecaudo('toString')).toBe(generico);
+    expect(textos.motivoRecaudo(null)).toBe(generico);
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    expect(textos.motivoRecaudo('FONDOS_INSUFICIENTES')).toBe('Insufficient funds');
+    expect(textos.motivoRecaudo('MOTIVO_NO_INFORMADO')).toBe('The payment provider did not report a reason we can show.');
+    TestBed.inject(IdiomaService).cambiar('pseudo');
+    expect(textos.motivoRecaudo('FONDOS_INSUFICIENTES')).toMatch(/^⟦/);
+    expect(textos.motivoRecaudo('OTRO')).toMatch(/^⟦/);
+  });
+
+  it('HU-W16: el monto del primer cobro (texto, sin aritmética) y su fecha según el idioma', () => {
+    const textos = TestBed.inject(TextosContratacionService);
+    expect(textos.monto('64638', 'COP').replace(/\s/g, ' ')).toBe('$ 64.638');
+    const fechaEs = textos.fechaHora('2026-10-24T15:00:01Z');
+    expect(fechaEs).toMatch(/24.*2026/);
+    expect(fechaEs).not.toMatch(/Oct/);
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    expect(textos.monto('64638', 'COP').replace(/\s/g, ' ')).toBe('COP 64,638');
+    expect(textos.fechaHora('2026-10-24T15:00:01Z')).toMatch(/^Oct 24, 2026/);
+  });
+
+  it('HU-W17: la vigencia (fechas sin hora, sin correrse de día) y la hora de cada paso con segundos', () => {
+    const textos = TestBed.inject(TextosContratacionService);
+    const es = TEXTOS_CONTRATACION['es-CO'];
+    const en = TEXTOS_CONTRATACION['en-US'];
+    // Una fecha aaaa-mm-dd es un día civil: no se interpreta en la zona del navegador.
+    expect(textos.fecha('2026-10-25')).toBe('25/10/2026');
+    expect(textos.fecha('2027-01-01')).toBe('01/01/2027');
+    expect(es.rangoFechas(textos.fecha('2026-10-25'), textos.fecha('2027-10-24'))).toBe('25/10/2026 – 24/10/2027');
+    expect(textos.fechaHora('2026-10-24T15:00:03Z', true)).toMatch(/:03/);
+    expect(textos.fechaHora('2026-10-24T15:00:03Z')).not.toMatch(/:03/);
+    expect(textos.monto('180000000', 'COP').replace(/\s/g, ' ')).toBe('$ 180.000.000');
+    expect(es.pasosCompletados(2, 4)).toBe('2 de 4 pasos completados');
+    expect(en.pasosCompletados(2, 4)).toBe('2 of 4 steps completed');
+    expect(es.anuncioPolizaEmitida('100-2026-000001')).toBe('Póliza emitida: 100-2026-000001');
+    expect(en.anuncioPolizaEmitida('100-2026-000001')).toBe('Policy issued: 100-2026-000001');
+    expect(es.productoVersion('Vida hipotecario', '2026.09.1')).toBe('Vida hipotecario · versión 2026.09.1');
+    expect(en.productoVersion('Mortgage life', '2026.09.1')).toBe('Mortgage life · version 2026.09.1');
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    expect(textos.fecha('2026-10-25')).toBe('10/25/2026');
+    expect(textos.monto('180000000', 'COP').replace(/\s/g, ' ')).toBe('COP 180,000,000');
+    expect(textos.fechaHora('2026-10-24T15:00:03Z', true)).toMatch(/^Oct 24, 2026.*:03/);
+    TestBed.inject(IdiomaService).cambiar('pseudo');
+    expect(textos.fecha('2026-10-25')).toBe('25/10/2026');
+    expect(TEXTOS_CONTRATACION.pseudo.tituloEmitiendo).toMatch(/^⟦/);
+    expect(TEXTOS_CONTRATACION.pseudo.anuncioPolizaEmitida('100-2026-000001')).toMatch(/^⟦.*100-2026-000001/);
+  });
 });

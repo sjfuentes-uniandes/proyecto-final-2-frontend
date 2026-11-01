@@ -74,7 +74,8 @@
         <h2>{{ t.tituloAceptacion }}</h2>
         <p class="sub">{{ codigo() }}</p>
       </header>
-      <app-pasos-contratacion [actual]="2" />
+      <!-- HU-W16 (ADR 0013): el siguiente paso es el recaudo; la firma del tomador no tiene historia. -->
+      <app-pasos-contratacion [actual]="3" [noDisponibles]="firmaNoDisponible" />
       <div class="cols">
         <section class="card" aria-labelledby="titulo-confirmacion">
           <h3 #foco id="titulo-confirmacion" tabindex="-1">{{ t.aceptacionRegistrada }}</h3>
@@ -85,12 +86,15 @@
             <div><dt>{{ t.kvAceptadaEn }}</dt><dd>{{ fecha(a.aceptadaEn) }}</dd></div>
             <div><dt>{{ t.identificador }}</dt><dd>{{ a.id }}</dd></div>
             <div><dt>{{ t.kvRecaudo }}</dt><dd class="exito">{{ a.recaudoHabilitado ? t.recaudoHabilitado : t.no }}</dd></div>
-            <div><dt>{{ t.kvSiguientePaso }}</dt><dd>{{ t.pasoFirma }}</dd></div>
+            <div><dt>{{ t.kvSiguientePaso }}</dt><dd>{{ t.pasoRecaudo }}</dd></div>
           </dl>
         </section>
         <div class="columna">
-          <!-- DS2-22: la firma es de HU-W17; hasta que exista su ruta, el siguiente paso es solo texto. -->
-          <p class="nota">{{ t.siguienteFirmaDetalle }}</p>
+          <!-- HU-W16: el cobro empezó con la aceptación (ADR 0013); su estado se ve en el paso 3. -->
+          <p class="nota">{{ t.siguienteRecaudoDetalle }}</p>
+          <a class="btn btn--primario btn--bloque" [routerLink]="['/contratacion/cotizaciones', cotizacionId(), 'recaudo']">{{
+            t.verRecaudo
+          }}</a>
           @if (decision(); as d) {
             <a class="enlace-centro" [routerLink]="['/contratacion/decisiones', d.id]">{{ t.volverOferta }}</a>
           }
@@ -171,11 +175,13 @@
             </ul>
             <p class="version">{{ t.versionDeclaraciones(versionDeclaraciones) }}</p>
           </section>
+          <!-- HU-W16 (ADR 0013): aceptar inicia el primer cobro; el aviso va antes del botón y lo describe. -->
+          <p class="nota nota--alerta" [id]="idAviso">{{ t.notaSinDinero }}</p>
           <button
             type="button"
             class="btn btn--primario btn--bloque"
             [attr.aria-disabled]="!puedeEnviar() || enviando()"
-            [attr.aria-describedby]="idMotivo"
+            [attr.aria-describedby]="idAviso + ' ' + idMotivo"
             [attr.aria-busy]="enviando()"
             (click)="enviar()"
           >
@@ -196,7 +202,6 @@
             </div>
           }
           <a class="enlace-centro" [routerLink]="['/contratacion/decisiones', d.id]">{{ t.volverOferta }}</a>
-          <p class="nota">{{ t.notaSinDinero }}</p>
         </div>
       </div>
     }

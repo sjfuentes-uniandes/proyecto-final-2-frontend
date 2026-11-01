@@ -226,3 +226,59 @@ export interface Aceptacion {
   recaudoHabilitado: boolean;
   siguientePaso: SiguientePasoContratacion;
 }
+
+/** HU-W16: el primer cobro de la prima, de solo lectura (ADR 0013, decisión 9). */
+export type SituacionRecaudo = 'PENDIENTE' | 'CONFIRMADO' | 'RECHAZADO';
+
+export interface EstadoRecaudo {
+  /** PENDIENTE mientras dinero no publica un estado final. */
+  estado: SituacionRecaudo;
+  /** El id de la aceptación. */
+  claveRecaudo: string;
+  /** Texto decimal: lo cobrado si está CONFIRMADO; si no, la prima de la oferta aceptada. */
+  monto: string;
+  moneda: string;
+  /** Solo en CONFIRMADO. */
+  transaccionId: string | null;
+  /** Código del rechazo; solo en RECHAZADO. */
+  motivo: string | null;
+  /** Cuándo dinero resolvió el cobro; si está PENDIENTE, cuándo se aceptó. */
+  actualizadoEn: string;
+}
+
+/** HU-W17: la póliza de la oferta aceptada (ADR 0014). Una por aceptación. */
+export type EstadoPoliza = 'EMITIENDO' | 'ACTIVA';
+
+export interface Poliza {
+  polizaId: string;
+  estado: EstadoPoliza;
+  /** Reservado al crear la póliza (`100-2026-000001`): no cambia. */
+  numero: string;
+  producto: { id: string; version: string };
+  ramo: { codigo: string; nombre: string };
+  /** La instantánea de la oferta aceptada. */
+  coberturas: CoberturaProducto[];
+  /** Fechas (`aaaa-mm-dd`) inclusivas en America/Bogota. */
+  vigencia: { desde: string; hasta: string };
+  sumaAsegurada: TextoDecimal;
+  prima: TextoDecimal;
+  moneda: string;
+  periodicidad: string;
+  aceptadaEn: string;
+  /** Cuándo dinero confirmó el recaudo. */
+  recaudadaEn: string;
+  /** Nulo mientras se emite. */
+  emitidaEn: string | null;
+  /** Nulo hasta que se sube el PDF. */
+  documento: { huella: string; versionId: string } | null;
+  /** Nula hasta que Solventa firma la huella del PDF. */
+  firma: { firmaId: string; selloTiempo: string } | null;
+  /** El nombre del titular según clientes, solo con la póliza ACTIVA; nulo mientras se emite o si bff-web no lo obtiene. */
+  titularNombre: string | null;
+}
+
+/** URL prefirmada de la versión registrada del PDF; vence pronto (`venceEn`): no se guarda. */
+export interface EnlaceDocumento {
+  url: string;
+  venceEn: string;
+}
