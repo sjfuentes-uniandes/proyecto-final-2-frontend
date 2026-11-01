@@ -1,4 +1,7 @@
-import { Page, Request, TestInfo, expect, test } from '@playwright/test';
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+
+import { Page, Request, TestInfo } from '@playwright/test';
 
 import {
   COTIZACION_S01,
@@ -12,14 +15,16 @@ import {
   TITULAR_NOMBRE,
 } from '../src/app/features/contratacion/contratacion.testing';
 import { API, ASESOR, prepararPortal, simular, violacionesGraves } from './soporte/portal';
+import { SHA256_PDF_SINTETICO, ServidorPdf, expect, test } from './soporte/servidor-pdf';
 import { focoVisible, tabularHasta } from './soporte/teclado';
 
 /**
  * E2E-W17-01 · R3 emisión (HU-W17, W17-2 y W17-4 adaptadas a la ADR 0014) con la API simulada, en es-CO
  * y en-US: del recaudo confirmado a «Ver la emisión»; «Emitiendo» y luego «Póliza emitida» por el
  * sondeo, con el cambio anunciado y el foco en el título nuevo; «Descargar la póliza» descarga la URL
- * prefirmada en la misma pestaña, sin salir del portal; el titular en «Póliza emitida» (17.12b) (S3 interceptado como adjunto: sin red real, ADR
- * 0014 decisión 12); la cotización sin póliza; el documento 409; axe sin violaciones críticas ni serias, el teclado y la pseudolocalización.
+ * prefirmada en la misma pestaña, sin salir del portal; el titular en «Póliza emitida» (17.12b) (S3 es un
+ * servidor local en 127.0.0.1 que responde un adjunto: sin red real, ADR 0014 decisión 12; 17.12c); la
+ * cotización sin póliza; el documento 409; axe sin violaciones críticas ni serias, el teclado y la pseudolocalización.
  */
 
 type Idioma = 'es-CO' | 'en-US';
@@ -53,7 +58,7 @@ const TEXTOS = {
 
 const RUTA_RECAUDO = `/contratacion/cotizaciones/${COTIZACION_S01}/recaudo`;
 const RUTA_EMISION = `/contratacion/cotizaciones/${COTIZACION_S01}/emision`;
-/** El origen de la URL prefirmada sintética: se intercepta en el contexto y responde un adjunto. */
+/** El origen de la URL prefirmada sintética: en la prueba del 409 se intercepta en el contexto. */
 const S3 = 'https://polizas-documentos.s3.amazonaws.com/**';
 
 /** Una ruta del BFF con respuestas en orden (la última se repite); devuelve los pedidos recibidos. */
@@ -73,8 +78,9 @@ const simularDocumento = (page: Page, respuestas: { estado?: number; cuerpo: unk
   simularEnOrden(page, `/polizas/${POLIZA_ID}/documento`, respuestas);
 
 /**
- * S3 simulado: un PDF sintético como adjunto; devuelve las URL pedidas y si las pidió el marco principal
- * de esta pestaña (una ventana nueva tiene otro marco, y Chromium igual le atribuye la descarga a esta).
+ * S3 simulado con `route` (solo el 409, que no debe pedir el PDF): un PDF sintético como adjunto; devuelve
+ * las URL pedidas y si las pidió el marco principal de esta pestaña. La descarga usa `servidorPdf`, porque en
+ * WebKit `route.fulfill` no emite `download` (microsoft/playwright#9267).
  */
 async function simularS3(page: Page): Promise<{ url: string; mismaPestana: boolean }[]> {
   const pedidas: { url: string; mismaPestana: boolean }[] = [];
@@ -96,6 +102,36 @@ async function simularS3(page: Page): Promise<{ url: string; mismaPestana: boole
   return pedidas;
 }
 
+/** La respuesta de `…/documento` con la URL prefirmada sintética servida desde `servidorPdf`. */
+const enlaceLocal = (servidorPdf: ServidorPdf) => ({ ...ENLACE_DOCUMENTO, url: servidorPdf.imitar(ENLACE_DOCUMENTO.url) });
+
+/**
+ * Descarga con `accion` y exige lo mismo en los tres motores: `download` con la URL exacta; una sola
+ * petición al servidor, del marco principal de esta pestaña (una ventana nueva tiene su propia página y
+ * su propio marco); ninguna pestaña nueva; la URL del portal sin cambios; y el PDF íntegro. Sin
+ * `requestfinished` (Chromium aborta la navegación de una descarga) ni respuestas (en WebKit, dos).
+ */
+async function descargarEnLaMismaPestana(page: Page, servidorPdf: ServidorPdf, url: string, accion: () => Promise<void>): Promise<void> {
+  const antes = page.url();
+  const pestanas: Page[] = [];
+  page.context().on('page', (p) => pestanas.push(p));
+  const delMarcoPrincipal: boolean[] = [];
+  page.on('request', (r) => {
+    if (r.url().startsWith(`${servidorPdf.origen}/`)) {
+      delMarcoPrincipal.push(r.frame() === page.mainFrame());
+    }
+  });
+  const [descarga] = await Promise.all([page.waitForEvent('download'), accion()]);
+  expect(descarga.url()).toBe(url);
+  const contenido = await readFile(await descarga.path());
+  expect(createHash('sha256').update(contenido).digest('hex')).toBe(SHA256_PDF_SINTETICO);
+  const { pathname, search } = new URL(url);
+  expect(servidorPdf.peticiones).toEqual([{ ruta: pathname, consulta: search }]);
+  expect(delMarcoPrincipal).toEqual([true]);
+  expect(pestanas).toEqual([]);
+  expect(page.url()).toBe(antes);
+}
+
 const valor = (page: Page, termino: string) => page.locator('#datos-poliza .kv div').filter({ hasText: termino }).locator('dd');
 
 async function captura(page: Page, testInfo: TestInfo, nombre: string): Promise<void> {
@@ -107,12 +143,12 @@ async function captura(page: Page, testInfo: TestInfo, nombre: string): Promise<
 for (const idioma of ['es-CO', 'en-US'] as const) {
   const t = TEXTOS[idioma];
 
-  test(`recaudo confirmado → «${t.verEmision}» → emitiendo → póliza emitida → descarga · ${idioma}`, async ({ page }, testInfo) => {
+  test(`recaudo confirmado → «${t.verEmision}» → emitiendo → póliza emitida → descarga · ${idioma}`, async ({ page, servidorPdf }, testInfo) => {
     await prepararPortal(page, ASESOR);
     await simular(page, `/cotizaciones/${COTIZACION_S01}/recaudo`, RECAUDO_CONFIRMADO);
     const consultas = await simularPoliza(page, [{ cuerpo: POLIZA_EMITIENDO }, { cuerpo: POLIZA_FIRMADA }, { cuerpo: POLIZA_ACTIVA }]);
-    const documentos = await simularDocumento(page, [{ cuerpo: ENLACE_DOCUMENTO }]);
-    const pedidasS3 = await simularS3(page);
+    const enlace = enlaceLocal(servidorPdf);
+    const documentos = await simularDocumento(page, [{ cuerpo: enlace }]);
 
     await page.goto(`${RUTA_RECAUDO}?idioma=${idioma}`);
     await page.getByRole('link', { name: t.verEmision }).click();
@@ -145,14 +181,9 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
     await captura(page, testInfo, `poliza-emitida-${idioma}`);
 
     const descargar = page.getByRole('button', { name: t.descargar });
-    const pestanas: Page[] = [];
-    page.context().on('page', (p) => pestanas.push(p));
     // La misma pestaña pide la URL exacta; el adjunto se descarga sin salir del portal.
-    const [descarga] = await Promise.all([page.waitForEvent('download'), descargar.click()]);
-    expect(descarga.url()).toBe(ENLACE_DOCUMENTO.url);
-    expect(pedidasS3).toEqual([{ url: ENLACE_DOCUMENTO.url, mismaPestana: true }]);
+    await descargarEnLaMismaPestana(page, servidorPdf, enlace.url, () => descargar.click());
     expect(documentos).toHaveLength(1);
-    expect(pestanas).toEqual([]);
     await expect(page).toHaveURL(new RegExp(`${RUTA_EMISION}(\\?|$)`));
     await expect(titulo).toBeVisible();
     await expect(page.locator('#datos-poliza')).toBeVisible();
@@ -195,20 +226,19 @@ test('el documento 409 POLIZA_NO_ACTIVA: el mensaje, sin pedir el PDF', async ({
   expect(await violacionesGraves(page, testInfo, 'axe-documento-409')).toEqual([]);
 });
 
-test('teclado: foco en el título al cargar y «Descargar la póliza» con foco visible y Enter', async ({ page }) => {
+test('teclado: foco en el título al cargar y «Descargar la póliza» con foco visible y Enter', async ({ page, servidorPdf }) => {
   await prepararPortal(page, ASESOR);
   await simularPoliza(page, [{ cuerpo: POLIZA_ACTIVA }]);
-  const documentos = await simularDocumento(page, [{ cuerpo: ENLACE_DOCUMENTO }]);
-  const pedidasS3 = await simularS3(page);
+  const enlace = enlaceLocal(servidorPdf);
+  const documentos = await simularDocumento(page, [{ cuerpo: enlace }]);
   await page.goto(`${RUTA_EMISION}?idioma=es-CO`);
   await expect(page.getByRole('heading', { level: 2, name: 'Póliza emitida' })).toBeFocused();
   await tabularHasta(page, '.descarga button');
   expect(await focoVisible(page)).toBe(true);
-  const [descarga] = await Promise.all([page.waitForEvent('download'), page.keyboard.press('Enter')]);
-  expect(descarga.url()).toBe(ENLACE_DOCUMENTO.url);
-  expect(pedidasS3).toEqual([{ url: ENLACE_DOCUMENTO.url, mismaPestana: true }]);
+  await descargarEnLaMismaPestana(page, servidorPdf, enlace.url, () => page.keyboard.press('Enter'));
   expect(documentos).toHaveLength(1);
   await expect(page.getByRole('heading', { level: 2, name: 'Póliza emitida' })).toBeVisible();
+  await expect(page.locator('.descarga button')).toBeFocused();
 });
 
 for (const { nombre, poliza } of [
