@@ -1,6 +1,7 @@
 package com.solventa.app
 
 import android.app.Application
+import com.solventa.core.auth.AlmacenSesionSegura
 import com.solventa.core.auth.ClienteIdentidad
 import com.solventa.core.auth.ClienteRegistro
 import com.solventa.core.auth.CognitoClienteIdentidad
@@ -23,11 +24,13 @@ import com.solventa.feature.billetera.dominio.RepositorioPolizas
 import com.solventa.feature.privacidad.biometria.VerificadorBiometricoPrompt
 import com.solventa.feature.privacidad.datos.RepositorioConsentimientosRed
 import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
+import com.solventa.feature.notificaciones.AlmacenDispositivo
 import com.solventa.feature.notificaciones.AlmacenDispositivoCifrado
 import com.solventa.feature.notificaciones.ConfiguracionFirebase
 import com.solventa.feature.notificaciones.DependenciasNotificaciones
 import com.solventa.feature.notificaciones.GestorDispositivo
 import com.solventa.feature.notificaciones.InicializadorFirebase
+import com.solventa.feature.notificaciones.ProveedorTokenPush
 import com.solventa.feature.notificaciones.RedDispositivosBff
 import com.solventa.feature.notificaciones.ui.RegistroExplicacionPermisoPreferencias
 import com.solventa.feature.onboardingidentidad.verificacion.CrearCuenta
@@ -80,12 +83,21 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
         senderId = BuildConfig.FIREBASE_SENDER_ID,
     )
 
+    internal open fun urlBaseBff(): String = BuildConfig.BFF_MOVIL_BASE_URL
+
+    internal open fun crearAlmacenSesion(): AlmacenSesionSegura = AlmacenSesionSeguraKeystore(this)
+
+    internal open fun crearAlmacenDispositivo(): AlmacenDispositivo = AlmacenDispositivoCifrado(this)
+
+    internal open fun crearProveedorTokenPush(): ProveedorTokenPush =
+        InicializadorFirebase.inicializar(this, configuracionFirebase())
+
     override fun onCreate() {
         super.onCreate()
 
         gestorBiometria = GestorBiometria(this)
 
-        val almacenSesionSegura = AlmacenSesionSeguraKeystore(this)
+        val almacenSesionSegura = crearAlmacenSesion()
         // La baja del dispositivo se lanza con el token ya capturado y sin esperar: cerrar sesión no se bloquea.
         gestorSesion = GestorSesion(
             crearClienteIdentidad(),
@@ -95,7 +107,7 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
 
         // Los valores de desarrollo local solo se aplican en debug, aunque en release ya vienen vacíos.
         val subLocal = BuildConfig.SUB_LOCAL.takeIf { BuildConfig.DEBUG && it.isNotBlank() }
-        val api = RedModule.crearApi(BuildConfig.BFF_MOVIL_BASE_URL, subLocal = subLocal, proveedorAccessToken = gestorSesion)
+        val api = RedModule.crearApi(urlBaseBff(), subLocal = subLocal, proveedorAccessToken = gestorSesion)
         bffMovilCliente = BffMovilCliente(api)
         repositorioConsentimientos = RepositorioConsentimientosRed(ConsentimientosCliente(api))
         repositorioPolizas = RepositorioPolizasRed(bffMovilCliente)
@@ -117,8 +129,8 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
         // Sin configuración de Firebase el proveedor es un no-op y la app arranca igual.
         gestorDispositivo = GestorDispositivo(
             red = RedDispositivosBff(bffMovilCliente),
-            proveedorToken = InicializadorFirebase.inicializar(this, configuracionFirebase()),
-            almacen = AlmacenDispositivoCifrado(this),
+            proveedorToken = crearProveedorTokenPush(),
+                        almacen = crearAlmacenDispositivo(),
             tokenSesion = gestorSesion::actual,
         )
         registroPermisoNotificaciones = RegistroExplicacionPermisoPreferencias(this)
@@ -139,7 +151,7 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
         return CognitoClienteRegistro(this, configuracion)
     }
 
-    private fun crearClienteIdentidad(): ClienteIdentidad {
+    internal open fun crearClienteIdentidad(): ClienteIdentidad {
         val configuracion = ConfiguracionCognito(
             poolId = BuildConfig.COGNITO_POOL_ID,
             clientId = BuildConfig.COGNITO_CLIENT_ID,

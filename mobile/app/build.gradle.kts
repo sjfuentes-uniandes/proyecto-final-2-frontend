@@ -94,6 +94,9 @@ dependencies {
     testImplementation(libs.mockk)
     // Las respuestas falsas de BffMovilApi son `retrofit2.Response` (core:network no lo expone).
     testImplementation(libs.retrofit.core)
+    // API simulada del BFF para las pruebas de SolventaApp y MainActivity.
+    testImplementation(libs.okhttp.core)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }
