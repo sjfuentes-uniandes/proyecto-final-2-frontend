@@ -48,4 +48,19 @@ class ConfiguracionSeguridadTest {
             assertFalse("$seccion no debe incluir nada", contenido.contains("<include"))
         }
     }
+
+    @Test
+    fun `el servicio de mensajeria no se exporta y solo atiende el evento de Firebase`() {
+        val servicio = manifiesto.substringAfter("""android:name="com.solventa.feature.notificaciones.ServicioMensajeriaPush"""")
+            .substringBefore("</service>")
+
+        assertTrue(servicio.contains("""android:exported="false""""))
+        assertTrue(servicio.contains("""<action android:name="com.google.firebase.MESSAGING_EVENT" />"""))
+    }
+
+    @Test
+    fun `el manifiesto declara POST_NOTIFICATIONS y la actividad es singleTop`() {
+        assertTrue(manifiesto.contains("""android.permission.POST_NOTIFICATIONS"""))
+        assertTrue(manifiesto.substringBefore("<service").contains("""android:launchMode="singleTop""""))
+    }
 }

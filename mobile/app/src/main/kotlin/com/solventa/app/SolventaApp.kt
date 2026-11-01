@@ -6,6 +6,7 @@ import com.solventa.core.auth.ClienteRegistro
 import com.solventa.core.auth.CognitoClienteIdentidad
 import com.solventa.core.auth.CognitoClienteRegistro
 import com.solventa.core.auth.ConfiguracionCognito
+import com.solventa.core.auth.EstadoSesion
 import com.solventa.core.auth.GestorSesion
 import com.solventa.core.auth.ResultadoAutenticacion
 import com.solventa.core.auth.ResultadoConfirmacion
@@ -22,15 +23,26 @@ import com.solventa.feature.billetera.dominio.RepositorioPolizas
 import com.solventa.feature.privacidad.biometria.VerificadorBiometricoPrompt
 import com.solventa.feature.privacidad.datos.RepositorioConsentimientosRed
 import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
+import com.solventa.feature.notificaciones.AlmacenDispositivoCifrado
+import com.solventa.feature.notificaciones.ConfiguracionFirebase
+import com.solventa.feature.notificaciones.DependenciasNotificaciones
+import com.solventa.feature.notificaciones.GestorDispositivo
+import com.solventa.feature.notificaciones.InicializadorFirebase
+import com.solventa.feature.notificaciones.RedDispositivosBff
+import com.solventa.feature.notificaciones.ui.RegistroExplicacionPermisoPreferencias
 import com.solventa.feature.onboardingidentidad.verificacion.CrearCuenta
 import com.solventa.feature.onboardingidentidad.verificacion.SesionRegistro
 import com.solventa.feature.onboardingidentidad.verificacion.VerificarIdentidad
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Punto de arranque de la app y raíz de composición (DI manual: no hay Hilt/Koin en el proyecto).
  * Expone las piezas ya cableadas para que las Activities/ViewModels las tomen de aquí.
  */
-class SolventaApp : Application() {
+open class SolventaApp : Application(), DependenciasNotificaciones {
     lateinit var gestorSesion: GestorSesion
         private set
     lateinit var gestorBiometria: GestorBiometria
@@ -52,13 +64,34 @@ class SolventaApp : Application() {
     /** Estado del registro en curso; vive aquí para sobrevivir a las pantallas del registro. */
     val sesionRegistro = SesionRegistro()
 
+    /** Scope de aplicación (SupervisorJob): registro y baja del dispositivo no dependen de ninguna pantalla. */
+    override val ambitoApp: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    final override lateinit var gestorDispositivo: GestorDispositivo
+        private set
+    val destinoPendiente = DestinoPendiente()
+    lateinit var registroPermisoNotificaciones: RegistroExplicacionPermisoPreferencias
+        private set
+
+    /** Punto de extensión para las pruebas: sin valores, Firebase queda sin configurar. */
+    internal open fun configuracionFirebase() = ConfiguracionFirebase(
+        apiKey = BuildConfig.FIREBASE_API_KEY,
+        appId = BuildConfig.FIREBASE_APP_ID,
+        projectId = BuildConfig.FIREBASE_PROJECT_ID,
+        senderId = BuildConfig.FIREBASE_SENDER_ID,
+    )
+
     override fun onCreate() {
         super.onCreate()
 
         gestorBiometria = GestorBiometria(this)
 
         val almacenSesionSegura = AlmacenSesionSeguraKeystore(this)
-        gestorSesion = GestorSesion(crearClienteIdentidad(), almacenSesionSegura)
+        // La baja del dispositivo se lanza con el token ya capturado y sin esperar: cerrar sesión no se bloquea.
+        gestorSesion = GestorSesion(
+            crearClienteIdentidad(),
+            almacenSesionSegura,
+            antesDeCerrarSesion = { token -> ambitoApp.launch { gestorDispositivo.darDeBaja(token) } },
+        )
 
         // Los valores de desarrollo local solo se aplican en debug, aunque en release ya vienen vacíos.
         val subLocal = BuildConfig.SUB_LOCAL.takeIf { BuildConfig.DEBUG && it.isNotBlank() }
@@ -80,6 +113,20 @@ class SolventaApp : Application() {
             // Backend local: no hay Cognito; /validaciones simula el pre sign-up y el sub local autentica.
             modoLocal = subLocal != null,
         )
+
+        // Sin configuración de Firebase el proveedor es un no-op y la app arranca igual.
+        gestorDispositivo = GestorDispositivo(
+            red = RedDispositivosBff(bffMovilCliente),
+            proveedorToken = InicializadorFirebase.inicializar(this, configuracionFirebase()),
+            almacen = AlmacenDispositivoCifrado(this),
+            tokenSesion = gestorSesion::actual,
+        )
+        registroPermisoNotificaciones = RegistroExplicacionPermisoPreferencias(this)
+        ambitoApp.launch {
+            gestorSesion.estado.collect { estado ->
+                if (estado is EstadoSesion.Autenticada) gestorDispositivo.registrar()
+            }
+        }
     }
 
     private fun crearClienteRegistro(): ClienteRegistro {

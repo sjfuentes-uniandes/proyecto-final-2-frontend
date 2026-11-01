@@ -1,8 +1,16 @@
 package com.solventa.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.solventa.core.auth.EstadoSesion
+import com.solventa.feature.notificaciones.ui.PermisoNotificacionesRoute
+import com.solventa.feature.notificaciones.ui.RegistroExplicacionPermiso
+import kotlinx.coroutines.flow.StateFlow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,9 +70,21 @@ class MainActivity : FragmentActivity() {
             sesionRegistro = app.sesionRegistro,
             fabricaBilletera = BilleteraViewModelFactory(app.repositorioPolizas, app.gestorSesion),
             fabricaDetalle = { polizaId -> DetallePolizaViewModelFactory(polizaId, app.repositorioPolizas, app.gestorSesion) },
+            estadoSesion = app.gestorSesion.estado,
+            destinoPendiente = app.destinoPendiente,
+            registroPermisoNotificaciones = app.registroPermisoNotificaciones,
         )
 
+        // Rotación o recreación: el intent original ya se procesó la primera vez.
+        if (savedInstanceState == null) app.destinoPendiente.desdeIntent(intent)
+
         setContent { ContenidoSolventa(dependencias, this) }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        (application as SolventaApp).destinoPendiente.desdeIntent(intent)
     }
 
     override fun onDestroy() {
@@ -84,6 +104,9 @@ internal class DependenciasNavegacion(
     val fabricaBilletera: ViewModelProvider.Factory,
     /** El `polizaId` llega por argumento de navegación: la fábrica del detalle lo recibe. */
     val fabricaDetalle: (polizaId: String) -> ViewModelProvider.Factory,
+    val estadoSesion: StateFlow<EstadoSesion>,
+    val destinoPendiente: DestinoPendiente,
+    val registroPermisoNotificaciones: RegistroExplicacionPermiso,
 )
 
 /** Contenido de [MainActivity], fuera de ella para probar la navegación sin la app real. */
@@ -116,6 +139,19 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
         navegacion.navigate(Rutas.LOGIN) { popUpTo(navegacion.graph.id) { inclusive = true } }
     }
 
+    // Una notificación abre el detalle solo con sesión y fuera del ingreso/registro: tras el login
+    // espera a que la navegación llegue a la billetera para no ser desapilada por `popUpTo(LOGIN)`.
+    val pendiente by dependencias.destinoPendiente.polizaId.collectAsState()
+    val estadoSesion by dependencias.estadoSesion.collectAsState()
+    val rutaActual = navegacion.currentBackStackEntryAsState().value?.destination?.route
+    LaunchedEffect(pendiente, estadoSesion, rutaActual) {
+        val polizaId = pendiente ?: return@LaunchedEffect
+        if (estadoSesion !is EstadoSesion.Autenticada || rutaActual == null) return@LaunchedEffect
+        if (rutaActual == Rutas.LOGIN || rutaActual == Rutas.REGISTRO) return@LaunchedEffect
+        dependencias.destinoPendiente.consumir()
+        navegacion.navigate(Rutas.detallePoliza(polizaId)) { launchSingleTop = true }
+    }
+
     NavHost(navController = navegacion, startDestination = Rutas.LOGIN) {
         composable(Rutas.LOGIN) {
             val viewModel = viewModel<LoginViewModel>(factory = dependencias.fabricaLogin)
@@ -138,6 +174,7 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
                 onAbrirPrivacidad = { navegacion.navigate(Rutas.PRIVACIDAD) },
                 onIrALogin = irALogin,
             )
+            PermisoNotificacionesRoute(dependencias.registroPermisoNotificaciones)
         }
         composable(
             Rutas.DETALLE_POLIZA,

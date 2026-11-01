@@ -1,6 +1,8 @@
 package com.solventa.app
 
 import android.app.Application
+import android.Manifest
+import android.content.Intent
 import android.content.Context
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertCountEquals
@@ -72,6 +74,12 @@ import com.solventa.feature.privacidad.dominio.EstadoConsentimiento
 import io.mockk.coEvery
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.robolectric.Shadows.shadowOf
+import com.solventa.feature.notificaciones.ProcesadorMensajePush
+import com.solventa.feature.notificaciones.ui.EtiquetasPermisoNotificaciones
+import com.solventa.feature.notificaciones.ui.RegistroExplicacionPermiso
+import com.solventa.feature.notificaciones.R as RNotificaciones
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -147,9 +155,12 @@ class NavegacionSolventaTest {
             real.create(modelClass).also { creados.getOrPut(modelClass) { mutableListOf() } += it }
     }
 
+    private val gestorSesion = GestorSesion(clienteIdentidad, almacen)
+    private val destino = DestinoPendiente()
+    private val explicacionPermiso = RegistroPermisoFalso(mostrada = true)
+
     private fun montar(): FragmentActivity {
         val actividad = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
-        val gestorSesion = GestorSesion(clienteIdentidad, almacen)
         val gestorBiometria = GestorBiometria(actividad)
         val registroCliente = RegistroCliente(api)
         val dependencias = DependenciasNavegacion(
@@ -161,6 +172,9 @@ class NavegacionSolventaTest {
             sesionRegistro = sesionRegistro,
             fabricaBilletera = contando(BilleteraViewModelFactory(polizas, gestorSesion)),
             fabricaDetalle = { id -> contando(DetallePolizaViewModelFactory(id, polizas, gestorSesion)) },
+            estadoSesion = gestorSesion.estado,
+            destinoPendiente = destino,
+            registroPermisoNotificaciones = explicacionPermiso,
         )
         actividad.setContent { ContenidoSolventa(dependencias, actividad) }
         compose.waitForIdle()
@@ -293,6 +307,105 @@ class NavegacionSolventaTest {
     }
 
     @Test
+    fun `(AC1) tocar la notificacion con sesion abre el detalle de esa poliza`() {
+        montar()
+        ingresar()
+
+        abrirDesdeNotificacion(ID_POLIZA)
+
+        compose.onNodeWithText(texto(RBilletera.string.detalle_titulo)).assertIsDisplayed()
+        assertEquals(listOf(ID_POLIZA), polizas.detallesPedidos)
+        assertEquals(null, destino.polizaId.value)
+    }
+
+    @Test
+    fun `tocar la notificacion sin sesion pasa por el login y luego abre el detalle`() {
+        val actividad = montar()
+
+        abrirDesdeNotificacion(ID_POLIZA)
+
+        compose.onAllNodesWithText(texto(RLogin.string.login_boton_ingresar)).assertCountEquals(1)
+        assertEquals(emptyList<String>(), polizas.detallesPedidos)
+
+        ingresar()
+
+        compose.onNodeWithText(texto(RBilletera.string.detalle_titulo)).assertIsDisplayed()
+        assertEquals(listOf(ID_POLIZA), polizas.detallesPedidos)
+        actividad.onBackPressedDispatcher.onBackPressed()
+        compose.waitForIdle()
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `un polizaId invalido en la notificacion no navega`() {
+        montar()
+        ingresar()
+
+        abrirDesdeNotificacion("no-es-un-uuid")
+
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+        assertEquals(emptyList<String>(), polizas.detallesPedidos)
+        assertEquals(null, destino.polizaId.value)
+    }
+
+    @Test
+    fun `(AC3) con la sesion invalida la notificacion termina en el login sin mostrar datos`() {
+        polizas.detalle = ResultadoPolizas.Fallo(FalloPolizas.SesionInvalida)
+        montar()
+        ingresar()
+
+        abrirDesdeNotificacion(ID_POLIZA)
+
+        compose.onAllNodesWithText(texto(RLogin.string.login_boton_ingresar)).assertCountEquals(1)
+        compose.onAllNodesWithText("POL-", substring = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun `(AC3) una poliza no autorizada desde la notificacion muestra el mensaje generico`() {
+        polizas.detalle = ResultadoPolizas.Fallo(FalloPolizas.NoAutorizada)
+        montar()
+        ingresar()
+
+        abrirDesdeNotificacion(ID_POLIZA)
+
+        compose.onNodeWithTag(EtiquetasBilletera.NO_AUTORIZADA).assertIsDisplayed()
+        compose.onAllNodesWithTag(EtiquetasBilletera.CREDENCIAL).assertCountEquals(0)
+    }
+
+    @Test
+    fun `el dialogo de permiso aparece en la billetera la primera vez y Ahora no lo recuerda`() {
+        explicacionPermiso.mostrada = false
+        montar()
+        ingresar()
+
+        compose.onNodeWithTag(EtiquetasPermisoNotificaciones.DIALOGO).assertIsDisplayed()
+        compose.onNodeWithText(texto(RNotificaciones.string.notificaciones_permiso_titulo)).assertIsDisplayed()
+
+        compose.onNodeWithTag(EtiquetasPermisoNotificaciones.AHORA_NO).performClick()
+        compose.waitForIdle()
+
+        compose.onAllNodesWithTag(EtiquetasPermisoNotificaciones.DIALOGO).assertCountEquals(0)
+        assertTrue(explicacionPermiso.mostrada)
+    }
+
+    @Test
+    fun `con el permiso ya concedido no hay dialogo`() {
+        shadowOf(ApplicationProvider.getApplicationContext<Application>())
+            .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        explicacionPermiso.mostrada = false
+        montar()
+        ingresar()
+
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+        compose.onAllNodesWithTag(EtiquetasPermisoNotificaciones.DIALOGO).assertCountEquals(0)
+    }
+
+    private fun abrirDesdeNotificacion(polizaId: String) {
+        destino.desdeIntent(Intent().putExtra(ProcesadorMensajePush.EXTRA_POLIZA_ID, polizaId))
+        compose.waitForIdle()
+    }
+
+    @Test
     fun `(d) Aceptar en el fin del registro vuelve al ingreso, como en main`() {
         // El botón de crear la cuenta exige la verificación con cámara (CameraX no corre en
         // Robolectric): con un token ya guardado se llama al ViewModel real de la ruta, como ese botón.
@@ -399,6 +512,14 @@ private class RepositorioPolizasFalso : RepositorioPolizas {
 }
 
 private const val ID_POLIZA = "11111111-1111-1111-1111-111111111111"
+
+private class RegistroPermisoFalso(var mostrada: Boolean) : RegistroExplicacionPermiso {
+    override fun yaMostrada() = mostrada
+
+    override fun marcarMostrada() {
+        mostrada = true
+    }
+}
 
 /** Repositorio con estado: lo que se otorga o revoca es lo que después listan el detalle y el historial. */
 private class RepositorioEnMemoria : RepositorioConsentimientos {

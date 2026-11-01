@@ -4,6 +4,10 @@
     <string name="notificaciones_canal_descripcion">Avisos sobre la emisión de tus pólizas.</string>
     <string name="notificaciones_poliza_emitida_titulo">Tu póliza fue emitida</string>
     <string name="notificaciones_poliza_emitida_texto">Toca para ver el resultado en Solventa.</string>
+    <string name="notificaciones_permiso_titulo">¿Quieres recibir avisos?</string>
+    <string name="notificaciones_permiso_mensaje">Te avisaremos cuando tu póliza sea emitida. Los avisos no muestran datos de tu póliza en la pantalla bloqueada.</string>
+    <string name="notificaciones_permiso_activar">Activar avisos</string>
+    <string name="notificaciones_permiso_ahora_no">Ahora no</string>
     <string name="notificaciones_publica_titulo">Solventa</string>
     <string name="notificaciones_publica_texto">Tienes una notificación nueva.</string>
 </resources>

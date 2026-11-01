@@ -4,6 +4,10 @@
     <string name="notificaciones_canal_descripcion">Alerts about the issuance of your policies.</string>
     <string name="notificaciones_poliza_emitida_titulo">Your policy was issued</string>
     <string name="notificaciones_poliza_emitida_texto">Tap to see the result in Solventa.</string>
+    <string name="notificaciones_permiso_titulo">Do you want to receive alerts?</string>
+    <string name="notificaciones_permiso_mensaje">We will let you know when your policy is issued. Alerts show no policy data on the lock screen.</string>
+    <string name="notificaciones_permiso_activar">Turn on alerts</string>
+    <string name="notificaciones_permiso_ahora_no">Not now</string>
     <string name="notificaciones_publica_titulo">Solventa</string>
     <string name="notificaciones_publica_texto">You have a new notification.</string>
 </resources>
