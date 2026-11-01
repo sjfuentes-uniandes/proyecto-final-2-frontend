@@ -13,6 +13,14 @@ cognitoPoolId=
 cognitoClientId=
 cognitoRegion=us-east-1
 
+# Firebase Cloud Messaging (notificaciones push, HU-M11). Se toman de la consola de Firebase
+# (Configuracion del proyecto > General > tu app Android) y NO se versionan: no hay
+# google-services.json. Si falta alguno, las notificaciones quedan desactivadas y la app arranca.
+firebaseApiKey=
+firebaseAppId=
+firebaseProjectId=
+firebaseSenderId=
+
 # --- Solo builds debug contra el backend local (docker compose); ignorados en release ---
 # El backend local no usa Cognito: identifica al titular por X-Authenticated-Sub. Use un texto
 # distinto por cada persona de prueba. Déjelo vacío al apuntar a AWS.
