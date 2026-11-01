@@ -30,6 +30,25 @@ class GestorSesionTest {
     }
 
     @Test
+    fun `cerrarSesion invoca el gancho con el token vigente antes de limpiar`() = runTest {
+        val clienteIdentidad = mockk<ClienteIdentidad>(relaxed = true)
+        val almacen = FakeAlmacenSesionSegura()
+        coEvery { clienteIdentidad.autenticar("ana", "clave-1") } returns ResultadoAutenticacion.Exito(sesion)
+        val eventos = mutableListOf<String>()
+        lateinit var gestor: GestorSesion
+        gestor = GestorSesion(clienteIdentidad, almacen) { token ->
+            eventos += "gancho:$token:${almacen.usuarioActivo()}:${gestor.estado.value is EstadoSesion.Autenticada}"
+        }
+        gestor.iniciarSesion("ana", "clave-1")
+
+        gestor.cerrarSesion()
+
+        assertEquals(listOf("gancho:id-1:ana:true"), eventos)
+        assertNull(almacen.usuarioActivo())
+        assertEquals(EstadoSesion.NoAutenticada, gestor.estado.value)
+    }
+
+    @Test
     fun `iniciarSesion con credenciales invalidas no guarda usuario ni autentica`() = runTest {
         val clienteIdentidad = mockk<ClienteIdentidad>()
         val almacen = FakeAlmacenSesionSegura()

@@ -2,4 +2,8 @@
 <resources>
     <string name="notificaciones_canal_nombre">Pólizas</string>
     <string name="notificaciones_canal_descripcion">Avisos sobre la emisión de tus pólizas.</string>
+    <string name="notificaciones_poliza_emitida_titulo">Tu póliza fue emitida</string>
+    <string name="notificaciones_poliza_emitida_texto">Toca para ver el resultado en Solventa.</string>
+    <string name="notificaciones_publica_titulo">Solventa</string>
+    <string name="notificaciones_publica_texto">Tienes una notificación nueva.</string>
 </resources>

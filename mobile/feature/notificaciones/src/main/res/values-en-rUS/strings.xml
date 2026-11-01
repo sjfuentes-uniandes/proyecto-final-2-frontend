@@ -2,4 +2,8 @@
 <resources>
     <string name="notificaciones_canal_nombre">Policies</string>
     <string name="notificaciones_canal_descripcion">Alerts about the issuance of your policies.</string>
+    <string name="notificaciones_poliza_emitida_titulo">Your policy was issued</string>
+    <string name="notificaciones_poliza_emitida_texto">Tap to see the result in Solventa.</string>
+    <string name="notificaciones_publica_titulo">Solventa</string>
+    <string name="notificaciones_publica_texto">You have a new notification.</string>
 </resources>

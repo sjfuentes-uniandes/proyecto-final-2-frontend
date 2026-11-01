@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 class GestorSesion(
     private val clienteIdentidad: ClienteIdentidad,
     private val almacenSesionSegura: AlmacenSesionSegura,
+    /** Recibe el token vigente (o null) justo antes de limpiar la sesión; no debe bloquear. */
+    private val antesDeCerrarSesion: (String?) -> Unit = {},
 ) : ProveedorAccessToken {
     private var usuarioEnCurso: String? = null
     private val _estado = MutableStateFlow<EstadoSesion>(EstadoSesion.NoAutenticada)
@@ -59,6 +61,7 @@ class GestorSesion(
     }
 
     fun cerrarSesion() {
+        antesDeCerrarSesion(actual())
         usuarioEnCurso?.let(clienteIdentidad::cerrarSesion)
         almacenSesionSegura.limpiar()
         usuarioEnCurso = null

@@ -51,6 +51,19 @@ class AuthInterceptorTest {
     }
 
     @Test
+    fun `respeta una autorizacion explicita de la solicitud`() {
+        val cliente = okhttp3.OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor { "otro-token" })
+            .build()
+        val solicitud = okhttp3.Request.Builder().url(servidor.url("/v1/sesion"))
+            .header("Authorization", "explicita").build()
+
+        cliente.newCall(solicitud).execute().close()
+
+        assertEquals("explicita", servidor.takeRequest().getHeader("Authorization"))
+    }
+
+    @Test
     fun `sin token no agrega el encabezado Authorization`() {
         val cliente = okhttp3.OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor { null })
