@@ -9,7 +9,10 @@ import com.solventa.core.network.modelo.SolicitudOtorgarDto
 import com.solventa.core.network.modelo.TextoVigenteDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import com.solventa.core.network.modelo.DispositivoDto
+import com.solventa.core.network.modelo.SolicitudRegistroDispositivoDto
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -46,6 +49,17 @@ interface BffMovilApi {
 
     @GET("v1/polizas/{poliza_id}")
     suspend fun poliza(@Path("poliza_id") polizaId: String): Response<PolizaDetalleDto>
+
+    /** HU-M11: el titular es el del token; ninguna ruta lleva `clienteId`. El token push va en el cuerpo. */
+    @POST("v1/dispositivos")
+    suspend fun registrarDispositivo(@Body solicitud: SolicitudRegistroDispositivoDto): Response<DispositivoDto>
+
+    /** `autorizacion` explícita: la baja puede ocurrir cuando la sesión ya se limpió (null = no se envía). */
+    @DELETE("v1/dispositivos/{dispositivoId}")
+    suspend fun darDeBajaDispositivo(
+        @Path("dispositivoId") dispositivoId: String,
+        @Header("Authorization") autorizacion: String? = null,
+    ): Response<Unit>
 
     @GET("health")
     suspend fun health(): Response<Map<String, String>>

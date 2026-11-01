@@ -1,6 +1,7 @@
 package com.solventa.core.network
 
 import com.solventa.core.network.modelo.ErrorDto
+import com.solventa.core.network.modelo.SolicitudRegistroDispositivoDto
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import retrofit2.Response
@@ -52,6 +53,55 @@ class BffMovilCliente(
             ClaseError.DESCONOCIDO -> ResultadoPoliza.ErrorDesconocido(r.mensaje)
         }
     }
+
+    /** HU-M11: idempotente por token; el token push solo viaja en el cuerpo (nunca en URL ni trazas). */
+    suspend fun registrarDispositivo(tokenPush: String): ResultadoDispositivo {
+        val respuesta = try {
+            api.registrarDispositivo(SolicitudRegistroDispositivoDto(tokenPush))
+        } catch (e: IOException) {
+            return ResultadoDispositivo.SinConexion(MENSAJE_SIN_CONEXION)
+        } catch (e: SerializationException) {
+            return ResultadoDispositivo.ErrorDesconocido(MENSAJE_FUERA_DE_CONTRATO)
+        }
+        if (respuesta.isSuccessful) {
+            val id = respuesta.body()?.dispositivoId
+            return if (id.isNullOrBlank()) {
+                ResultadoDispositivo.ErrorDesconocido("Respuesta vacía del servidor")
+            } else {
+                ResultadoDispositivo.Exito(id)
+            }
+        }
+        val error = leerError(respuesta)
+        val mensaje = error?.mensaje ?: MENSAJE_GENERICO
+        return when (error?.codigo) {
+            "NO_AUTENTICADO", "ROL_NO_AUTORIZADO", "CLIENTE_NO_ENCONTRADO" -> ResultadoDispositivo.SesionInvalida(mensaje)
+            "SOLICITUD_INVALIDA" -> ResultadoDispositivo.SolicitudInvalida(mensaje)
+            "SERVICIO_NO_DISPONIBLE" -> ResultadoDispositivo.ServicioNoDisponible(mensaje)
+            else -> when (respuesta.code()) {
+                401, 403, 404 -> ResultadoDispositivo.SesionInvalida(mensaje)
+                400, 422 -> ResultadoDispositivo.SolicitudInvalida(mensaje)
+                503 -> ResultadoDispositivo.ServicioNoDisponible(mensaje)
+                else -> ResultadoDispositivo.ErrorDesconocido(mensaje)
+            }
+        }
+    }
+
+    /**
+     * HU-M11: el 204 no trae cuerpo. `autorizacion` (valor completo del encabezado) se envía de forma
+     * explícita porque la baja puede lanzarse cuando la sesión ya no tiene token.
+     */
+    suspend fun darDeBajaDispositivo(dispositivoId: String, autorizacion: String? = null): ResultadoBajaDispositivo =
+        try {
+            if (api.darDeBajaDispositivo(dispositivoId, autorizacion).isSuccessful) {
+                ResultadoBajaDispositivo.Exito
+            } else {
+                ResultadoBajaDispositivo.Tolerado
+            }
+        } catch (e: IOException) {
+            ResultadoBajaDispositivo.Tolerado
+        } catch (e: SerializationException) {
+            ResultadoBajaDispositivo.Tolerado
+        }
 
     private sealed interface Llamada<out T> {
         data class Cuerpo<T>(val valor: T) : Llamada<T>
@@ -131,6 +181,8 @@ class BffMovilCliente(
     private fun leerError(respuesta: Response<*>): ErrorDto? = leerErrorDto(respuesta, json)
 
     private companion object {
+        const val MENSAJE_SIN_CONEXION = "Sin conexión"
+        const val MENSAJE_FUERA_DE_CONTRATO = "Respuesta fuera del contrato"
         const val MENSAJE_GENERICO = "No fue posible completar la operación. Inténtalo de nuevo."
     }
 }

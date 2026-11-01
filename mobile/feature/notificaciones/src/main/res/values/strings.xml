@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notificaciones_canal_nombre">Pólizas</string>
+    <string name="notificaciones_canal_descripcion">Avisos sobre la emisión de tus pólizas.</string>
+</resources>
