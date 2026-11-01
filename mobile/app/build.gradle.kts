@@ -64,6 +64,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":feature:login"))
     implementation(project(":feature:privacidad"))
+    implementation(project(":feature:billetera"))
     implementation(project(":feature:onboarding-identidad"))
 
     implementation(libs.androidx.core.ktx)

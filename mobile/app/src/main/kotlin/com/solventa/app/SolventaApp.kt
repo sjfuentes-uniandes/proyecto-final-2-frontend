@@ -17,6 +17,8 @@ import com.solventa.core.network.RedModule
 import com.solventa.core.network.RegistroCliente
 import com.solventa.core.security.AlmacenSesionSeguraKeystore
 import com.solventa.core.security.GestorBiometria
+import com.solventa.feature.billetera.datos.RepositorioPolizasRed
+import com.solventa.feature.billetera.dominio.RepositorioPolizas
 import com.solventa.feature.privacidad.biometria.VerificadorBiometricoPrompt
 import com.solventa.feature.privacidad.datos.RepositorioConsentimientosRed
 import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
@@ -36,6 +38,8 @@ class SolventaApp : Application() {
     lateinit var bffMovilCliente: BffMovilCliente
         private set
     lateinit var repositorioConsentimientos: RepositorioConsentimientos
+        private set
+    lateinit var repositorioPolizas: RepositorioPolizas
         private set
     /** Uno por proceso: la actividad en pantalla se adjunta al crearse y se suelta al destruirse. */
     lateinit var verificadorBiometrico: VerificadorBiometricoPrompt
@@ -61,6 +65,7 @@ class SolventaApp : Application() {
         val api = RedModule.crearApi(BuildConfig.BFF_MOVIL_BASE_URL, subLocal = subLocal, proveedorAccessToken = gestorSesion)
         bffMovilCliente = BffMovilCliente(api)
         repositorioConsentimientos = RepositorioConsentimientosRed(ConsentimientosCliente(api))
+        repositorioPolizas = RepositorioPolizasRed(bffMovilCliente)
         verificadorBiometrico = VerificadorBiometricoPrompt(gestorBiometria)
         verificarIdentidad = VerificarIdentidad(
             cliente = RegistroCliente(api),

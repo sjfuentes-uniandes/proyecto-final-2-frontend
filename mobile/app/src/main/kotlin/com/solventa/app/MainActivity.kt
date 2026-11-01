@@ -14,11 +14,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.solventa.core.designsystem.SolventaTheme
 import com.solventa.core.security.GestorBiometria
+import com.solventa.feature.billetera.BilleteraViewModel
+import com.solventa.feature.billetera.BilleteraViewModelFactory
+import com.solventa.feature.billetera.DetallePolizaViewModel
+import com.solventa.feature.billetera.DetallePolizaViewModelFactory
+import com.solventa.feature.billetera.ui.BilleteraRoute
+import com.solventa.feature.billetera.ui.DetallePolizaRoute
 import com.solventa.feature.login.LoginRoute
 import com.solventa.feature.login.LoginViewModel
 import com.solventa.feature.login.LoginViewModelFactory
@@ -52,6 +60,8 @@ class MainActivity : FragmentActivity() {
             fabricaVerificacion = VerificacionIdentidadViewModelFactory(app.verificarIdentidad),
             fabricaCuenta = CuentaViewModelFactory(app.crearCuenta),
             sesionRegistro = app.sesionRegistro,
+            fabricaBilletera = BilleteraViewModelFactory(app.repositorioPolizas, app.gestorSesion),
+            fabricaDetalle = { polizaId -> DetallePolizaViewModelFactory(polizaId, app.repositorioPolizas, app.gestorSesion) },
         )
 
         setContent { ContenidoSolventa(dependencias, this) }
@@ -71,6 +81,9 @@ internal class DependenciasNavegacion(
     val fabricaVerificacion: ViewModelProvider.Factory,
     val fabricaCuenta: ViewModelProvider.Factory,
     val sesionRegistro: SesionRegistro,
+    val fabricaBilletera: ViewModelProvider.Factory,
+    /** El `polizaId` llega por argumento de navegación: la fábrica del detalle lo recibe. */
+    val fabricaDetalle: (polizaId: String) -> ViewModelProvider.Factory,
 )
 
 /** Contenido de [MainActivity], fuera de ella para probar la navegación sin la app real. */
@@ -86,6 +99,11 @@ private object Rutas {
     const val REGISTRO = "registro"
     const val PRIVACIDAD = "privacidad"
     const val PERMISO_OPEN_FINANCE = "privacidad/open-finance"
+    const val BILLETERA = "billetera"
+    const val ARG_POLIZA_ID = "polizaId"
+    const val DETALLE_POLIZA = "billetera/{$ARG_POLIZA_ID}"
+
+    fun detallePoliza(polizaId: String) = "billetera/$polizaId"
 }
 
 @Composable
@@ -93,6 +111,10 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
     val navegacion = rememberNavController()
     // Lista y detalle de Privacidad comparten un ViewModel con el alcance de la actividad.
     val fabricaPrivacidad = dependencias.fabricaPrivacidad
+    // Sesión cerrada por el servidor: se vacía toda la pila (billetera y detalle) y se vuelve al ingreso.
+    val irALogin: () -> Unit = {
+        navegacion.navigate(Rutas.LOGIN) { popUpTo(navegacion.graph.id) { inclusive = true } }
+    }
 
     NavHost(navController = navegacion, startDestination = Rutas.LOGIN) {
         composable(Rutas.LOGIN) {
@@ -104,9 +126,28 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
                 onOlvideClave = { /* TODO: recuperación de contraseña (fuera del alcance de HU-07) */ },
                 onRegistrarme = { navegacion.navigate(Rutas.REGISTRO) },
                 onIngresoExitoso = {
-                    // Provisional (HU-M08): aún no hay pantalla de inicio con los servicios del cliente.
-                    navegacion.navigate(Rutas.PRIVACIDAD) { popUpTo(Rutas.LOGIN) { inclusive = true } }
+                    // Provisional (HU-M08): aún no hay pantalla de inicio; la billetera es el destino tras el login.
+                    navegacion.navigate(Rutas.BILLETERA) { popUpTo(Rutas.LOGIN) { inclusive = true } }
                 },
+            )
+        }
+        composable(Rutas.BILLETERA) {
+            BilleteraRoute(
+                viewModel = viewModel<BilleteraViewModel>(factory = dependencias.fabricaBilletera),
+                onAbrirPoliza = { polizaId -> navegacion.navigate(Rutas.detallePoliza(polizaId)) },
+                onAbrirPrivacidad = { navegacion.navigate(Rutas.PRIVACIDAD) },
+                onIrALogin = irALogin,
+            )
+        }
+        composable(
+            Rutas.DETALLE_POLIZA,
+            arguments = listOf(navArgument(Rutas.ARG_POLIZA_ID) { type = NavType.StringType }),
+        ) { entrada ->
+            val polizaId = entrada.arguments?.getString(Rutas.ARG_POLIZA_ID) ?: return@composable
+            DetallePolizaRoute(
+                viewModel = viewModel<DetallePolizaViewModel>(factory = dependencias.fabricaDetalle(polizaId)),
+                onVolver = { navegacion.popBackStack() },
+                onIrALogin = irALogin,
             )
         }
         composable(Rutas.REGISTRO) {
