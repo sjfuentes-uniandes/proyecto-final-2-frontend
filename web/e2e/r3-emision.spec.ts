@@ -78,6 +78,34 @@ const simularDocumento = (page: Page, respuestas: { estado?: number; cuerpo: unk
   simularEnOrden(page, `/polizas/${POLIZA_ID}/documento`, respuestas);
 
 /**
+ * `…/poliza` con la emisión en manos de la prueba (17.12d): la carga recibe EMITIENDO y toda consulta del
+ * sondeo queda retenida hasta `liberar()`; solo entonces recibe FIRMADA y luego ACTIVA. El sondeo encadena
+ * cada espera tras la respuesta anterior, así que no avanza con su consulta retenida: lo que se ve antes
+ * de liberar es EMITIENDO, con o sin carga, y luego llegan las dos respuestas, a una espera de 1 s una de
+ * otra. `servidas` dice, en orden, qué recibió cada consulta.
+ */
+async function simularEmisionRetenida(page: Page): Promise<{ pedidos: Request[]; servidas: string[]; liberar: () => void }> {
+  const pedidos: Request[] = [];
+  const servidas: string[] = [];
+  let liberar!: () => void;
+  const liberada = new Promise<void>((resolver) => (liberar = resolver));
+  const siguientes = [
+    { nombre: 'FIRMADA', cuerpo: POLIZA_FIRMADA },
+    { nombre: 'ACTIVA', cuerpo: POLIZA_ACTIVA },
+  ];
+  await page.route(`**${API}/cotizaciones/${COTIZACION_S01}/poliza`, async (r) => {
+    const n = pedidos.push(r.request());
+    const { nombre, cuerpo } = n === 1 ? { nombre: 'EMITIENDO', cuerpo: POLIZA_EMITIENDO } : siguientes[Math.min(n - 2, siguientes.length - 1)];
+    if (n > 1) {
+      await liberada;
+    }
+    servidas.push(nombre);
+    return r.fulfill({ json: cuerpo, headers: { 'X-Correlation-Id': 'corr-e2e' } });
+  });
+  return { pedidos, servidas, liberar };
+}
+
+/**
  * S3 simulado con `route` (solo el 409, que no debe pedir el PDF): un PDF sintético como adjunto; devuelve
  * las URL pedidas y si las pidió el marco principal de esta pestaña. La descarga usa `servidorPdf`, porque en
  * WebKit `route.fulfill` no emite `download` (microsoft/playwright#9267).
@@ -146,7 +174,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
   test(`recaudo confirmado → «${t.verEmision}» → emitiendo → póliza emitida → descarga · ${idioma}`, async ({ page, servidorPdf }, testInfo) => {
     await prepararPortal(page, ASESOR);
     await simular(page, `/cotizaciones/${COTIZACION_S01}/recaudo`, RECAUDO_CONFIRMADO);
-    const consultas = await simularPoliza(page, [{ cuerpo: POLIZA_EMITIENDO }, { cuerpo: POLIZA_FIRMADA }, { cuerpo: POLIZA_ACTIVA }]);
+    const { pedidos: consultas, servidas, liberar } = await simularEmisionRetenida(page);
     const enlace = enlaceLocal(servidorPdf);
     const documentos = await simularDocumento(page, [{ cuerpo: enlace }]);
 
@@ -162,8 +190,11 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
     await expect(page.locator('.side__item--activo')).toContainText(idioma === 'es-CO' ? 'Emisión' : 'Issuance');
     expect(await violacionesGraves(page, testInfo, `axe-emitiendo-${idioma}`)).toEqual([]);
     await captura(page, testInfo, `emitiendo-${idioma}`);
+    // Hasta aquí solo se sirvió la carga: la consulta del sondeo, si ya llegó, sigue retenida.
+    expect(servidas).toEqual(['EMITIENDO']);
 
-    // Las dos primeras esperas del sondeo son de 1 s: firmada y luego activa.
+    // Liberada, la consulta retenida recibe la firmada y, tras la siguiente espera de 1 s, la activa.
+    liberar();
     const titulo = page.getByRole('heading', { level: 2, name: t.emitida });
     await expect(titulo).toBeFocused({ timeout: 10_000 });
     await expect(page.locator('p[aria-live=polite]')).toHaveText(t.anuncio);
@@ -176,6 +207,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
     await expect(page.locator('#datos-poliza .kv div').filter({ hasText: t.titular }).locator('dt')).toHaveText(t.titular);
     await expect(page.locator('.hitos li')).toHaveCount(4);
     await expect(page.locator('.hitos li[aria-current]')).toHaveCount(0);
+    expect(servidas).toEqual(['EMITIENDO', 'FIRMADA', 'ACTIVA']);
     expect(consultas).toHaveLength(3);
     expect(await violacionesGraves(page, testInfo, `axe-poliza-emitida-${idioma}`)).toEqual([]);
     await captura(page, testInfo, `poliza-emitida-${idioma}`);
