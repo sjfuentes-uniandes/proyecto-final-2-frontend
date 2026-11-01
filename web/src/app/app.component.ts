@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, afterRender, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { SesionService } from './core/auth/sesion.service';
@@ -8,6 +8,8 @@ interface ItemMenu {
   etiqueta: string;
   ruta?: string;
 }
+
+const TEXTO_SALTAR = { 'es-CO': 'Saltar al contenido principal', 'en-US': 'Skip to main content' };
 
 const ROLES: Record<string, string> = {
   operacion: 'Operación',
@@ -44,6 +46,20 @@ export class AppComponent {
       ...(this.sesion.tieneGrupo('administradores') ? [{ etiqueta: 'Administración', ruta: '/administracion' }] : []),
     ];
   });
+
+  /** El destino existe solo en las rutas que usan seccion-layout (`<main id="contenido">`). */
+  readonly hayDestino = signal(false);
+  readonly textoSaltar = computed(() => TEXTO_SALTAR[this.idioma.actual() === 'en-US' ? 'en-US' : 'es-CO']);
+
+  constructor() {
+    afterRender(() => this.hayDestino.set(document.getElementById('contenido') !== null));
+  }
+
+  /** Mueve el foco al contenido sin navegar (un href con ancla chocaría con el <base>). */
+  saltar(evento: Event): void {
+    evento.preventDefault();
+    document.getElementById('contenido')?.focus();
+  }
 
   readonly rol = computed(() => {
     const grupos = this.sesion.claims()?.['cognito:groups'] ?? [];

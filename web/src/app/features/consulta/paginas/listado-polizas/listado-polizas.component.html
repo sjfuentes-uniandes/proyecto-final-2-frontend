@@ -1,0 +1,151 @@
+@let t = textos.t();
+@let f = filtro();
+@let p = pagina();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaConsulta }} › <strong>{{ t.migaPolizas }}</strong>
+</nav>
+
+<header>
+  <h2>{{ t.tituloListado }}</h2>
+  <p class="sub" aria-live="polite">{{ resumen() }}</p>
+</header>
+
+<form class="card filtros" [attr.aria-label]="t.filtros" novalidate
+  (submit)="$event.preventDefault(); buscar(numero.value, ramo.value, estado.value, desde.value)">
+  <div class="fld">
+    <label for="filtro-numero">{{ t.filtroNumero }}</label>
+    <input #numero id="filtro-numero" class="inp" type="text" maxlength="15" inputmode="numeric" autocomplete="off"
+      [value]="f.numero ?? ''" [attr.aria-invalid]="errorNumero() ? 'true' : null"
+      [attr.aria-describedby]="errorNumero() ? 'ayuda-numero error-numero' : 'ayuda-numero'" />
+    <span id="ayuda-numero" class="fld__ayuda">{{ t.ayudaNumero }}</span>
+    @if (errorNumero(); as mensaje) {
+      <span id="error-numero" class="fld__error" role="alert">{{ mensaje }}</span>
+    }
+  </div>
+  <div class="fld">
+    <label for="filtro-ramo">{{ t.filtroRamo }}</label>
+    <input #ramo id="filtro-ramo" class="inp" type="text" maxlength="80" [value]="f.ramo ?? ''" />
+  </div>
+  <div class="fld">
+    <label for="filtro-estado">{{ t.filtroEstado }}</label>
+    <select #estado id="filtro-estado" class="inp">
+      <option value="">{{ t.estadoTodos }}</option>
+      @for (e of estados; track e) {
+        <option [value]="e" [selected]="f.estado === e">{{ etiquetaEstado(e) }}</option>
+      }
+    </select>
+  </div>
+  <div class="fld">
+    <label for="filtro-desde">{{ t.filtroVigenciaDesde }}</label>
+    <input #desde id="filtro-desde" class="inp" type="date" [value]="f.vigenciaDesde ?? ''" />
+  </div>
+  <div class="acciones">
+    <button class="btn btn--primario" type="submit">{{ t.buscar }}</button>
+    <button class="btn btn--secundario" type="button" (click)="limpiar()">{{ t.limpiar }}</button>
+  </div>
+</form>
+
+@if (error(); as e) {
+  @if (degradado()) {
+    <div class="alerta alerta--error" role="alert">
+      <span aria-hidden="true">⚠</span>
+      <div>
+        <p><strong>{{ t.degradadoTitulo }}</strong></p>
+        <p>{{ t.degradadoDetalle }}</p>
+        @if (fechaPrevio(); as fecha) {
+          <p>{{ t.degradadoConFecha(fecha) }}</p>
+        }
+        @if (e.correlationId) {
+          <p class="seguimiento">{{ t.referenciaSoporte }}: <span class="mono">{{ e.correlationId }}</span></p>
+        }
+        <button class="btn btn--secundario" type="button" (click)="reintentar()">{{ t.reintentarAhora }}</button>
+      </div>
+    </div>
+  } @else {
+    <div class="alerta alerta--error" role="alert">
+      <span aria-hidden="true">⚠</span>
+      <div>
+        <p>{{ e.mensaje }}</p>
+        @if (e.correlationId) {
+          <p class="seguimiento">{{ t.referenciaSoporte }}: <span class="mono">{{ e.correlationId }}</span></p>
+        }
+        @if (e.tipo === 'red' || e.tipo === 'general') {
+          <button class="btn btn--secundario" type="button" (click)="reintentar()">{{ t.reintentar }}</button>
+        }
+      </div>
+    </div>
+  }
+}
+
+<section class="card resultados" [attr.aria-label]="t.captionListado">
+  @if (cargando() && !p) {
+    <div role="status">
+      <p class="sub">{{ t.cargando }}</p>
+      <p class="nota">{{ t.notaPropagacion }}</p>
+    </div>
+  } @else if (p && filas().length === 0) {
+    @if (hayFiltros()) {
+      <div class="vacio">
+        <h3>{{ t.sinResultadosTitulo }}</h3>
+        <p class="sub">{{ t.sinResultadosCausa }}</p>
+        <button class="btn btn--secundario" type="button" (click)="limpiar()">{{ t.quitarFiltros }}</button>
+      </div>
+    } @else {
+      <div class="vacio">
+        <h3>{{ t.vacioTitulo }}</h3>
+        <p class="nota">{{ t.notaPropagacion }}</p>
+      </div>
+    }
+  } @else if (p) {
+    <div class="region" role="region" tabindex="0" [attr.aria-label]="t.regionTabla">
+      <table class="data">
+        <caption class="sr-only">{{ t.captionListado }}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{ t.colNumero }}</th>
+            <th scope="col">{{ t.colRamo }}</th>
+            <th scope="col">{{ t.colPrima }}</th>
+            <th scope="col">{{ t.colVigenciaHasta }}</th>
+            <th scope="col">{{ t.colEstado }}</th>
+            <th scope="col"><span class="sr-only">{{ t.colAcciones }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of filas(); track fila.polizaId) {
+            <tr>
+              <th scope="row" class="mono">{{ fila.numero }}</th>
+              <td>{{ fila.ramo }}<br /><span class="sub">{{ fila.producto }}</span></td>
+              <td class="mono">{{ fila.prima }}</td>
+              <td>{{ fila.vigenciaHasta }}</td>
+              <td><span [class]="fila.claseEstado">{{ fila.estado }}</span></td>
+              <td>
+                <a class="enlace" [routerLink]="[fila.polizaId]" queryParamsHandling="preserve" [attr.aria-label]="t.verDetalleDe(fila.numero)">{{ t.verDetalle }}</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (rango(); as r) {
+      <div class="pie">
+        <p class="sub">{{ t.mostrando(r.desde, r.hasta, r.total) }}</p>
+        @if (paginas().total > 1) {
+          <nav class="paginacion" [attr.aria-label]="t.paginacion">
+            <button class="btn btn--secundario" type="button" [disabled]="paginas().actual <= 1" (click)="irAPagina(paginas().actual - 1)">
+              {{ t.anterior }}
+            </button>
+            @for (n of paginas().numeros; track n) {
+              <button class="btn pagina" type="button" [class.pagina--actual]="n === paginas().actual"
+                [attr.aria-current]="n === paginas().actual ? 'page' : null" [attr.aria-label]="t.irAPagina(n)" (click)="irAPagina(n)">
+                {{ n }}
+              </button>
+            }
+            <button class="btn btn--secundario" type="button" [disabled]="paginas().actual >= paginas().total" (click)="irAPagina(paginas().actual + 1)">
+              {{ t.siguiente }}
+            </button>
+          </nav>
+        }
+      </div>
+    }
+  }
+</section>

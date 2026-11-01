@@ -47,11 +47,21 @@ describe('ContratacionLayoutComponent (E01 a E04 y F01)', () => {
     expect(enlaces.map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
       ['$Cotizaciones', '/perfilamiento/cotizaciones'],
       ['⚖Decisiones', '/decisiones'],
+      ['📄Pólizas', '/consulta/polizas'],
     ]);
     TestBed.inject(IdiomaService).cambiar('en-US');
     fixture.detectChanges();
     expect(Array.from(html.querySelectorAll('h5')).map((h) => h.textContent)).toEqual(['Contracting', 'Inquiries']);
     expect(html.querySelector('aside')?.getAttribute('aria-label')).toBe('Contracting');
+  });
+
+  it('HU-W18: el suscriptor NO ve el enlace a Pólizas y el ítem queda desactivado', async () => {
+    await iniciarSesion({ name: 'Ana Suárez', 'cognito:groups': ['suscriptores'] });
+    const { html } = crear();
+    expect(html.querySelector('a[href="/consulta/polizas"]')).toBeNull();
+    const polizas = Array.from(html.querySelectorAll('.side__item--off')).find((p) => p.textContent?.includes('Pólizas'));
+    expect(polizas).toBeDefined();
+    expect(polizas?.getAttribute('title')).toBe('Disponible en una próxima versión');
   });
 
   it('HU-W15: en la aceptación (F01) «Emisión» queda activo y enlaza a la página actual', async () => {
