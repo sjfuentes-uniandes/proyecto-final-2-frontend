@@ -54,6 +54,23 @@ describe('PerfilRiesgoComponent · HU-W03 (prima con el perfil)', () => {
     expect(Array.from(html().querySelectorAll('.lateral > button')).pop()?.textContent?.trim()).toBe('Generar la oferta');
   });
 
+  it('al recalcular, el perfil nuevo conserva los datos para calcular la prima', () => {
+    montar(true);
+    const nuevoId = '00000000-0000-4000-a000-0000000000a1';
+    fixture.componentInstance.recalcular(PERFIL_C01);
+    http.expectOne(`${BASE_PERFILES}/${PERFIL_ID}/recalculos`).flush({ ...PERFIL_C01, id: nuevoId, perfilAnteriorId: PERFIL_ID });
+    expect(navegar).toHaveBeenCalledWith(['/perfilamiento', nuevoId, 'actualizacion']);
+    expect(TestBed.inject(BorradorCotizacionService).obtener(nuevoId)).toEqual(BORRADOR);
+  });
+
+  it('al recalcular sin datos de "Nueva cotización" el perfil nuevo tampoco los tiene', () => {
+    montar(false);
+    const nuevoId = '00000000-0000-4000-a000-0000000000a1';
+    fixture.componentInstance.recalcular(PERFIL_C01);
+    http.expectOne(`${BASE_PERFILES}/${PERFIL_ID}/recalculos`).flush({ ...PERFIL_C01, id: nuevoId, perfilAnteriorId: PERFIL_ID });
+    expect(TestBed.inject(BorradorCotizacionService).obtener(nuevoId)).toBeNull();
+  });
+
   it('calcula la prima con el perfil y los datos con que se perfiló', () => {
     montar(true);
     botonPrima().click();

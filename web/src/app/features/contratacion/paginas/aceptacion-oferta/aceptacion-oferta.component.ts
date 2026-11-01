@@ -40,8 +40,10 @@ const TEXTO_DECLARACION = {
  * F01 · Aceptación de la oferta (HU-W15). Se arma con la decisión y con la cotización y su oferta
  * (DS2-23): sin inicio y fin de la póliza, carencia ni deducibles, que el modelo no tiene. El asesor
  * registra la aceptación en nombre del cliente (DS2-09) con las cuatro declaraciones; el botón
- * «Continuar a la firma» registra la aceptación y muestra la confirmación, sin navegar a la firma
- * (DS2-22). La Idempotency-Key vive en sessionStorage por cotización: una doble pulsación o un
+ * «Aceptar la oferta» registra la aceptación y muestra la confirmación (DS2-22). HU-W16 (ADR 0013):
+ * aceptar inicia el primer cobro sin firma del tomador, y un aviso lo dice antes del botón; la
+ * confirmación lleva al recaudo (paso 3) y la firma queda «no disponible» en el indicador.
+ * `siguientePaso` (FIRMA) del contrato no cambia. La Idempotency-Key vive en sessionStorage por cotización: una doble pulsación o un
  * reintento no crean dos aceptaciones. La oferta vencida usa el lenguaje de C08; una decisión que no
  * es aprobada vuelve a la decisión. El foco va al título o al resultado y los errores son `alert`.
  */
@@ -63,8 +65,10 @@ export class AceptacionOfertaComponent {
   private readonly alertaEnvio = viewChild<ElementRef<HTMLElement>>('alertaEnvio');
 
   readonly declaracionesF01 = DECLARACIONES;
+  readonly firmaNoDisponible: readonly number[] = [2];
   readonly versionDeclaraciones = VERSION_DECLARACIONES;
   readonly idMotivo = `motivo-aceptacion-${Math.random().toString(36).slice(2, 9)}`;
+  readonly idAviso = `aviso-cobro-${Math.random().toString(36).slice(2, 9)}`;
 
   readonly carga = signal<CargaAceptacion>({ estado: 'cargando' });
   readonly declaraciones = signal<Declaraciones>({

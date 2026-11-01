@@ -28,13 +28,14 @@ const TEXTOS = {
     leido: 'He leído las condiciones generales',
     veraz: 'La información declarada es veraz',
     debito: 'Autorizo el débito automático',
-    boton: 'Continuar a la firma',
+    boton: 'Aceptar la oferta',
     confirmacion: 'Aceptación registrada',
     recaudo: 'Habilitado',
     vencida: 'Esta oferta ya no está vigente',
     cotizar: 'Cotizar nuevamente',
     existente: 'ya tenía una aceptación registrada',
     sinDinero: 'no se ha movido dinero',
+    avisoCobro: 'Al aceptar la oferta se inicia el cobro del primer recaudo de la prima',
   },
   'en-US': {
     continuarAceptacion: 'Continue to acceptance',
@@ -42,13 +43,14 @@ const TEXTOS = {
     leido: 'I have read the general terms',
     veraz: 'The information I declared is true',
     debito: 'I authorize automatic debit',
-    boton: 'Continue to signature',
+    boton: 'Accept the offer',
     confirmacion: 'Acceptance recorded',
     recaudo: 'Enabled',
     vencida: 'This offer is no longer valid',
     cotizar: 'Quote again',
     existente: 'already had a recorded acceptance',
-    sinDinero: 'No money has moved',
+    sinDinero: 'no money has moved',
+    avisoCobro: 'Accepting the offer starts the first premium charge',
   },
 } as const;
 
@@ -118,6 +120,9 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
     await expect(page.getByRole('heading', { level: 2, name: t.titulo })).toBeFocused();
     await expect(page.locator('[aria-current=step]')).toHaveCount(1);
     await expect(page.getByText(t.sinDinero)).toBeVisible();
+    // HU-W16 (ADR 0013): el aviso de que aceptar inicia el cobro, visible antes del botón.
+    await expect(page.getByText(t.avisoCobro)).toBeVisible();
+    await expect(botonFirma(page, idioma)).toHaveAccessibleDescription(new RegExp(`^${t.avisoCobro}`));
     for (const s of await page.getByRole('switch').all()) {
       await expect(s).toHaveAttribute('aria-checked', 'false');
     }

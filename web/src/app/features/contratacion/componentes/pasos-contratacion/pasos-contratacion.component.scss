@@ -25,3 +25,8 @@ li.actual {
   font-weight: 700;
   color: var(--sv-azul);
 }
+
+/* HU-W16: sin historia; la barra discontinua acompaña al texto «no disponible», no lo sustituye. */
+li.no-disponible {
+  border-top-style: dashed;
+}
