@@ -11,6 +11,8 @@ class AuthInterceptor(private val proveedorAccessToken: ProveedorAccessToken) : 
     override fun intercept(chain: Interceptor.Chain): Response {
         val token = proveedorAccessToken.actual()
         val solicitud = chain.request()
+        // Una llamada con autorización explícita (p. ej. la baja del dispositivo tras limpiar la sesión) se respeta.
+        if (solicitud.header("Authorization") != null) return chain.proceed(solicitud)
         return if (token.isNullOrBlank()) {
             chain.proceed(solicitud)
         } else {

@@ -30,6 +30,13 @@ android {
         buildConfigField("String", "COGNITO_CLIENT_ID", "\"${propiedadLocal("cognitoClientId", "")}\"")
         buildConfigField("String", "COGNITO_REGION", "\"${propiedadLocal("cognitoRegion", "us-east-1")}\"")
 
+        // Firebase (FCM) sin plugin google-services: se inicializa a mano. Vacíos = notificaciones
+        // desactivadas (NotificacionesSinConfigurar); la app arranca igual.
+        buildConfigField("String", "FIREBASE_API_KEY", "\"${propiedadLocal("firebaseApiKey", "")}\"")
+        buildConfigField("String", "FIREBASE_APP_ID", "\"${propiedadLocal("firebaseAppId", "")}\"")
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"${propiedadLocal("firebaseProjectId", "")}\"")
+        buildConfigField("String", "FIREBASE_SENDER_ID", "\"${propiedadLocal("firebaseSenderId", "")}\"")
+
         // Solo desarrollo contra el backend local; en release quedan vacíos (ver buildTypes.debug).
         buildConfigField("String", "SUB_LOCAL", "\"\"")
         buildConfigField("String", "SELFIE_DE_PRUEBA_LOCAL", "\"\"")
@@ -64,6 +71,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":feature:login"))
     implementation(project(":feature:privacidad"))
+    implementation(project(":feature:billetera"))
+    implementation(project(":feature:notificaciones"))
     implementation(project(":feature:onboarding-identidad"))
 
     implementation(libs.androidx.core.ktx)
@@ -85,6 +94,9 @@ dependencies {
     testImplementation(libs.mockk)
     // Las respuestas falsas de BffMovilApi son `retrofit2.Response` (core:network no lo expone).
     testImplementation(libs.retrofit.core)
+    // API simulada del BFF para las pruebas de SolventaApp y MainActivity.
+    testImplementation(libs.okhttp.core)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }

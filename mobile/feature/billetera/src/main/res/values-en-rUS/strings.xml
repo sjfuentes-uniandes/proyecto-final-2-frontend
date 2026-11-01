@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en-US">
+    <!-- Common -->
+    <string name="billetera_cargando">Loading…</string>
+    <string name="billetera_reintentar">Retry</string>
+    <string name="billetera_volver">Back</string>
+    <string name="billetera_monto">$ %1$s %2$s</string>
+
+    <!-- Policy status: the text identifies it; color only reinforces it -->
+    <string name="billetera_estado_activa">ACTIVE</string>
+    <string name="billetera_estado_vencida">EXPIRED</string>
+    <string name="billetera_estado_activa_descripcion">Status: active</string>
+    <string name="billetera_estado_vencida_descripcion">Status: expired</string>
+
+    <!-- List (My Wallet) -->
+    <string name="billetera_titulo">My Wallet</string>
+    <string name="billetera_subtitulo">Your policies and their coverage</string>
+    <string name="billetera_privacidad_acceso">Consents and privacy</string>
+    <string name="billetera_vacia">You don\'t have any policies yet. When you take out insurance, it will show up here.</string>
+    <string name="billetera_error_sin_conexion">No connection. Check your network and try again.</string>
+    <string name="billetera_error_generico">We couldn\'t load your policies. Please try again.</string>
+    <string name="billetera_poliza_numero">Policy %1$s</string>
+    <string name="billetera_suma_asegurada">Sum insured: %1$s</string>
+    <plurals name="billetera_total_coberturas">
+        <item quantity="one">%1$d coverage</item>
+        <item quantity="other">%1$d coverages</item>
+    </plurals>
+    <string name="billetera_ver_detalle">View full details</string>
+    <string name="billetera_abrir_poliza">Open policy details</string>
+
+    <!-- Detail (Digital card) -->
+    <string name="detalle_titulo">Digital card</string>
+    <string name="detalle_error_sin_conexion">No connection. Check your network and try again.</string>
+    <string name="detalle_error_generico">We couldn\'t load the policy. Please try again.</string>
+    <string name="detalle_no_autorizada">You don\'t have access to this policy.</string>
+    <string name="detalle_no_encontrada">We couldn\'t find this policy.</string>
+    <string name="detalle_seccion_seguro">Associated insurance</string>
+    <string name="detalle_seccion_credencial">Credential</string>
+    <string name="detalle_seccion_coberturas">Active coverages</string>
+    <string name="detalle_seccion_valores">Amounts</string>
+    <string name="detalle_seccion_vigencia">Validity</string>
+    <string name="detalle_producto_ramo">%1$s · %2$s</string>
+    <string name="detalle_numero_poliza">Policy %1$s</string>
+    <string name="detalle_credencial_numero">Credential %1$s</string>
+    <string name="detalle_credencial_huella">Fingerprint: %1$s</string>
+    <string name="detalle_credencial_firma">Verifiable signature: %1$s</string>
+    <string name="detalle_cobertura_obligatoria">Mandatory</string>
+    <string name="detalle_suma_asegurada">Sum insured</string>
+    <string name="detalle_prima">Premium</string>
+    <string name="detalle_prima_periodicidad">%1$s · %2$s</string>
+    <string name="detalle_vigencia_inicio">Start: %1$s</string>
+    <string name="detalle_vigencia_fin">End: %1$s</string>
+</resources>

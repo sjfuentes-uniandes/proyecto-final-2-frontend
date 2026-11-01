@@ -2,12 +2,17 @@ package com.solventa.core.network
 
 import com.solventa.core.network.modelo.ConsentimientoDto
 import com.solventa.core.network.modelo.HistorialDto
+import com.solventa.core.network.modelo.PolizaDetalleDto
+import com.solventa.core.network.modelo.PolizaResumenDto
 import com.solventa.core.network.modelo.SesionDto
 import com.solventa.core.network.modelo.SolicitudOtorgarDto
 import com.solventa.core.network.modelo.TextoVigenteDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import com.solventa.core.network.modelo.DispositivoDto
+import com.solventa.core.network.modelo.SolicitudRegistroDispositivoDto
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -37,6 +42,24 @@ interface BffMovilApi {
 
     @POST("v1/registro/validaciones")
     suspend fun validarRegistroLocal(@Body solicitud: ValidacionRegistroSolicitud): Response<ValidacionRegistroDto>
+
+    /** HU-M10: pólizas del titular del token (incluidas las vencidas); ninguna ruta lleva `clienteId`. */
+    @GET("v1/polizas")
+    suspend fun polizas(): Response<List<PolizaResumenDto>>
+
+    @GET("v1/polizas/{poliza_id}")
+    suspend fun poliza(@Path("poliza_id") polizaId: String): Response<PolizaDetalleDto>
+
+    /** HU-M11: el titular es el del token; ninguna ruta lleva `clienteId`. El token push va en el cuerpo. */
+    @POST("v1/dispositivos")
+    suspend fun registrarDispositivo(@Body solicitud: SolicitudRegistroDispositivoDto): Response<DispositivoDto>
+
+    /** `autorizacion` explícita: la baja puede ocurrir cuando la sesión ya se limpió (null = no se envía). */
+    @DELETE("v1/dispositivos/{dispositivoId}")
+    suspend fun darDeBajaDispositivo(
+        @Path("dispositivoId") dispositivoId: String,
+        @Header("Authorization") autorizacion: String? = null,
+    ): Response<Unit>
 
     @GET("health")
     suspend fun health(): Response<Map<String, String>>

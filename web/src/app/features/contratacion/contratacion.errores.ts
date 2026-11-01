@@ -39,6 +39,9 @@ const POR_CODIGO: Record<string, ClaveError> = {
   DECLARACIONES_INCOMPLETAS: 'errorDeclaracionesIncompletas',
   TEXTO_NO_VIGENTE: 'errorTextoNoVigente',
   ACEPTACION_NO_ENCONTRADA: 'errorAceptacionNoEncontrada',
+  // HU-W17: la póliza y su documento.
+  POLIZA_NO_ENCONTRADA: 'errorPolizaNoEncontrada',
+  POLIZA_NO_ACTIVA: 'errorPolizaNoActiva',
 };
 
 export function errorContratacion(t: TextosContratacion, error: HttpErrorResponse): ErrorContratacion {

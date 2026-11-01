@@ -1,6 +1,8 @@
 package com.solventa.app
 
 import android.app.Application
+import android.Manifest
+import android.content.Intent
 import android.content.Context
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertCountEquals
@@ -9,7 +11,9 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -31,6 +35,17 @@ import com.solventa.core.network.BffMovilCliente
 import com.solventa.core.network.RegistroCliente
 import com.solventa.core.network.modelo.SesionDto
 import com.solventa.core.security.GestorBiometria
+import com.solventa.feature.billetera.BilleteraViewModelFactory
+import com.solventa.feature.billetera.DetallePolizaViewModelFactory
+import com.solventa.feature.billetera.EtiquetasPrueba as EtiquetasBilletera
+import com.solventa.feature.billetera.dominio.Cobertura
+import com.solventa.feature.billetera.dominio.Credencial
+import com.solventa.feature.billetera.dominio.FalloPolizas
+import com.solventa.feature.billetera.dominio.PolizaDetalle
+import com.solventa.feature.billetera.dominio.PolizaResumen
+import com.solventa.feature.billetera.dominio.RepositorioPolizas
+import com.solventa.feature.billetera.dominio.ResumenCobertura
+import com.solventa.feature.billetera.dominio.Vigencia
 import com.solventa.feature.login.LoginViewModel
 import com.solventa.feature.login.LoginViewModelFactory
 import com.solventa.feature.onboardingidentidad.verificacion.CrearCuenta
@@ -59,6 +74,12 @@ import com.solventa.feature.privacidad.dominio.EstadoConsentimiento
 import io.mockk.coEvery
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.robolectric.Shadows.shadowOf
+import com.solventa.feature.notificaciones.ProcesadorMensajePush
+import com.solventa.feature.notificaciones.ui.EtiquetasPermisoNotificaciones
+import com.solventa.feature.notificaciones.ui.RegistroExplicacionPermiso
+import com.solventa.feature.notificaciones.R as RNotificaciones
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,7 +87,12 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import retrofit2.Response
+import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import com.solventa.feature.billetera.R as RBilletera
+import com.solventa.feature.billetera.dominio.Resultado as ResultadoPolizas
 import com.solventa.feature.login.R as RLogin
 import com.solventa.feature.onboardingidentidad.R as ROnboarding
 import com.solventa.feature.privacidad.R as RPrivacidad
@@ -114,6 +140,7 @@ class NavegacionSolventaTest {
     }
     private val clienteRegistro = mockk<ClienteRegistro>()
     private val repositorio = RepositorioEnMemoria()
+    private val polizas = RepositorioPolizasFalso()
     private val acciones = mutableListOf<AccionBiometrica>()
     private val verificador = VerificadorBiometrico { accion ->
         acciones += accion
@@ -128,9 +155,12 @@ class NavegacionSolventaTest {
             real.create(modelClass).also { creados.getOrPut(modelClass) { mutableListOf() } += it }
     }
 
+    private val gestorSesion = GestorSesion(clienteIdentidad, almacen)
+    private val destino = DestinoPendiente()
+    private val explicacionPermiso = RegistroPermisoFalso(mostrada = true)
+
     private fun montar(): FragmentActivity {
         val actividad = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
-        val gestorSesion = GestorSesion(clienteIdentidad, almacen)
         val gestorBiometria = GestorBiometria(actividad)
         val registroCliente = RegistroCliente(api)
         val dependencias = DependenciasNavegacion(
@@ -140,6 +170,11 @@ class NavegacionSolventaTest {
             fabricaVerificacion = contando(VerificacionIdentidadViewModelFactory(VerificarIdentidad(registroCliente, sesionRegistro))),
             fabricaCuenta = contando(CuentaViewModelFactory(CrearCuenta(clienteRegistro, gestorSesion, registroCliente, sesionRegistro))),
             sesionRegistro = sesionRegistro,
+            fabricaBilletera = contando(BilleteraViewModelFactory(polizas, gestorSesion)),
+            fabricaDetalle = { id -> contando(DetallePolizaViewModelFactory(id, polizas, gestorSesion)) },
+            estadoSesion = gestorSesion.estado,
+            destinoPendiente = destino,
+            registroPermisoNotificaciones = explicacionPermiso,
         )
         actividad.setContent { ContenidoSolventa(dependencias, actividad) }
         compose.waitForIdle()
@@ -161,6 +196,11 @@ class NavegacionSolventaTest {
         pulsarEnLoginVisible(RLogin.string.login_boton_ingresar)
     }
 
+    private fun abrirPrivacidad() {
+        compose.onNodeWithContentDescription(texto(RBilletera.string.billetera_privacidad_acceso)).performClick()
+        compose.waitForIdle()
+    }
+
     @Test
     fun `(a) al abrir la app hay exactamente un login`() {
         montar()
@@ -179,14 +219,190 @@ class NavegacionSolventaTest {
     }
 
     @Test
-    fun `(c) un ingreso exitoso lleva a Privacidad y saca el login de la pila`() {
+    fun `(c) un ingreso exitoso lleva a la billetera y saca el login de la pila`() {
         montar()
 
         ingresar()
 
-        compose.onNodeWithText(texto(RPrivacidad.string.privacidad_lista_titulo)).assertExists().assertIsDisplayed()
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertExists().assertIsDisplayed()
+        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).assertIsDisplayed()
         compose.onAllNodes(hasText(texto(RLogin.string.login_boton_ingresar))).assertCountEquals(0)
         assertEquals(1, creados[LoginViewModel::class.java]?.size)
+    }
+
+    @Test
+    fun `tocar una poliza abre su detalle con el polizaId como argumento y atras vuelve a la lista`() {
+        val actividad = montar()
+        ingresar()
+
+        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText(texto(RBilletera.string.detalle_titulo)).assertIsDisplayed()
+        compose.onNodeWithTag(EtiquetasBilletera.CREDENCIAL).assertExists()
+        assertEquals(listOf(ID_POLIZA), polizas.detallesPedidos)
+
+        actividad.onBackPressedDispatcher.onBackPressed()
+        compose.waitForIdle()
+
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+        // La lista no se recargó ni se volvió a crear al regresar del detalle.
+        assertEquals(1, creados.getValue(com.solventa.feature.billetera.BilleteraViewModel::class.java).size)
+        assertEquals(1, polizas.listados)
+    }
+
+    @Test
+    fun `una poliza ajena muestra el mensaje generico en el detalle y ningun dato (AC3)`() {
+        polizas.detalle = ResultadoPolizas.Fallo(FalloPolizas.NoAutorizada)
+        montar()
+        ingresar()
+
+        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag(EtiquetasBilletera.NO_AUTORIZADA).assertIsDisplayed()
+        compose.onAllNodesWithText("POL-", substring = true).assertCountEquals(0)
+        compose.onAllNodesWithTag(EtiquetasBilletera.CREDENCIAL).assertCountEquals(0)
+    }
+
+    @Test
+    fun `una sesion invalida en la lista vuelve al login y vacia la pila`() {
+        polizas.lista = ResultadoPolizas.Fallo(FalloPolizas.SesionInvalida)
+        val actividad = montar()
+
+        ingresar()
+
+        compose.onAllNodesWithText(texto(RLogin.string.login_boton_ingresar)).assertCountEquals(1)
+        compose.onAllNodesWithText(texto(RBilletera.string.billetera_titulo)).assertCountEquals(0)
+        actividad.onBackPressedDispatcher.onBackPressed()
+        compose.waitForIdle()
+        compose.onAllNodesWithText(texto(RBilletera.string.billetera_titulo)).assertCountEquals(0)
+    }
+
+    @Test
+    fun `una sesion invalida en el detalle vuelve al login sin dejar la billetera en la pila`() {
+        polizas.detalle = ResultadoPolizas.Fallo(FalloPolizas.SesionInvalida)
+        montar()
+        ingresar()
+
+        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        compose.waitForIdle()
+
+        compose.onAllNodesWithText(texto(RLogin.string.login_boton_ingresar)).assertCountEquals(1)
+        compose.onAllNodesWithText(texto(RBilletera.string.detalle_titulo)).assertCountEquals(0)
+        compose.onAllNodesWithText(texto(RBilletera.string.billetera_titulo)).assertCountEquals(0)
+    }
+
+    @Test
+    fun `el acceso provisional de la billetera abre Privacidad y atras vuelve a la billetera`() {
+        val actividad = montar()
+        ingresar()
+
+        abrirPrivacidad()
+
+        compose.onNodeWithText(texto(RPrivacidad.string.privacidad_lista_titulo)).assertIsDisplayed()
+        actividad.onBackPressedDispatcher.onBackPressed()
+        compose.waitForIdle()
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `(AC1) tocar la notificacion con sesion abre el detalle de esa poliza`() {
+        montar()
+        ingresar()
+
+        abrirDesdeNotificacion(ID_POLIZA)
+
+        compose.onNodeWithText(texto(RBilletera.string.detalle_titulo)).assertIsDisplayed()
+        assertEquals(listOf(ID_POLIZA), polizas.detallesPedidos)
+        assertEquals(null, destino.polizaId.value)
+    }
+
+    @Test
+    fun `tocar la notificacion sin sesion pasa por el login y luego abre el detalle`() {
+        val actividad = montar()
+
+        abrirDesdeNotificacion(ID_POLIZA)
+
+        compose.onAllNodesWithText(texto(RLogin.string.login_boton_ingresar)).assertCountEquals(1)
+        assertEquals(emptyList<String>(), polizas.detallesPedidos)
+
+        ingresar()
+
+        compose.onNodeWithText(texto(RBilletera.string.detalle_titulo)).assertIsDisplayed()
+        assertEquals(listOf(ID_POLIZA), polizas.detallesPedidos)
+        actividad.onBackPressedDispatcher.onBackPressed()
+        compose.waitForIdle()
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `un polizaId invalido en la notificacion no navega`() {
+        montar()
+        ingresar()
+
+        abrirDesdeNotificacion("no-es-un-uuid")
+
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+        assertEquals(emptyList<String>(), polizas.detallesPedidos)
+        assertEquals(null, destino.polizaId.value)
+    }
+
+    @Test
+    fun `(AC3) con la sesion invalida la notificacion termina en el login sin mostrar datos`() {
+        polizas.detalle = ResultadoPolizas.Fallo(FalloPolizas.SesionInvalida)
+        montar()
+        ingresar()
+
+        abrirDesdeNotificacion(ID_POLIZA)
+
+        compose.onAllNodesWithText(texto(RLogin.string.login_boton_ingresar)).assertCountEquals(1)
+        compose.onAllNodesWithText("POL-", substring = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun `(AC3) una poliza no autorizada desde la notificacion muestra el mensaje generico`() {
+        polizas.detalle = ResultadoPolizas.Fallo(FalloPolizas.NoAutorizada)
+        montar()
+        ingresar()
+
+        abrirDesdeNotificacion(ID_POLIZA)
+
+        compose.onNodeWithTag(EtiquetasBilletera.NO_AUTORIZADA).assertIsDisplayed()
+        compose.onAllNodesWithTag(EtiquetasBilletera.CREDENCIAL).assertCountEquals(0)
+    }
+
+    @Test
+    fun `el dialogo de permiso aparece en la billetera la primera vez y Ahora no lo recuerda`() {
+        explicacionPermiso.mostrada = false
+        montar()
+        ingresar()
+
+        compose.onNodeWithTag(EtiquetasPermisoNotificaciones.DIALOGO).assertIsDisplayed()
+        compose.onNodeWithText(texto(RNotificaciones.string.notificaciones_permiso_titulo)).assertIsDisplayed()
+
+        compose.onNodeWithTag(EtiquetasPermisoNotificaciones.AHORA_NO).performClick()
+        compose.waitForIdle()
+
+        compose.onAllNodesWithTag(EtiquetasPermisoNotificaciones.DIALOGO).assertCountEquals(0)
+        assertTrue(explicacionPermiso.mostrada)
+    }
+
+    @Test
+    fun `con el permiso ya concedido no hay dialogo`() {
+        shadowOf(ApplicationProvider.getApplicationContext<Application>())
+            .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        explicacionPermiso.mostrada = false
+        montar()
+        ingresar()
+
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+        compose.onAllNodesWithTag(EtiquetasPermisoNotificaciones.DIALOGO).assertCountEquals(0)
+    }
+
+    private fun abrirDesdeNotificacion(polizaId: String) {
+        destino.desdeIntent(Intent().putExtra(ProcesadorMensajePush.EXTRA_POLIZA_ID, polizaId))
+        compose.waitForIdle()
     }
 
     @Test
@@ -229,6 +445,7 @@ class NavegacionSolventaTest {
     fun `(e) M08 y M09 desde la app - otorgar deja ACTIVA, revocar deja REVOCADA y el historial lo registra`() {
         montar()
         ingresar()
+        abrirPrivacidad()
         compose.onNodeWithTag(EtiquetasPrueba.permiso(Permiso.OPEN_FINANCE_OPEN_DATA.name)).performClick()
         compose.waitForIdle()
 
@@ -249,6 +466,58 @@ class NavegacionSolventaTest {
         compose.onNodeWithTag(EtiquetasPrueba.BOTON_REVOCAR).assertDoesNotExist()
         assertEquals(listOf(AccionBiometrica.OTORGAR, AccionBiometrica.REVOCAR), acciones)
         assertEquals(EstadoConsentimiento.REVOCADO, repositorio.actual?.estado)
+    }
+}
+
+/** Repositorio de pólizas con respuestas fijas; guarda lo pedido para comprobar los argumentos de navegación. */
+private class RepositorioPolizasFalso : RepositorioPolizas {
+    var lista: ResultadoPolizas<List<PolizaResumen>> = ResultadoPolizas.Exito(listOf(RESUMEN))
+    var detalle: ResultadoPolizas<PolizaDetalle> = ResultadoPolizas.Exito(DETALLE)
+    var listados = 0
+        private set
+    val detallesPedidos = mutableListOf<String>()
+
+    override suspend fun listar(): ResultadoPolizas<List<PolizaResumen>> {
+        listados++
+        return lista
+    }
+
+    override suspend fun detalle(polizaId: String): ResultadoPolizas<PolizaDetalle> {
+        detallesPedidos += polizaId
+        return detalle
+    }
+
+    private companion object {
+        val VIGENCIA = Vigencia(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-12-31"))
+        val RESUMEN = PolizaResumen(
+            ID_POLIZA, "POL-000123", "ACTIVA", "Seguro de Vida", "Personas", VIGENCIA, true,
+            ResumenCobertura(BigDecimal("300000000"), "COP", 1),
+        )
+        val DETALLE = PolizaDetalle(
+            numero = "POL-000123",
+            estado = "ACTIVA",
+            producto = "Seguro de Vida",
+            ramo = "Personas",
+            vigencia = VIGENCIA,
+            vigente = true,
+            prima = BigDecimal("1250000"),
+            sumaAsegurada = BigDecimal("300000000"),
+            moneda = "COP",
+            periodicidad = "MENSUAL",
+            emitidaEn = OffsetDateTime.parse("2026-01-01T10:00:00-05:00"),
+            coberturas = listOf(Cobertura("MUERTE", "Muerte por cualquier causa", true)),
+            credencial = Credencial("CRED-0001-2026", "a1b2c3d4e5f6a7b8", "FIRMA-7788", VIGENCIA),
+        )
+    }
+}
+
+private const val ID_POLIZA = "11111111-1111-1111-1111-111111111111"
+
+private class RegistroPermisoFalso(var mostrada: Boolean) : RegistroExplicacionPermiso {
+    override fun yaMostrada() = mostrada
+
+    override fun marcarMostrada() {
+        mostrada = true
     }
 }
 
