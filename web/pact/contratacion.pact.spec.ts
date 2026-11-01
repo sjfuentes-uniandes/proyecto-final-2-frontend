@@ -5,15 +5,26 @@ import {
   Aceptacion,
   Comunicacion,
   DecisionSuscripcion,
+  EnlaceDocumento,
+  EstadoRecaudo,
+  Poliza,
   ReglaEvaluada,
   SolicitudAceptacion,
 } from '../src/app/features/contratacion/contratacion.modelo';
 import {
   ACEPTACION,
+  COTIZACION_S01,
   DECISION_APROBADA,
   DECISION_RECHAZADA,
   DECISION_RESERVADA,
   DECISION_REVISION,
+  ENLACE_DOCUMENTO,
+  POLIZA_ACTIVA,
+  POLIZA_EMITIENDO,
+  POLIZA_ID,
+  RECAUDO_CONFIRMADO,
+  RECAUDO_PENDIENTE,
+  RECAUDO_RECHAZADO,
   SOLICITUD_ACEPTACION,
 } from '../src/app/features/contratacion/contratacion.testing';
 import { ACEPTA_JSON, nuevoPacto } from './pacto';
@@ -23,7 +34,9 @@ const { boolean, eachLike, equal, integer, like, regex, uuid } = MatchersV3;
 /**
  * Pact consumidor de contratación. HU-W14 (W14-F06): lo que el portal necesita de
  * GET /v1/suscripciones/{decisionId} de bff-web para comunicar la decisión. HU-W15 (W15-F07): el
- * registro de la aceptación (POST /v1/cotizaciones/{cotizacionId}/aceptacion), al final del archivo. La `comunicacion` se
+ * registro de la aceptación (POST /v1/cotizaciones/{cotizacionId}/aceptacion). HU-W16 (16.15): el estado
+ * del recaudo (GET /v1/cotizaciones/{cotizacionId}/recaudo). HU-W17 (17.12): la póliza y la URL de su
+ * documento, al final del archivo. La `comunicacion` se
  * compara exacta (es con lo único que el portal decide qué mostrar); el resto de la decisión, por
  * tipo. Los estados del proveedor llevan el caso sintético (S01, S02, S04, S06) para que bff-web los
  * reproduzca con polizas y clientes simulados (fase C).
@@ -278,3 +291,186 @@ for (const caso of ACEPTACIONES) {
       });
   });
 }
+
+// --- HU-W16 (16.15): estado del recaudo de la prima (paso 3, solo lectura) -------------------------
+
+/**
+ * Lo que promete bff-web en la 16.14 y nada más: los tres estados y el 404 (sin 5xx, que no son una
+ * promesa del proveedor). `estado` se compara exacto: con él el portal decide qué mostrar y si sigue
+ * consultando; lo demás, por tipo o patrón, no con los valores del simulador. `transaccionId` y
+ * `motivo` son null salvo en su estado (Pact no expresa «null o texto»).
+ */
+function estadoRecaudo(r: EstadoRecaudo) {
+  return {
+    estado: equal(r.estado),
+    claveRecaudo: uuid(r.claveRecaudo),
+    monto: regex(/^-?\d+(\.\d+)?$/, r.monto),
+    moneda: regex(/^[A-Z]{3}$/, r.moneda),
+    transaccionId: r.transaccionId === null ? null : like(r.transaccionId),
+    motivo: r.motivo === null ? null : regex(/^[A-Z][A-Z0-9_]*$/, r.motivo),
+    actualizadoEn: instante(r.actualizadoEn),
+  };
+}
+
+const urlRecaudo = (cotizacionId: string) => `/v1/cotizaciones/${cotizacionId}/recaudo`;
+
+const RECAUDOS: { estado: string; recaudo: EstadoRecaudo }[] = [
+  { estado: 'la aceptación tiene el recaudo pendiente', recaudo: RECAUDO_PENDIENTE },
+  { estado: 'la aceptación tiene el recaudo confirmado', recaudo: RECAUDO_CONFIRMADO },
+  { estado: 'la aceptación tiene el recaudo rechazado', recaudo: RECAUDO_RECHAZADO },
+];
+
+for (const { estado, recaudo } of RECAUDOS) {
+  test(`recaudo · 200 ${recaudo.estado}: ${estado}`, async () => {
+    await pacto
+      .addInteraction()
+      .given(estado, { cotizacionId: COTIZACION_S01 })
+      .uponReceiving(`la consulta del recaudo de la prima · ${recaudo.estado}`)
+      .withRequest('GET', urlRecaudo(COTIZACION_S01), (pedido) => pedido.headers(ACEPTA_JSON))
+      .willRespondWith(200, (respuesta) =>
+        respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(estadoRecaudo(recaudo)),
+      )
+      .executeTest(async (servidor) => {
+        const respuesta = await fetch(`${servidor.url}${urlRecaudo(COTIZACION_S01)}`, { headers: ACEPTA_JSON });
+        expect(respuesta.status).toBe(200);
+        const cuerpo = (await respuesta.json()) as EstadoRecaudo;
+        expect(cuerpo.estado).toBe(recaudo.estado);
+        expect(cuerpo.monto).toMatch(/^\d+$/);
+        expect(cuerpo.transaccionId === null).toBe(recaudo.estado !== 'CONFIRMADO');
+        expect(cuerpo.motivo === null).toBe(recaudo.estado !== 'RECHAZADO');
+      });
+  });
+}
+
+test('recaudo · 404 ACEPTACION_NO_ENCONTRADA: la cotización no tiene aceptación', async () => {
+  await pacto
+    .addInteraction()
+    .given('la cotización no tiene aceptación', { cotizacionId: COTIZACION_S01 })
+    .uponReceiving('la consulta del recaudo de una cotización sin aceptación')
+    .withRequest('GET', urlRecaudo(COTIZACION_S01), (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(404, (respuesta) =>
+      respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(error('ACEPTACION_NO_ENCONTRADA', {})),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${urlRecaudo(COTIZACION_S01)}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(404);
+      expect((await respuesta.json()).codigo).toBe('ACEPTACION_NO_ENCONTRADA');
+    });
+});
+
+// --- HU-W17 (17.12): la póliza y la URL de su documento ---------------------------------------------
+
+/**
+ * Lo que promete bff-web en la 17.11 y la 17.11c, con los estados de proveedor de `_sembrar` (sin 5xx).
+ * `estado` se compara exacto: con él el portal elige la vista y si sigue consultando.
+ * `emitidaEn`, `documento`, `firma` y `titularNombre` son null en EMITIENDO y presentes en ACTIVA (Pact
+ * no expresa «null u objeto»). Lo demás, por tipo o patrón, no con los valores del simulador.
+ */
+function poliza(p: Poliza) {
+  return {
+    polizaId: uuid(p.polizaId),
+    estado: equal(p.estado),
+    numero: regex(/^[0-9]{3}-[0-9]{4}-[0-9]{6}$/, p.numero),
+    producto: { id: like(p.producto.id), version: like(p.producto.version) },
+    ramo: { codigo: regex(/^[0-9]{3}$/, p.ramo.codigo), nombre: like(p.ramo.nombre) },
+    coberturas: eachLike({ codigo: like(p.coberturas[0].codigo), nombre: like(p.coberturas[0].nombre), obligatoria: boolean(true) }),
+    vigencia: { desde: regex(FECHA, p.vigencia.desde), hasta: regex(FECHA, p.vigencia.hasta) },
+    sumaAsegurada: regex(/^-?\d+(\.\d+)?$/, p.sumaAsegurada),
+    prima: regex(/^-?\d+(\.\d+)?$/, p.prima),
+    moneda: regex(/^[A-Z]{3}$/, p.moneda),
+    periodicidad: like(p.periodicidad),
+    aceptadaEn: instante(p.aceptadaEn),
+    recaudadaEn: instante(p.recaudadaEn),
+    emitidaEn: p.emitidaEn === null ? null : instante(p.emitidaEn),
+    documento:
+      p.documento === null
+        ? null
+        : { huella: regex(/^sha256:[0-9a-f]{64}$/, p.documento.huella), versionId: like(p.documento.versionId) },
+    firma: p.firma === null ? null : { firmaId: like(p.firma.firmaId), selloTiempo: instante(p.firma.selloTiempo) },
+    titularNombre: p.titularNombre === null ? null : like(p.titularNombre),
+  };
+}
+
+/** Fecha sin hora (`aaaa-mm-dd`), como la vigencia. */
+const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const urlPoliza = (cotizacionId: string) => `/v1/cotizaciones/${cotizacionId}/poliza`;
+const urlDocumento = (polizaId: string) => `/v1/polizas/${polizaId}/documento`;
+
+const POLIZAS: { estado: string; poliza: Poliza }[] = [
+  { estado: 'la cotización tiene la póliza emitiéndose', poliza: POLIZA_EMITIENDO },
+  { estado: 'la cotización tiene la póliza activa', poliza: POLIZA_ACTIVA },
+];
+
+for (const { estado, poliza: p } of POLIZAS) {
+  test(`póliza · 200 ${p.estado}: ${estado}`, async () => {
+    await pacto
+      .addInteraction()
+      .given(estado, { cotizacionId: COTIZACION_S01 })
+      .uponReceiving(`la consulta de la póliza · ${p.estado}`)
+      .withRequest('GET', urlPoliza(COTIZACION_S01), (pedido) => pedido.headers(ACEPTA_JSON))
+      .willRespondWith(200, (respuesta) => respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(poliza(p)))
+      .executeTest(async (servidor) => {
+        const respuesta = await fetch(`${servidor.url}${urlPoliza(COTIZACION_S01)}`, { headers: ACEPTA_JSON });
+        expect(respuesta.status).toBe(200);
+        const cuerpo = (await respuesta.json()) as Poliza;
+        expect(cuerpo.estado).toBe(p.estado);
+        expect(cuerpo.vigencia.desde).toMatch(FECHA);
+        expect(cuerpo.coberturas.length).toBeGreaterThan(0);
+        expect(cuerpo.firma === null).toBe(p.estado === 'EMITIENDO');
+        expect(cuerpo.titularNombre).toBe(p.titularNombre);
+      });
+  });
+}
+
+test('póliza · 404 POLIZA_NO_ENCONTRADA: la cotización no tiene póliza', async () => {
+  await pacto
+    .addInteraction()
+    .given('la cotización no tiene póliza', { cotizacionId: COTIZACION_S01 })
+    .uponReceiving('la consulta de la póliza de una cotización sin póliza')
+    .withRequest('GET', urlPoliza(COTIZACION_S01), (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(404, (respuesta) =>
+      respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(error('POLIZA_NO_ENCONTRADA', {})),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${urlPoliza(COTIZACION_S01)}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(404);
+      expect((await respuesta.json()).codigo).toBe('POLIZA_NO_ENCONTRADA');
+    });
+});
+
+test('documento · 200 EnlaceDocumento: la póliza está activa con su documento', async () => {
+  await pacto
+    .addInteraction()
+    .given('la póliza está activa con su documento', { polizaId: POLIZA_ID })
+    .uponReceiving('el pedido de la URL del documento de una póliza activa')
+    .withRequest('GET', urlDocumento(POLIZA_ID), (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(200, (respuesta) =>
+      respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody({
+        url: regex(/^https:\/\/\S+$/, ENLACE_DOCUMENTO.url),
+        venceEn: instante(ENLACE_DOCUMENTO.venceEn),
+      }),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${urlDocumento(POLIZA_ID)}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(200);
+      const cuerpo = (await respuesta.json()) as EnlaceDocumento;
+      expect(cuerpo.url).toMatch(/^https:\/\//);
+      expect(cuerpo.venceEn).toMatch(INSTANTE);
+    });
+});
+
+test('documento · 409 POLIZA_NO_ACTIVA: la póliza todavía se está emitiendo', async () => {
+  await pacto
+    .addInteraction()
+    .given('la póliza todavía se está emitiendo', { polizaId: POLIZA_ID })
+    .uponReceiving('el pedido de la URL del documento de una póliza que se está emitiendo')
+    .withRequest('GET', urlDocumento(POLIZA_ID), (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(409, (respuesta) =>
+      respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(error('POLIZA_NO_ACTIVA', {})),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${urlDocumento(POLIZA_ID)}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(409);
+      expect((await respuesta.json()).codigo).toBe('POLIZA_NO_ACTIVA');
+    });
+});

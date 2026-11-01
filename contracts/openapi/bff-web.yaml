@@ -2298,6 +2298,219 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDto'
+  /v1/cotizaciones/{cotizacionId}/recaudo:
+    get:
+      tags:
+      - recaudos
+      summary: Consultar Recaudo
+      description: El estado del primer cobro de la prima aceptada (paso 3 del portal,
+        solo lectura).
+      operationId: consultar_recaudo_v1_cotizaciones__cotizacionId__recaudo_get
+      parameters:
+      - name: cotizacionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Cotizacionid
+      - name: x-authenticated-groups
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Authenticated-Groups
+      - name: x-authenticated-issuer
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Authenticated-Issuer
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoRecaudo'
+        '401':
+          description: 'ACTOR_REQUERIDO: la solicitud no trae el usuario autenticado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '403':
+          description: 'ROL_NO_AUTORIZADO: falta el grupo asesores o no es del back-office'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '503':
+          description: SERVICIO_NO_DISPONIBLE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '404':
+          description: ACEPTACION_NO_ENCONTRADA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '422':
+          description: SOLICITUD_INVALIDA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+  /v1/cotizaciones/{cotizacionId}/poliza:
+    get:
+      tags:
+      - polizas
+      summary: Consultar Poliza
+      description: La póliza de la oferta aceptada de la cotización (solo lectura).
+      operationId: consultar_poliza_v1_cotizaciones__cotizacionId__poliza_get
+      parameters:
+      - name: cotizacionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Cotizacionid
+      - name: x-authenticated-groups
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Authenticated-Groups
+      - name: x-authenticated-issuer
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Authenticated-Issuer
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poliza'
+        '401':
+          description: 'ACTOR_REQUERIDO: la solicitud no trae el usuario autenticado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '403':
+          description: 'ROL_NO_AUTORIZADO: falta el grupo asesores o no es del back-office'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '503':
+          description: SERVICIO_NO_DISPONIBLE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '404':
+          description: 'ACEPTACION_NO_ENCONTRADA o POLIZA_NO_ENCONTRADA (con aceptación:
+            el recaudo está pendiente o fue rechazado)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '422':
+          description: SOLICITUD_INVALIDA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+  /v1/polizas/{polizaId}/documento:
+    get:
+      tags:
+      - polizas
+      summary: Documento
+      description: URL prefirmada, de vencimiento corto, del PDF de una póliza ACTIVA
+        (no va a los logs).
+      operationId: documento_v1_polizas__polizaId__documento_get
+      parameters:
+      - name: polizaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Polizaid
+      - name: x-authenticated-groups
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Authenticated-Groups
+      - name: x-authenticated-issuer
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Authenticated-Issuer
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnlaceDocumento'
+        '401':
+          description: 'ACTOR_REQUERIDO: la solicitud no trae el usuario autenticado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '403':
+          description: 'ROL_NO_AUTORIZADO: falta el grupo asesores o no es del back-office'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '503':
+          description: SERVICIO_NO_DISPONIBLE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '404':
+          description: POLIZA_NO_ENCONTRADA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '409':
+          description: 'POLIZA_NO_ACTIVA: todavía se está emitiendo'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        '422':
+          description: SOLICITUD_INVALIDA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
   /health:
     get:
       summary: Health
@@ -3541,6 +3754,35 @@ components:
       - AUMENTA_LEVEMENTE
       - AUMENTA_RIESGO
       title: Direccion
+    DocumentoPolizaDto:
+      properties:
+        huella:
+          type: string
+          pattern: ^sha256:[0-9a-f]{64}$
+          title: Huella
+        versionId:
+          type: string
+          title: Versionid
+      type: object
+      required:
+      - huella
+      - versionId
+      title: DocumentoPolizaDto
+    EnlaceDocumento:
+      properties:
+        url:
+          type: string
+          title: Url
+          description: URL prefirmada de la versión registrada del PDF
+        venceEn:
+          type: string
+          format: date-time
+          title: Venceen
+      type: object
+      required:
+      - url
+      - venceEn
+      title: EnlaceDocumento
     EnlaceRespuesta:
       properties:
         tipo:
@@ -3686,6 +3928,62 @@ components:
       - DEGRADADO
       - INFORMACION_INSUFICIENTE
       title: EstadoPerfil
+    EstadoPoliza:
+      type: string
+      enum:
+      - EMITIENDO
+      - ACTIVA
+      title: EstadoPoliza
+    EstadoRecaudo:
+      properties:
+        estado:
+          $ref: '#/components/schemas/SituacionRecaudo'
+          description: PENDIENTE mientras dinero no publica un estado final
+        claveRecaudo:
+          type: string
+          format: uuid
+          title: Claverecaudo
+          description: El id de la aceptación
+        monto:
+          type: string
+          pattern: ^-?\d+(\.\d+)?$
+          title: Monto
+          description: Lo cobrado si está CONFIRMADO; si no, la prima de la oferta
+            aceptada
+        moneda:
+          type: string
+          pattern: ^[A-Z]{3}$
+          title: Moneda
+        transaccionId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Transaccionid
+          description: Solo en CONFIRMADO
+        motivo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Motivo
+          description: Código del rechazo; solo en RECHAZADO
+        actualizadoEn:
+          type: string
+          format: date-time
+          title: Actualizadoen
+          description: Cuándo dinero resolvió el cobro; si está PENDIENTE, cuándo
+            se aceptó
+      type: object
+      required:
+      - estado
+      - claveRecaudo
+      - monto
+      - moneda
+      - transaccionId
+      - motivo
+      - actualizadoEn
+      title: EstadoRecaudo
+      description: El estado del primer cobro de la prima de la aceptación (ADR 0013,
+        decisión 9).
     ExclusionDto:
       properties:
         codigo:
@@ -3778,6 +4076,20 @@ components:
       title: FaltanteDto
       description: 'Un dato que no se obtuvo (HU-W06). Solo su nombre: el valor no
         existe y no se inventa.'
+    FirmaPolizaDto:
+      properties:
+        firmaId:
+          type: string
+          title: Firmaid
+        selloTiempo:
+          type: string
+          format: date-time
+          title: Sellotiempo
+      type: object
+      required:
+      - firmaId
+      - selloTiempo
+      title: FirmaPolizaDto
     Fuente:
       type: string
       enum:
@@ -4041,7 +4353,7 @@ components:
           items:
             type: string
           type: array
-          maxItems: 4
+          maxItems: 5
           minItems: 1
           title: Grupos
       type: object
@@ -4296,6 +4608,129 @@ components:
       - estandar
       - prueba
       title: Plan
+    Poliza:
+      properties:
+        polizaId:
+          type: string
+          format: uuid
+          title: Polizaid
+        estado:
+          $ref: '#/components/schemas/EstadoPoliza'
+        numero:
+          type: string
+          pattern: ^[0-9]{3}-[0-9]{4}-[0-9]{6}$
+          title: Numero
+          description: 'Reservado al crear la póliza: no cambia'
+        producto:
+          $ref: '#/components/schemas/ProductoPolizaDto'
+        ramo:
+          $ref: '#/components/schemas/RamoPolizaDto'
+        coberturas:
+          items:
+            $ref: '#/components/schemas/CoberturaProductoDto'
+          type: array
+          title: Coberturas
+        vigencia:
+          $ref: '#/components/schemas/VigenciaPolizaDto'
+        sumaAsegurada:
+          type: string
+          pattern: ^-?\d+(\.\d+)?$
+          title: Sumaasegurada
+        prima:
+          type: string
+          pattern: ^-?\d+(\.\d+)?$
+          title: Prima
+        moneda:
+          type: string
+          pattern: ^[A-Z]{3}$
+          title: Moneda
+        periodicidad:
+          type: string
+          title: Periodicidad
+        aceptadaEn:
+          type: string
+          format: date-time
+          title: Aceptadaen
+        recaudadaEn:
+          type: string
+          format: date-time
+          title: Recaudadaen
+          description: Cuándo dinero confirmó el recaudo
+        emitidaEn:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Emitidaen
+          description: Nulo mientras se emite
+        documento:
+          anyOf:
+          - $ref: '#/components/schemas/DocumentoPolizaDto'
+          - type: 'null'
+          description: Nulo hasta que se sube el PDF
+        firma:
+          anyOf:
+          - $ref: '#/components/schemas/FirmaPolizaDto'
+          - type: 'null'
+          description: Nula hasta que se firma su huella
+        titularNombre:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Titularnombre
+          description: Nombre del titular según clientes, solo con la póliza ACTIVA;
+            nulo mientras se emite o si clientes no lo da a tiempo
+      type: object
+      required:
+      - polizaId
+      - estado
+      - numero
+      - producto
+      - ramo
+      - coberturas
+      - vigencia
+      - sumaAsegurada
+      - prima
+      - moneda
+      - periodicidad
+      - aceptadaEn
+      - recaudadaEn
+      - emitidaEn
+      - documento
+      - firma
+      - titularNombre
+      title: Poliza
+      description: 'La póliza de la oferta aceptada (ADR 0014). `emitidaEn`, `documento`
+        y `firma` son nulos
+
+        mientras no estén registrados.'
+    ProductoPolizaDto:
+      properties:
+        id:
+          type: string
+          title: Id
+        version:
+          type: string
+          title: Version
+      type: object
+      required:
+      - id
+      - version
+      title: ProductoPolizaDto
+    RamoPolizaDto:
+      properties:
+        codigo:
+          type: string
+          pattern: ^[0-9]{3}$
+          title: Codigo
+        nombre:
+          type: string
+          title: Nombre
+      type: object
+      required:
+      - codigo
+      - nombre
+      title: RamoPolizaDto
     RangoDto:
       properties:
         minimo:
@@ -4655,6 +5090,13 @@ components:
       enum:
       - FIRMA
       title: SiguientePasoContratacion
+    SituacionRecaudo:
+      type: string
+      enum:
+      - PENDIENTE
+      - CONFIRMADO
+      - RECHAZADO
+      title: SituacionRecaudo
     SocioCreado:
       properties:
         id:
@@ -5084,6 +5526,22 @@ components:
       - fin
       - reinicio
       title: VentanaCuota
+    VigenciaPolizaDto:
+      properties:
+        desde:
+          type: string
+          format: date
+          title: Desde
+        hasta:
+          type: string
+          format: date
+          title: Hasta
+      type: object
+      required:
+      - desde
+      - hasta
+      title: VigenciaPolizaDto
+      description: Fechas inclusivas en America/Bogota.
     Visibilidad:
       type: string
       enum:
