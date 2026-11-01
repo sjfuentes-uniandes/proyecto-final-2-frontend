@@ -43,7 +43,7 @@ export interface GrupoSeccion {
         }
       }
     </aside>
-    <main class="content"><router-outlet /></main>
+    <main class="content" id="contenido" tabindex="-1"><router-outlet /></main>
   `,
   styles: `
     :host { display: flex; flex: 1; min-width: 0; min-height: 0; }

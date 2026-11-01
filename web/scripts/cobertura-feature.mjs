@@ -13,6 +13,8 @@ const GRUPOS = [
   { nombre: 'cotizacion', partes: ['/features/cotizacion/'] },
   /** HU-W13: suscripción automática (bandeja E01, decisión E02/E03 y revisión E04). */
   { nombre: 'contratacion', partes: ['/features/contratacion/'] },
+  /** HU-W18: consulta del estado de las pólizas. */
+  { nombre: 'consulta', partes: ['/features/consulta/'] },
 ];
 /** Apoyo de las pruebas, no código de la feature. */
 const EXCLUIDAS = [/\.testing\.ts$/, /\.spec\.ts$/];

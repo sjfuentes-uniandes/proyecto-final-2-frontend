@@ -61,7 +61,14 @@ export class ContratacionLayoutComponent {
           emision,
         ],
       },
-      { titulo: t.grupoConsulta, items: [{ etiqueta: t.menuPolizas, icono: '📄', pendiente: t.proximamente }] },
+      {
+        titulo: t.grupoConsulta,
+        items: [
+          this.sesion.tieneGrupo('asesores')
+            ? { etiqueta: t.menuPolizas, icono: '📄', ruta: '/consulta/polizas' }
+            : { etiqueta: t.menuPolizas, icono: '📄', pendiente: t.proximamente },
+        ],
+      },
     ];
   });
 }

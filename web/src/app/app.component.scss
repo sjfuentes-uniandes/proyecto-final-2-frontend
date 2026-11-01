@@ -4,6 +4,28 @@
   min-height: 100vh;
 }
 
+/* Visible solo con foco (WCAG 2.4.1). */
+.saltar {
+  position: absolute;
+  top: 8px;
+  left: -9999px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: var(--sv-blanco);
+  color: var(--sv-azul);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:focus {
+    left: 8px;
+    outline: 3px solid var(--sv-azul);
+    outline-offset: 2px;
+  }
+}
+
 .topbar {
   display: flex;
   align-items: center;

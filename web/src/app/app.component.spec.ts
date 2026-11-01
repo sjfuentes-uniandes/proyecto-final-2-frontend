@@ -1,8 +1,14 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import { AppComponent } from './app.component';
+import { IdiomaService } from './core/i18n/idioma.service';
+import { SeccionLayoutComponent } from './shared/seccion/seccion-layout.component';
 import { AuthFalso, iniciarSesion, proveerAuthFalso } from './testing';
+
+@Component({ template: '' })
+class PaginaVaciaComponent {}
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -66,5 +72,76 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     expect(html(fixture).querySelector('span.nav__item--off')?.textContent?.trim()).toBe('Cotización');
+  });
+
+  describe('enlace «Saltar al contenido principal» (HU-W18, W-08)', () => {
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [AppComponent],
+        providers: [
+          provideRouter([
+            { path: 'con-seccion', component: SeccionLayoutComponent, children: [{ path: '', component: PaginaVaciaComponent }] },
+            { path: 'sin-seccion', component: PaginaVaciaComponent },
+          ]),
+          proveerAuthFalso(),
+        ],
+      });
+    });
+    afterEach(() => TestBed.inject(IdiomaService).cambiar('es-CO'));
+
+    async function abrir(ruta: string) {
+      await iniciarSesion({ name: 'Carlos Portillo', 'cognito:groups': ['asesores'] });
+      const fixture = TestBed.createComponent(AppComponent);
+      document.body.appendChild(fixture.nativeElement);
+      await TestBed.inject(Router).navigateByUrl(ruta);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return fixture;
+    }
+    const enlace = (fixture: { nativeElement: HTMLElement }) => fixture.nativeElement.querySelector<HTMLElement>('.saltar');
+
+    it('es el primer elemento enfocable del documento', async () => {
+      const fixture = await abrir('/con-seccion');
+      const primero = fixture.nativeElement.querySelector('a[href], a[tabindex="0"], button, select, input, [tabindex="0"]');
+      expect(primero).toBe(enlace(fixture));
+      expect(enlace(fixture)?.textContent?.trim()).toBe('Saltar al contenido principal');
+      fixture.nativeElement.remove();
+    });
+
+    it('al activarlo mueve el foco a main#contenido sin cambiar la URL', async () => {
+      const fixture = await abrir('/con-seccion');
+      const url = TestBed.inject(Router).url;
+      const ruta = location.href;
+      enlace(fixture)?.click();
+      await fixture.whenStable();
+      const main = fixture.nativeElement.querySelector('main#contenido');
+      expect(main?.getAttribute('tabindex')).toBe('-1');
+      expect(document.activeElement).toBe(main);
+      expect(TestBed.inject(Router).url).toBe(url);
+      expect(location.href).toBe(ruta);
+      fixture.nativeElement.remove();
+    });
+
+    it('también se activa con Enter', async () => {
+      const fixture = await abrir('/con-seccion');
+      enlace(fixture)?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(document.activeElement?.id).toBe('contenido');
+      fixture.nativeElement.remove();
+    });
+
+    it('no aparece en rutas sin seccion-layout', async () => {
+      const fixture = await abrir('/sin-seccion');
+      expect(enlace(fixture)).toBeNull();
+      fixture.nativeElement.remove();
+    });
+
+    it('en en-US dice «Skip to main content»', async () => {
+      TestBed.inject(IdiomaService).cambiar('en-US');
+      const fixture = await abrir('/con-seccion');
+      expect(enlace(fixture)?.textContent?.trim()).toBe('Skip to main content');
+      fixture.nativeElement.remove();
+    });
   });
 });

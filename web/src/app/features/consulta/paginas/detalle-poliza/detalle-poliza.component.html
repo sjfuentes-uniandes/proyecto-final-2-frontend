@@ -1,0 +1,111 @@
+@let t = textos.t();
+@let v = vista();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaConsulta }} ›
+  <a routerLink="/consulta/polizas" queryParamsHandling="preserve">{{ t.migaPolizas }}</a>
+  @if (v) {
+    › <strong>{{ datos()?.numero }}</strong>
+  }
+</nav>
+
+@if (cargando() && !v) {
+  <div class="card" role="status">
+    <p class="sub">{{ t.cargandoDetalle }}</p>
+    <p class="nota">{{ t.notaPropagacion }}</p>
+  </div>
+}
+
+@if (error(); as e) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <div>
+      @if (degradado()) {
+        <p><strong>{{ t.degradadoTitulo }}</strong></p>
+        <p>{{ t.degradadoDetalle }}</p>
+        @if (fechaPrevio(); as fecha) {
+          <p>{{ t.degradadoConFecha(fecha) }}</p>
+        }
+      } @else {
+        <p>{{ e.mensaje }}</p>
+      }
+      @if (e.correlationId) {
+        <p class="seguimiento">{{ t.referenciaSoporte }}: <span class="mono">{{ e.correlationId }}</span></p>
+      }
+      @if (e.tipo !== 'acceso' && e.tipo !== 'validacion') {
+        <div class="acciones">
+          <button class="btn btn--secundario" type="button" (click)="reintentar()">
+            {{ degradado() ? t.reintentarAhora : t.reintentar }}
+          </button>
+          @if (!v) {
+            <a class="btn btn--secundario" routerLink="/consulta/polizas" queryParamsHandling="preserve">{{ t.volverListado }}</a>
+          }
+        </div>
+      } @else {
+        <a class="btn btn--secundario" routerLink="/consulta/polizas" queryParamsHandling="preserve">{{ t.volverListado }}</a>
+      }
+    </div>
+  </div>
+}
+
+@if (v) {
+  <header>
+    <h2>
+      {{ v.titulo }}
+      <span [class]="v.claseEstado">{{ v.estado }}</span>
+    </h2>
+    <p class="sub">{{ v.subtitulo }}</p>
+  </header>
+
+  <section class="card" aria-labelledby="titulo-datos">
+    <h3 id="titulo-datos">{{ t.datosPoliza }}</h3>
+    <dl class="kv">
+      <div><dt>{{ t.sumaAsegurada }}</dt><dd>{{ v.sumaAsegurada }}</dd></div>
+      <div><dt>{{ t.prima }}</dt><dd>{{ v.prima }}</dd></div>
+      <div><dt>{{ t.vigenciaInicio }}</dt><dd>{{ v.desde }}</dd></div>
+      <div><dt>{{ t.vigenciaFin }}</dt><dd>{{ v.hasta }}</dd></div>
+      <div><dt>{{ t.fechaEmision }}</dt><dd>{{ v.emitidaEn }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="card" aria-labelledby="titulo-coberturas">
+    <h3 id="titulo-coberturas">{{ t.coberturas }}</h3>
+    @if (v.coberturas.length) {
+      <table class="data">
+        <caption class="sr-only">{{ t.captionCoberturas }}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{ t.colCobertura }}</th>
+            <th scope="col">{{ t.colTipo }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of v.coberturas; track c.codigo) {
+            <tr>
+              <th scope="row">{{ c.nombre }}</th>
+              <td>{{ c.tipo }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p class="sub">{{ t.sinCoberturas }}</p>
+    }
+  </section>
+
+  <section class="card" aria-labelledby="titulo-consulta">
+    <h3 id="titulo-consulta">{{ t.consultaTitulo }}</h3>
+    <dl class="kv">
+      <div><dt>{{ t.ultimaActualizacion }}</dt><dd>{{ v.actualizadoEn }}</dd></div>
+      @if (v.propagacion) {
+        <div><dt>{{ t.tiempoPropagacion }}</dt><dd>{{ v.propagacion }}</dd></div>
+      }
+    </dl>
+    @if (v.nota) {
+      <p class="nota">{{ v.nota }}</p>
+    }
+  </section>
+
+  <div class="acciones">
+    <a class="btn btn--secundario" routerLink="/consulta/polizas" queryParamsHandling="preserve">{{ t.volverListado }}</a>
+  </div>
+}

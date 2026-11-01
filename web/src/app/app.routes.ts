@@ -35,6 +35,7 @@ export const routes: Routes = [
   { path: 'consentimientos', loadChildren: () => import('./features/consentimientos/consentimientos.routes').then((m) => m.routes) },
   { path: 'perfilamiento', loadChildren: () => import('./features/perfilamiento/perfilamiento.routes').then((m) => m.routes) },
   { path: 'contratacion', loadChildren: () => import('./features/contratacion/contratacion.routes').then((m) => m.routes) },
+  { path: 'consulta', loadChildren: () => import('./features/consulta/consulta.routes').then((m) => m.routes) },
   {
     path: 'sin-acceso',
     title: 'Acceso restringido · Solventa',

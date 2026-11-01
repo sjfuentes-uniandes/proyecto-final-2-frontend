@@ -10,6 +10,7 @@
     "test:ci": "ng test --watch=false --browsers=ChromeHeadless --code-coverage && node scripts/cobertura-feature.mjs",
     "lint:consentimientos": "eslint src/app/features/consentimientos",
     "lint:contratacion": "eslint src/app/features/contratacion",
+    "lint:consulta": "eslint src/app/features/consulta",
     "e2e": "playwright test",
     "test:pact": "playwright test -c pact/playwright.config.ts",
     "typecheck:e2e": "tsc -p tsconfig.e2e.json"

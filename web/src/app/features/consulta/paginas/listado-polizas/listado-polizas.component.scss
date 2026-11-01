@@ -1,0 +1,12 @@
+.filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 18px; }
+.filtros .fld { margin: 0; }
+.resultados { padding: 0; }
+.resultados > div[role='status'], .vacio { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 18px; }
+.region { overflow-x: auto; }
+.pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; }
+.paginacion { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pagina { padding: 6px 10px; border: 1px solid var(--sv-borde); background: var(--sv-blanco); color: var(--sv-azul); }
+.pagina--actual { background: var(--sv-azul); border-color: var(--sv-azul); color: var(--sv-blanco); }
+.alerta > div { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.alerta p { margin: 0; }
+.fld__ayuda { color: var(--sv-texto-secundario); }
