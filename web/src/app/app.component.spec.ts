@@ -58,13 +58,21 @@ describe('AppComponent', () => {
     expect(html(fixture).querySelector('.usuario')?.textContent).toBe('Carlos Portillo · Asesor');
   });
 
-  it('asesores y suscriptores ven Pólizas como enlace a Contratación (HU-W13)', async () => {
+  it('un suscriptor ve Pólizas como enlace a Contratación (HU-W13)', async () => {
     await iniciarSesion({ name: 'Ana Suárez', 'cognito:groups': ['suscriptores'] });
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const polizas = html(fixture).querySelector<HTMLAnchorElement>('a[href="/contratacion"]');
     expect(polizas?.textContent?.trim()).toBe('Pólizas');
     expect(html(fixture).querySelector('.usuario')?.textContent).toBe('Ana Suárez · Suscriptor');
+  });
+
+  it('un asesor ve Pólizas como enlace a la consulta de pólizas (HU-W18)', async () => {
+    await iniciarSesion({ name: 'Carlos Portillo', 'cognito:groups': ['asesores'] });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const polizas = html(fixture).querySelector<HTMLAnchorElement>('a[href="/consulta/polizas"]');
+    expect(polizas?.textContent?.trim()).toBe('Pólizas');
   });
 
   it('sin el grupo asesores, Cotización sigue deshabilitada', async () => {

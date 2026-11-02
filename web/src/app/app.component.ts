@@ -31,15 +31,17 @@ export class AppComponent {
   readonly idiomas = IDIOMAS;
   private readonly router = inject(Router);
 
-  // Siniestros llega en otra historia; Cotización abre el perfilamiento (HU-W11) y Pólizas, la
-  // contratación (HU-W13: decisiones y bandeja de suscripción).
+  // Siniestros llega en otra historia; Cotización abre el perfilamiento (HU-W11); Pólizas abre la
+  // consulta de pólizas para el asesor (HU-W18) y la contratación para el suscriptor (HU-W13).
   readonly menu = computed<ItemMenu[]>(() => {
     this.sesion.claims();
     return [
       this.sesion.tieneGrupo('asesores') ? { etiqueta: 'Cotización', ruta: '/perfilamiento' } : { etiqueta: 'Cotización' },
-      this.sesion.tieneGrupo('asesores') || this.sesion.tieneGrupo('suscriptores')
-        ? { etiqueta: 'Pólizas', ruta: '/contratacion' }
-        : { etiqueta: 'Pólizas' },
+      this.sesion.tieneGrupo('asesores')
+        ? { etiqueta: 'Pólizas', ruta: '/consulta/polizas' }
+        : this.sesion.tieneGrupo('suscriptores')
+          ? { etiqueta: 'Pólizas', ruta: '/contratacion' }
+          : { etiqueta: 'Pólizas' },
       { etiqueta: 'Siniestros' },
       this.sesion.tieneGrupo('administradores-socios') ? { etiqueta: 'Socios', ruta: '/socios' } : { etiqueta: 'Socios' },
       ...(this.sesion.tieneGrupo('operacion') ? [{ etiqueta: 'Operación', ruta: '/operacion' }] : []),
