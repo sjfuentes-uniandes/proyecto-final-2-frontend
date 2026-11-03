@@ -46,9 +46,10 @@ fun DetallePolizaScreen(
     estado: DetallePolizaUiState,
     onReintentar: () -> Unit,
     onVolver: () -> Unit,
+    onCerrarSesion: (() -> Unit)? = null,
 ) {
     Column(modifier = Modifier.fillMaxSize().background(fondoBilletera)) {
-        BarraBilletera(stringResource(R.string.detalle_titulo), onVolver = onVolver)
+        BarraBilletera(stringResource(R.string.detalle_titulo), onVolver = onVolver, onCerrarSesion = onCerrarSesion)
         Column(
             modifier = Modifier
                 .fillMaxSize()

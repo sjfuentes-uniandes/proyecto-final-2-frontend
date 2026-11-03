@@ -17,6 +17,7 @@
     <string name="billetera_lista_titulo">Your policies</string>
     <string name="billetera_subtitulo">Secure repository of your policy data</string>
     <string name="billetera_coberturas_principales">Main coverages</string>
+    <string name="billetera_cerrar_sesion">Sign out</string>
     <string name="billetera_privacidad_acceso">Consents and privacy</string>
     <string name="billetera_vacia">You don\'t have any policies yet. When you take out insurance, it will show up here.</string>
     <string name="billetera_error_sin_conexion">No connection. Check your network and try again.</string>

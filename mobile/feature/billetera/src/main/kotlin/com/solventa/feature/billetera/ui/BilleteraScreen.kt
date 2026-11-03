@@ -52,9 +52,14 @@ fun BilleteraScreen(
     onAbrirPoliza: (String) -> Unit,
     onReintentar: () -> Unit,
     onAbrirPrivacidad: () -> Unit,
+    onCerrarSesion: (() -> Unit)? = null,
 ) {
     Column(modifier = Modifier.fillMaxSize().background(fondoBilletera)) {
-        BarraBilletera(stringResource(R.string.billetera_titulo), onAbrirPrivacidad = onAbrirPrivacidad)
+        BarraBilletera(
+            stringResource(R.string.billetera_titulo),
+            onAbrirPrivacidad = onAbrirPrivacidad,
+            onCerrarSesion = onCerrarSesion,
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()

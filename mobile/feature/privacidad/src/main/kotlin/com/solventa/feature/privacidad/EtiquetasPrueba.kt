@@ -6,6 +6,7 @@ package com.solventa.feature.privacidad
  */
 object EtiquetasPrueba {
     const val CARGANDO = "privacidad.cargando"
+    const val CERRAR_SESION = "privacidad.cerrar_sesion"
     const val ERROR_CARGA = "privacidad.error_carga"
     const val BOTON_OTORGAR = "privacidad.boton_otorgar"
     const val COMPROBANTE = "privacidad.comprobante"

@@ -17,6 +17,7 @@
     <string name="billetera_lista_titulo">Tus pólizas</string>
     <string name="billetera_subtitulo">Repositorio seguro de los datos de tus pólizas</string>
     <string name="billetera_coberturas_principales">Coberturas principales</string>
+    <string name="billetera_cerrar_sesion">Cerrar sesión</string>
     <string name="billetera_privacidad_acceso">Consentimientos y privacidad</string>
     <string name="billetera_vacia">Aún no tienes pólizas. Cuando contrates un seguro, aparecerá aquí.</string>
     <string name="billetera_error_sin_conexion">No hay conexión. Revisa tu red e inténtalo de nuevo.</string>

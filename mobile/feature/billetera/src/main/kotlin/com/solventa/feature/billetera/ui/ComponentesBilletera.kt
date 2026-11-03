@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,6 +61,7 @@ internal fun BarraBilletera(
     titulo: String,
     onVolver: (() -> Unit)? = null,
     onAbrirPrivacidad: (() -> Unit)? = null,
+    onCerrarSesion: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -113,6 +115,20 @@ internal fun BarraBilletera(
                 Icon(
                     Icons.Filled.Lock,
                     contentDescription = stringResource(R.string.billetera_privacidad_acceso),
+                    tint = Color.White,
+                )
+            }
+        }
+        if (onCerrarSesion != null) {
+            IconButton(
+                onClick = onCerrarSesion,
+                modifier = Modifier
+                    .size(AREA_TACTIL_MINIMA)
+                    .testTag(EtiquetasPrueba.CERRAR_SESION),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = stringResource(R.string.billetera_cerrar_sesion),
                     tint = Color.White,
                 )
             }
