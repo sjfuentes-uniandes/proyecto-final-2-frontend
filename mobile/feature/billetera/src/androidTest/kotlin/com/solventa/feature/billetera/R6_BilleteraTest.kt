@@ -130,12 +130,12 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
         montar()
         esperarEtiqueta(EtiquetasPrueba.poliza(ID_ACTIVA))
 
-        compose.onNodeWithText("Seguro de Vida").assertIsDisplayed()
-        compose.onNodeWithText("Seguro de Auto").assertIsDisplayed()
+        compose.onNodeWithText("SEGURO DE VIDA").assertIsDisplayed()
+        compose.onNodeWithText("SEGURO DE AUTO").assertIsDisplayed()
         compose.onNodeWithText(texto(R.string.billetera_estado_activa), useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithText(texto(R.string.billetera_estado_vencida), useUnmergedTree = true).assertIsDisplayed()
 
-        compose.onNodeWithTag(EtiquetasPrueba.poliza(ID_ACTIVA)).performClick()
+        abrirDetalle()
         esperarEtiqueta(EtiquetasPrueba.DETALLE)
 
         compose.onNodeWithText(textos.getString(R.string.detalle_vigencia_inicio, "1/1/2026".fechaLarga())).assertExists()
@@ -165,7 +165,7 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
         compose.onNodeWithText(texto(R.string.billetera_reintentar)).performClick()
 
         esperarEtiqueta(EtiquetasPrueba.poliza(ID_ACTIVA))
-        compose.onNodeWithText("Seguro de Vida").assertIsDisplayed()
+        compose.onNodeWithText("SEGURO DE VIDA").assertIsDisplayed()
         assertEquals(2, servidor.requestCount)
     }
 
@@ -181,7 +181,7 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
         compose.onNodeWithText(texto(R.string.billetera_reintentar)).performClick()
 
         esperarEtiqueta(EtiquetasPrueba.poliza(ID_ACTIVA))
-        compose.onNodeWithText("Seguro de Vida").assertIsDisplayed()
+        compose.onNodeWithText("SEGURO DE VIDA").assertIsDisplayed()
     }
 
     @Test
@@ -191,7 +191,7 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
 
         montar()
         esperarEtiqueta(EtiquetasPrueba.poliza(ID_ACTIVA))
-        compose.onNodeWithTag(EtiquetasPrueba.poliza(ID_ACTIVA)).performClick()
+        abrirDetalle()
         esperarTexto(texto(R.string.detalle_no_autorizada))
 
         compose.onAllNodesWithTag(EtiquetasPrueba.DETALLE).assertCountEquals(0)
@@ -227,7 +227,7 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, textos.getString(R.string.billetera_estado_activa_descripcion)))
             .assert(SemanticsMatcher("etiqueta de la acción") {
-                it.config[SemanticsActions.OnClick].label == textos.getString(R.string.billetera_abrir_poliza)
+                it.config[SemanticsActions.OnClick].label == textos.getString(R.string.billetera_alternar_poliza)
             })
             .assertHasClickAction()
             .assertHeightIsAtLeast(48.dp)
@@ -237,7 +237,7 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
         compose.onNode(hasText(texto(R.string.billetera_titulo)).and(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)))
             .assertExists()
 
-        compose.onNodeWithTag(EtiquetasPrueba.poliza(ID_ACTIVA)).performClick()
+        abrirDetalle()
         esperarEtiqueta(EtiquetasPrueba.DETALLE)
 
         compose.onNodeWithContentDescription(texto(R.string.billetera_volver))
@@ -249,7 +249,7 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
             R.string.detalle_seccion_seguro, R.string.detalle_seccion_credencial, R.string.detalle_seccion_coberturas,
             R.string.detalle_seccion_valores, R.string.detalle_seccion_vigencia,
         ).forEach {
-            compose.onNode(hasText(texto(it)).and(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))).assertExists()
+            compose.onNode(hasText(texto(it).uppercase()).and(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))).assertExists()
         }
     }
 
@@ -261,13 +261,14 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
         montar(FUENTE_200)
         esperarEtiqueta(EtiquetasPrueba.poliza(ID_ACTIVA))
 
-        listOf("Seguro de Vida", "Personas", textos.getString(R.string.billetera_poliza_numero, "POL-000123"))
+        compose.onNodeWithTag(EtiquetasPrueba.poliza(ID_ACTIVA)).performClick()
+        listOf("SEGURO DE VIDA", "Personas", "POL-000123")
             .forEach { compose.onNodeWithText(it, useUnmergedTree = true).assertTextoCompleto() }
         compose.onNodeWithText(texto(R.string.billetera_ver_detalle), useUnmergedTree = true).assertTextoCompleto()
         compose.onNodeWithText(texto(R.string.billetera_estado_activa), useUnmergedTree = true).assertTextoCompleto()
         compose.onNodeWithTag(EtiquetasPrueba.poliza(ID_ACTIVA)).assertHeightIsAtLeast(48.dp)
 
-        compose.onNodeWithTag(EtiquetasPrueba.poliza(ID_ACTIVA)).performClick()
+        compose.onNodeWithTag(EtiquetasPrueba.verDetalle(ID_ACTIVA)).performClick()
         esperarEtiqueta(EtiquetasPrueba.DETALLE)
 
         compose.onNodeWithText(texto(R.string.detalle_titulo)).assertTextoCompleto(desplazar = false)
@@ -325,6 +326,12 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
 
     private fun esperarEtiqueta(etiqueta: String) = compose.waitUntil(ESPERA_MS) {
         compose.onAllNodesWithTag(etiqueta).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    /** La tarjeta es un acordeón: se despliega y luego se pulsa "Ver detalle completo". */
+    private fun abrirDetalle() {
+        compose.onNodeWithTag(EtiquetasPrueba.poliza(ID_ACTIVA)).performClick()
+        compose.onNodeWithTag(EtiquetasPrueba.verDetalle(ID_ACTIVA)).performClick()
     }
 
     private fun esperarTexto(texto: String) = compose.waitUntil(ESPERA_MS) {

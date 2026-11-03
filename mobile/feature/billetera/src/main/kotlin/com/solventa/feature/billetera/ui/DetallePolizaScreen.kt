@@ -1,17 +1,29 @@
 package com.solventa.feature.billetera.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -35,7 +47,7 @@ fun DetallePolizaScreen(
     onReintentar: () -> Unit,
     onVolver: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(fondoBilletera)) {
         BarraBilletera(stringResource(R.string.detalle_titulo), onVolver = onVolver)
         Column(
             modifier = Modifier
@@ -104,6 +116,7 @@ private fun ContenidoDetalle(poliza: PolizaDetalle) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Text("•", style = MaterialTheme.typography.bodyMedium, color = SolventaTema.colores.textoSecundario)
                 Text(
                     cobertura.nombre,
                     style = MaterialTheme.typography.bodyMedium,
@@ -146,14 +159,45 @@ private fun ContenidoDetalle(poliza: PolizaDetalle) {
     }
 
     SeccionBilletera(stringResource(R.string.detalle_seccion_vigencia)) {
-        Text(
+        HitoVigencia(
             stringResource(R.string.detalle_vigencia_inicio, formatearFecha(poliza.vigencia.desde, idioma)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = SolventaTema.colores.textoPrimario,
+            Icons.Filled.Check,
+            azulHito,
         )
-        Text(
+        Box(
+            Modifier
+                .padding(start = 13.dp)
+                .size(width = 2.dp, height = 16.dp)
+                .background(SolventaTema.colores.campoBorde),
+        )
+        HitoVigencia(
             stringResource(R.string.detalle_vigencia_fin, formatearFecha(poliza.vigencia.hasta, idioma)),
-            style = MaterialTheme.typography.bodyMedium,
+            Icons.Filled.Close,
+            naranjaHito,
+        )
+    }
+}
+
+private val azulHito = Color(0xFF3A57E8)
+private val naranjaHito = Color(0xFFF2994A)
+
+/** Punto de la línea de tiempo de la vigencia: círculo con borde de color y su fecha. */
+@Composable
+private fun HitoVigencia(texto: String, icono: ImageVector, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .background(color.copy(alpha = 0.12f), CircleShape)
+                .border(2.dp, color, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icono, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
+        }
+        Text(
+            texto,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
             color = SolventaTema.colores.textoPrimario,
         )
     }

@@ -4,15 +4,18 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -23,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -42,6 +47,9 @@ import java.math.BigDecimal
 internal val AREA_TACTIL_MINIMA = 48.dp
 
 private val azulBarra = Color(0xFF0F2A55)
+internal val fondoBilletera = Color(0xFFF4F5F9)
+private val menta = Color(0xFFD7EFEA)
+internal val verdeMarca = Color(0xFF0F6B63)
 
 /**
  * Barra superior. Con [onVolver] muestra la flecha atrás; con [onAbrirPrivacidad] muestra el acceso
@@ -53,26 +61,43 @@ internal fun BarraBilletera(
     onVolver: (() -> Unit)? = null,
     onAbrirPrivacidad: (() -> Unit)? = null,
 ) {
-    val oscura = onVolver == null
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (oscura) azulBarra else SolventaTema.colores.fondo)
-            .heightIn(min = 64.dp)
-            .padding(horizontal = 8.dp),
+            .background(azulBarra)
+            .heightIn(min = 72.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (onVolver != null) {
-            IconButton(onClick = onVolver, modifier = Modifier.size(AREA_TACTIL_MINIMA)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.billetera_volver))
+            IconButton(
+                onClick = onVolver,
+                modifier = Modifier
+                    .size(AREA_TACTIL_MINIMA)
+                    .background(Color.White, CircleShape),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.billetera_volver),
+                    tint = azulBarra,
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(menta, RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Shield, contentDescription = null, tint = verdeMarca)
             }
         }
         Text(
             titulo,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = if (oscura) Color.White else SolventaTema.colores.textoPrimario,
+            color = Color.White,
             modifier = Modifier
                 .weight(1f)
                 .semantics { heading() },
@@ -86,7 +111,7 @@ internal fun BarraBilletera(
                     .testTag(EtiquetasPrueba.ACCESO_PRIVACIDAD),
             ) {
                 Icon(
-                    Icons.Filled.Shield,
+                    Icons.Filled.Lock,
                     contentDescription = stringResource(R.string.billetera_privacidad_acceso),
                     tint = Color.White,
                 )
@@ -163,25 +188,36 @@ internal fun MensajeBilletera(texto: String, etiqueta: String, onReintentar: (()
     }
 }
 
-/** Tarjeta con título, como las secciones del carné digital. */
+/** Tarjeta con título en mayúsculas, como las secciones del carné digital. */
 @Composable
 internal fun SeccionBilletera(titulo: String, modifier: Modifier = Modifier, contenido: @Composable () -> Unit) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, SolventaTema.colores.campoBorde, RoundedCornerShape(16.dp))
-            .padding(16.dp),
+            .tarjetaBilletera()
+            .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            titulo,
+            titulo.uppercase(LocalConfiguration.current.locales[0]),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = SolventaTema.colores.textoPrimario,
+            color = SolventaTema.colores.textoSecundario,
             modifier = Modifier.semantics { heading() },
         )
         contenido()
     }
+}
+
+/** Superficie blanca con borde suave y sombra, común a las tarjetas de la billetera. */
+@Composable
+internal fun Modifier.tarjetaBilletera(): Modifier {
+    val forma = RoundedCornerShape(16.dp)
+    return this
+        .shadow(2.dp, forma, clip = false)
+        .background(Color.White, forma)
+        .border(1.dp, SolventaTema.colores.campoBorde, forma)
+        .clip(forma)
 }
 
 /** Monto con la moneda en el formato del idioma del dispositivo (es-CO: `$ 300.000.000 COP`). */

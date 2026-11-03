@@ -14,7 +14,9 @@
 
     <!-- List (My Wallet) -->
     <string name="billetera_titulo">My Wallet</string>
-    <string name="billetera_subtitulo">Your policies and their coverage</string>
+    <string name="billetera_lista_titulo">Your policies</string>
+    <string name="billetera_subtitulo">Secure repository of your policy data</string>
+    <string name="billetera_coberturas_principales">Main coverages</string>
     <string name="billetera_privacidad_acceso">Consents and privacy</string>
     <string name="billetera_vacia">You don\'t have any policies yet. When you take out insurance, it will show up here.</string>
     <string name="billetera_error_sin_conexion">No connection. Check your network and try again.</string>
@@ -26,7 +28,7 @@
         <item quantity="other">%1$d coverages</item>
     </plurals>
     <string name="billetera_ver_detalle">View full details</string>
-    <string name="billetera_abrir_poliza">Open policy details</string>
+    <string name="billetera_alternar_poliza">Show or hide the policy data</string>
 
     <!-- Detail (Digital card) -->
     <string name="detalle_titulo">Digital card</string>

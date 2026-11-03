@@ -11,6 +11,16 @@ import com.solventa.core.auth.EstadoSesion
 import com.solventa.feature.notificaciones.ui.PermisoNotificacionesRoute
 import com.solventa.feature.notificaciones.ui.RegistroExplicacionPermiso
 import kotlinx.coroutines.flow.StateFlow
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -152,7 +162,40 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
         navegacion.navigate(Rutas.detallePoliza(polizaId)) { launchSingleTop = true }
     }
 
-    NavHost(navController = navegacion, startDestination = Rutas.LOGIN) {
+    val mostrarBarra = rutaActual == Rutas.BILLETERA || rutaActual == Rutas.PRIVACIDAD
+    Scaffold(
+        contentWindowInsets = WindowInsets(0),
+        bottomBar = {
+            if (mostrarBarra) {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = rutaActual == Rutas.BILLETERA,
+                        onClick = {
+                            navegacion.navigate(Rutas.BILLETERA) {
+                                popUpTo(Rutas.BILLETERA) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
+                        icon = { Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_billetera)) },
+                    )
+                    NavigationBarItem(
+                        selected = rutaActual == Rutas.PRIVACIDAD,
+                        onClick = {
+                            navegacion.navigate(Rutas.PRIVACIDAD) { launchSingleTop = true }
+                        },
+                        icon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_privacidad)) },
+                    )
+                }
+            }
+        },
+    ) { relleno ->
+    NavHost(
+        navController = navegacion,
+        startDestination = Rutas.LOGIN,
+        modifier = Modifier.padding(bottom = relleno.calculateBottomPadding()),
+    ) {
         composable(Rutas.LOGIN) {
             val viewModel = viewModel<LoginViewModel>(factory = dependencias.fabricaLogin)
             LoginRoute(
@@ -218,6 +261,7 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
                 onVolver = { navegacion.popBackStack() },
             )
         }
+    }
     }
 }
 

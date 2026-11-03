@@ -17,4 +17,5 @@ object EtiquetasPrueba {
     const val NO_ENCONTRADA = "billetera.no_encontrada"
 
     fun poliza(polizaId: String) = "billetera.poliza.$polizaId"
+    fun verDetalle(polizaId: String) = "billetera.ver_detalle.$polizaId"
 }

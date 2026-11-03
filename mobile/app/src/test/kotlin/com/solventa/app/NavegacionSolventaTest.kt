@@ -188,6 +188,12 @@ class NavegacionSolventaTest {
         compose.waitForIdle()
     }
 
+    /** La tarjeta de la billetera es un acordeón: se despliega y luego se abre el detalle. */
+    private fun abrirPoliza() {
+        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        compose.onNodeWithTag(EtiquetasBilletera.verDetalle(ID_POLIZA)).performClick()
+    }
+
     private fun ingresar() {
         val campos = compose.onAllNodes(hasSetTextAction())
         val total = campos.fetchSemanticsNodes().size
@@ -235,7 +241,7 @@ class NavegacionSolventaTest {
         val actividad = montar()
         ingresar()
 
-        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        abrirPoliza()
         compose.waitForIdle()
 
         compose.onNodeWithText(texto(RBilletera.string.detalle_titulo)).assertIsDisplayed()
@@ -257,7 +263,7 @@ class NavegacionSolventaTest {
         montar()
         ingresar()
 
-        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        abrirPoliza()
         compose.waitForIdle()
 
         compose.onNodeWithTag(EtiquetasBilletera.NO_AUTORIZADA).assertIsDisplayed()
@@ -285,7 +291,7 @@ class NavegacionSolventaTest {
         montar()
         ingresar()
 
-        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        abrirPoliza()
         compose.waitForIdle()
 
         compose.onAllNodesWithText(texto(RLogin.string.login_boton_ingresar)).assertCountEquals(1)
