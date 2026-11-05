@@ -91,6 +91,14 @@ internal fun contenidoResultado(etapa: EtapaVerificacion): ContenidoResultado? =
         principal = AccionResultado.REINTENTAR,
         secundaria = AccionResultado.CANCELAR,
     )
+    EtapaVerificacion.ClienteNoRegistrado -> ContenidoResultado(
+        titulo = R.string.onboarding_cliente_no_registrado_titulo,
+        mensaje = R.string.onboarding_cliente_no_registrado_mensaje,
+        tipo = TipoResultado.ADVERTENCIA,
+        correlationId = null,
+        principal = AccionResultado.INTENTAR_DE_NUEVO,
+        secundaria = AccionResultado.CANCELAR,
+    )
     EtapaVerificacion.CorreoDistinto -> ContenidoResultado(
         titulo = R.string.onboarding_correo_distinto_titulo,
         mensaje = R.string.onboarding_correo_distinto_mensaje,

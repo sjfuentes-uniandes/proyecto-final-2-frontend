@@ -22,6 +22,8 @@ class VerificarIdentidad(
     suspend operator fun invoke(selfie: SelfieEnMemoria, pruebaDeVidaCompletada: Boolean): ResultadoVerificacionRegistro {
         val resultado = cliente.verificar(
             registroId = sesion.registroId,
+            tipoDocumento = sesion.tipoDocumento,
+            numeroDocumento = sesion.numeroDocumento,
             correo = sesion.correo,
             selfieBase64 = selfieDePruebaLocal ?: selfie.aBase64(),
             pruebaDeVidaCompletada = pruebaDeVidaCompletada,

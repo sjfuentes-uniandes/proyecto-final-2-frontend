@@ -52,6 +52,8 @@ internal fun RegistroScreen(
     uiState: RegistroUiState,
     identidadVerificada: Boolean,
     motivoAdvertencia: MotivoCapturaInvalida?,
+    onTipoDocumentoCambiado: (String) -> Unit,
+    onNumeroDocumentoCambiado: (String) -> Unit,
     onCorreoCambiado: (String) -> Unit,
     onContrasenaCambiada: (String) -> Unit,
     onConfirmacionCambiada: (String) -> Unit,
@@ -103,6 +105,21 @@ internal fun RegistroScreen(
             Spacer(Modifier.height(20.dp))
             Surface(shape = RoundedCornerShape(20.dp), color = colores.panel, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+                    CampoEtiquetado(
+                        etiqueta = stringResource(R.string.onboarding_etiqueta_tipo_documento),
+                        valor = uiState.tipoDocumento,
+                        onValorCambiado = onTipoDocumentoCambiado,
+                        placeholder = stringResource(R.string.onboarding_placeholder_tipo_documento),
+                        mensajeError = if (uiState.mostrarErrorTipoDocumento) stringResource(R.string.onboarding_tipo_documento_invalido) else null,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    CampoEtiquetado(
+                        etiqueta = stringResource(R.string.onboarding_etiqueta_numero_documento),
+                        valor = uiState.numeroDocumento,
+                        onValorCambiado = onNumeroDocumentoCambiado,
+                        mensajeError = if (uiState.mostrarErrorNumeroDocumento) stringResource(R.string.onboarding_numero_documento_invalido) else null,
+                    )
+                    Spacer(Modifier.height(12.dp))
                     CampoEtiquetado(
                         etiqueta = stringResource(R.string.onboarding_etiqueta_correo),
                         valor = uiState.correo,

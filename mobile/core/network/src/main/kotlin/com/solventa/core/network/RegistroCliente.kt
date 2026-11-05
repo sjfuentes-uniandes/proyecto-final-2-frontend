@@ -25,12 +25,14 @@ class RegistroCliente(
 ) {
     suspend fun verificar(
         registroId: String,
+        tipoDocumento: String,
+        numeroDocumento: String,
         correo: String,
         selfieBase64: String,
         pruebaDeVidaCompletada: Boolean,
     ): ResultadoVerificacionRegistro {
         val solicitud = RegistroVerificacionSolicitud(
-            registroId, correo, selfieBase64, PruebaDeVidaDto(pruebaDeVidaCompletada),
+            registroId, tipoDocumento, numeroDocumento, correo, selfieBase64, PruebaDeVidaDto(pruebaDeVidaCompletada),
         )
         val respuesta = try {
             api.verificarRegistro(solicitud)
@@ -113,6 +115,7 @@ class RegistroCliente(
         val correlationId = error?.correlationId ?: respuesta.headers()[ENCABEZADO_CORRELACION]
         return when (codigoDe(error, respuesta.code())) {
             "SERVICIO_NO_DISPONIBLE" -> ResultadoVerificacionRegistro.ServicioNoDisponible(correlationId)
+            "CLIENTE_NO_REGISTRADO" -> ResultadoVerificacionRegistro.ClienteNoRegistrado(correlationId)
             "REGISTRO_CORREO_DISTINTO" -> ResultadoVerificacionRegistro.CorreoDistinto(correlationId)
             "REGISTRO_YA_VINCULADO" -> ResultadoVerificacionRegistro.YaVinculado(correlationId)
             "SOLICITUD_INVALIDA" -> ResultadoVerificacionRegistro.SolicitudInvalida(correlationId, camposDe(error))

@@ -104,6 +104,16 @@
               <small class="fld__error" id="error-nombre">{{ t.nombreCompletoError }}</small>
             }
           </label>
+          <label class="fld">
+            <span>{{ t.correo }}</span>
+            <input class="inp" type="email" formControlName="correo" autocomplete="off" spellcheck="false" maxlength="254"
+                   [attr.aria-invalid]="formulario.controls.correo.touched && formulario.controls.correo.invalid"
+                   [attr.aria-describedby]="formulario.controls.correo.touched && formulario.controls.correo.invalid ? 'error-correo ayuda-correo' : 'ayuda-correo'" />
+            <small class="fld__ayuda" id="ayuda-correo">{{ t.correoAyuda }}</small>
+            @if (formulario.controls.correo.touched && formulario.controls.correo.invalid) {
+              <small class="fld__error" id="error-correo">{{ t.correoError }}</small>
+            }
+          </label>
           @let limiteFecha = motivoLimite('fechaNacimiento');
           <label class="fld">
             <span>{{ t.fechaNacimiento }}</span>

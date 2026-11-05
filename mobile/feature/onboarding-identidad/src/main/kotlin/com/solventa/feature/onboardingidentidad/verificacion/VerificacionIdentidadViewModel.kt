@@ -144,6 +144,7 @@ class VerificacionIdentidadViewModel(
             is ResultadoVerificacionRegistro.ServicioNoDisponible -> EtapaVerificacion.Interrumpida(resultado.correlationId)
             is ResultadoVerificacionRegistro.DemasiadosIntentos -> EtapaVerificacion.Interrumpida(resultado.correlationId)
             ResultadoVerificacionRegistro.SinConexion -> EtapaVerificacion.Interrumpida(correlationId = null)
+            is ResultadoVerificacionRegistro.ClienteNoRegistrado -> definitivo(EtapaVerificacion.ClienteNoRegistrado)
             is ResultadoVerificacionRegistro.CorreoDistinto -> definitivo(EtapaVerificacion.CorreoDistinto)
             is ResultadoVerificacionRegistro.YaVinculado -> definitivo(EtapaVerificacion.CuentaExistente)
             is ResultadoVerificacionRegistro.SolicitudInvalida -> definitivo(EtapaVerificacion.ErrorInesperado(resultado.correlationId))
