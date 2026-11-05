@@ -1,4 +1,10 @@
 import {
+  claseTono,
+  diferenciaSemanal,
+  fechaCorta,
+  fechaDia,
+  fechaHora,
+  filaVerificacion,
   formatearCoordenadas,
   formatearDuracion,
   insigniaCoherencia,
@@ -6,10 +12,12 @@ import {
   insigniaIntegridad,
   insigniaPrioridad,
   insigniaVerificacion,
+  rotuloPaso,
   textoOrigen,
   tiempoRestante,
 } from './presentacion';
 import { TEXTOS_SINIESTROS } from './siniestros.i18n';
+import { VerificacionCobertura } from './siniestros.modelo';
 
 const es = TEXTOS_SINIESTROS['es-CO'];
 const en = TEXTOS_SINIESTROS['en-US'];
@@ -141,5 +149,110 @@ describe('Presentación de los siniestros (HU-W19, mockups H01 a H04)', () => {
       expect(formatearDuracion(en, 60)).toBe('1 hour');
       expect(formatearDuracion(en, 4320)).toBe('3 days');
     });
+  });
+});
+
+describe('Presentación de los siniestros: fechas, trámite y verificación (H01 y H03)', () => {
+  // La zona del usuario se fija a UTC para que las pruebas no dependan de la máquina.
+  const ISO = '2026-09-11T16:31:00Z';
+
+  it('fechaCorta: «11/09 16:31» (día/mes en es-CO y mes/día en en-US)', () => {
+    expect(fechaCorta('es-CO', ISO, 'UTC')).toBe('11/09 16:31');
+    expect(fechaCorta('en-US', ISO, 'UTC')).toBe('09/11 16:31');
+  });
+
+  it('fechaHora: «11/09/2026 · 16:31» y la medianoche como 00:00', () => {
+    expect(fechaHora('es-CO', ISO, 'UTC')).toBe('11/09/2026 · 16:31');
+    expect(fechaHora('en-US', ISO, 'UTC')).toBe('09/11/2026 · 16:31');
+    expect(fechaHora('es-CO', '2026-09-11T00:05:00Z', 'UTC')).toBe('11/09/2026 · 00:05');
+  });
+
+  it('las fechas respetan la zona del usuario', () => {
+    expect(fechaHora('es-CO', ISO, 'America/Bogota')).toBe('11/09/2026 · 11:31');
+  });
+
+  it('fechaDia no cambia de día por la zona horaria', () => {
+    expect(fechaDia('es-CO', '2026-11-04')).toBe('04/11/2026');
+    expect(fechaDia('en-US', '2026-11-04')).toBe('11/04/2026');
+  });
+
+  it('rotuloPaso: «Recibido» dice por dónde llegó el reporte', () => {
+    expect(rotuloPaso(es, 'RECIBIDO', 'MOVIL')).toBe('Recibido desde el móvil');
+    expect(rotuloPaso(es, 'RECIBIDO', 'PORTAL')).toBe('Recibido desde el portal web');
+    expect(rotuloPaso(es, 'RECIBIDO', 'PARAMETRICO')).toBe('Detectado por un evento paramétrico');
+    expect(rotuloPaso(es, 'EVIDENCIAS_VALIDADAS', 'MOVIL')).toBe('Evidencias validadas');
+    expect(rotuloPaso(es, 'EN_EVALUACION', 'MOVIL')).toBe('En evaluación');
+    expect(rotuloPaso(es, 'DECISION', 'MOVIL')).toBe('Decisión');
+    expect(rotuloPaso(es, 'PAGO_INDEMNIZACION', 'MOVIL')).toBe('Pago de la indemnización');
+  });
+
+  describe('filaVerificacion (mockup H03)', () => {
+    const amparos = [{ codigo: 'DANO_ACCIDENTAL', nombre: 'Daño accidental', sumaAsegurada: '3000000.00' }];
+    const fila = (codigo: VerificacionCobertura['codigo'], resultado: VerificacionCobertura['resultado'], detalle: Record<string, string>, t = es, locale = 'es-CO') =>
+      filaVerificacion(t, locale, { codigo, resultado, detalle }, amparos);
+
+    it('las seis del caso cumplido, con el dato que las sustenta', () => {
+      const casos = [
+        fila('VIGENCIA', 'CUMPLE', { fechaEvento: '2026-09-11', desde: '2026-05-09', hasta: '2027-05-09' }),
+        fila('AMPARO', 'CUMPLE', { amparo: 'DANO_ACCIDENTAL' }),
+        fila('CARENCIA', 'CUMPLE', { diasDesdeInicio: '179', carenciaDias: '30' }),
+        fila('PLAZO_AVISO', 'CUMPLE', { minutosDesdeEvento: '41', plazoAvisoDias: '30' }),
+        fila('PRIMAS', 'CUMPLE', { primasAlDia: 'true' }),
+        fila('SOPORTES', 'PARCIAL', { presentes: '2', requeridos: '3' }),
+      ];
+      expect(casos.map((c) => [c.etiqueta, c.resultado, c.insignia.texto])).toEqual([
+        ['Póliza vigente en la fecha del evento', '11/09/2026 · vigente', 'Cumple'],
+        ['Evento cubierto por el amparo contratado', 'Daño accidental · incluido', 'Cumple'],
+        ['Fuera del período de carencia', '179 días desde el inicio · carencia de 30 días', 'Cumple'],
+        ['Dentro del plazo de aviso', '41 minutos después del evento', 'Cumple'],
+        ['Primas al día', 'Sin mora', 'Cumple'],
+        ['Soportes completos', '2 de 3 documentos', 'Parcial'],
+      ]);
+    });
+
+    it('cuando no cumple dice por qué', () => {
+      expect(fila('VIGENCIA', 'NO_CUMPLE', { fechaEvento: '2026-10-20', desde: '2025-05-09', hasta: '2026-05-09' }).resultado).toBe(
+        '20/10/2026 · fuera de la vigencia (09/05/2025 a 09/05/2026)',
+      );
+      expect(fila('AMPARO', 'NO_CUMPLE', { amparo: 'ROBO' }).resultado).toBe('ROBO · no incluido');
+      expect(fila('PRIMAS', 'NO_CUMPLE', { primasAlDia: 'false' }).resultado).toBe('Con mora');
+      expect(fila('PLAZO_AVISO', 'NO_CUMPLE', { minutosDesdeEvento: '2880', plazoAvisoDias: '1' }).resultado).toBe('2 días después del evento');
+      expect(fila('SOPORTES', 'NO_CUMPLE', { presentes: '0', requeridos: '3' }).insignia).toEqual({ texto: 'No cumple', tono: 'peligro' });
+    });
+
+    it('un resultado sin dato dice «Sin dato»', () => {
+      for (const codigo of ['VIGENCIA', 'AMPARO', 'CARENCIA', 'PLAZO_AVISO', 'PRIMAS', 'SOPORTES'] as const) {
+        const f = fila(codigo, 'NO_EVALUABLE', {});
+        expect(f.resultado).withContext(codigo).toBe('Sin dato');
+        expect(f.insignia.texto).toBe('No evaluable');
+      }
+    });
+
+    it('un amparo sin nombre conocido se muestra por su código', () => {
+      expect(filaVerificacion(es, 'es-CO', { codigo: 'AMPARO', resultado: 'CUMPLE', detalle: { amparo: 'PERDIDA_EQUIPAJE' } }).resultado).toBe(
+        'PERDIDA_EQUIPAJE · incluido',
+      );
+    });
+
+    it('un parámetro numérico dañado cuenta como cero', () => {
+      expect(fila('SOPORTES', 'PARCIAL', { presentes: 'x' }).resultado).toBe('0 de 0 documentos');
+    });
+
+    it('habla inglés en en-US', () => {
+      expect(fila('VIGENCIA', 'CUMPLE', { fechaEvento: '2026-09-11' }, en, 'en-US').resultado).toBe('09/11/2026 · in force');
+      expect(fila('PLAZO_AVISO', 'CUMPLE', { minutosDesdeEvento: '41' }, en, 'en-US').resultado).toBe('41 minutes after the event');
+    });
+  });
+
+  it('diferenciaSemanal y claseTono', () => {
+    expect(diferenciaSemanal(37, 28)).toBe(9);
+    expect(diferenciaSemanal(2, 5)).toBe(-3);
+    expect([claseTono('exito'), claseTono('alerta'), claseTono('peligro'), claseTono('info'), claseTono('neutro')]).toEqual([
+      'tag tag--ok',
+      'tag tag--alerta',
+      'tag tag--error',
+      'tag tag--info',
+      'tag tag--neutro',
+    ]);
   });
 });

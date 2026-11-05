@@ -1,0 +1,132 @@
+@let t = textos.t();
+@let f = filtros();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaSiniestros }} › <strong>{{ esCola ? t.migaSinAsignar : t.migaMiBandeja }}</strong>
+</nav>
+
+<div class="h-row">
+  <header>
+    <h2>{{ esCola ? t.tituloSinAsignar : t.tituloBandeja }}</h2>
+    @if (subtitulo()) {
+      <p class="sub">{{ subtitulo() }}</p>
+    }
+  </header>
+  @if (!esCola) {
+    <button class="btn btn--secundario" type="button" [disabled]="tomando()" (click)="tomarSiguiente()">
+      {{ tomando() ? t.tomando : t.tomarSiguiente }}
+    </button>
+  }
+</div>
+
+@if (indicadores().length) {
+  <section class="indicadores" [attr.aria-label]="t.indicadores">
+    @for (indicador of indicadores(); track indicador.etiqueta) {
+      <app-tarjeta-metrica [etiqueta]="indicador.etiqueta" [valor]="indicador.valor" [detalle]="indicador.detalle" [tono]="indicador.tono" />
+    }
+  </section>
+}
+
+<form class="card filtros" [attr.aria-label]="t.filtros" (submit)="buscar($event)">
+  <label class="fld fld--ancho">
+    {{ t.buscar }}
+    <input name="q" class="inp" type="search" maxlength="64" [value]="f.q ?? ''" [placeholder]="t.buscarAyuda" />
+  </label>
+  @if (!esCola) {
+    <label class="fld">
+      {{ t.filtroEstado }}
+      <select name="estado" class="inp">
+        <option value="">{{ t.todos }}</option>
+        @for (e of estados; track e) {
+          <option [value]="e" [selected]="f.estado === e">{{ estadoTexto(e) }}</option>
+        }
+      </select>
+    </label>
+  }
+  <label class="fld">
+    {{ t.filtroOrigen }}
+    <select name="origen" class="inp">
+      <option value="">{{ t.todos }}</option>
+      @for (o of origenes; track o) {
+        <option [value]="o" [selected]="f.origen === o">{{ origenTexto(o) }}</option>
+      }
+    </select>
+  </label>
+  <label class="fld">
+    {{ t.filtroPrioridad }}
+    <select name="prioridad" class="inp">
+      <option value="">{{ t.todas }}</option>
+      @for (p of prioridades; track p) {
+        <option [value]="p" [selected]="f.prioridad === p">{{ prioridadTexto(p) }}</option>
+      }
+    </select>
+  </label>
+  <button class="btn btn--primario" type="submit">{{ t.buscar }}</button>
+</form>
+
+@if (error(); as e) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <p>
+      {{ e.mensaje }}
+      @if (e.correlationId) {
+        <br /><span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+      }
+    </p>
+  </div>
+}
+
+<section class="card tabla" [attr.aria-label]="t.tablaSiniestros" aria-live="polite">
+  @if (cargando() && !cargado()) {
+    <p class="sub" role="status">{{ t.cargando }}</p>
+  } @else if (filas().length === 0 && cargado()) {
+    @if (esCola && !f.q && !f.origen && !f.prioridad) {
+      <div class="vacio">
+        <span class="vacio__icono" aria-hidden="true">✓</span>
+        <h3>{{ t.colaVaciaTitulo }}</h3>
+        <p>{{ t.colaVaciaTexto }}</p>
+        <div class="acciones">
+          <a class="btn btn--primario" routerLink="/siniestros/bandeja">{{ t.irMiBandeja(resumen()?.asignadosAlActor ?? 0) }}</a>
+          <button class="btn btn--secundario" type="button" disabled [attr.title]="t.proximamente">{{ t.verParametricos }}</button>
+        </div>
+      </div>
+    } @else {
+      <p class="sub vacia">{{ t.bandejaVacia }}</p>
+    }
+  } @else {
+    <table class="data">
+      <thead>
+        <tr>
+          <th scope="col">{{ t.colSiniestro }}</th>
+          <th scope="col">{{ t.colClienteRamo }}</th>
+          <th scope="col">{{ t.colOrigen }}</th>
+          <th scope="col">{{ t.colReportado }}</th>
+          <th scope="col">{{ t.colTiempo }}</th>
+          <th scope="col">{{ t.colEstado }}</th>
+          <th scope="col"><span class="sr-only">{{ t.abrir }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila.id) {
+          <tr>
+            <th scope="row" class="codigo">
+              <a [routerLink]="['/siniestros', fila.id]" [attr.aria-label]="t.abrirCaso(fila.codigo)">{{ fila.codigo }}</a>
+            </th>
+            <td>{{ fila.clienteRamo }}</td>
+            <td>{{ fila.origen }}</td>
+            <td class="mono">{{ fila.reportado }}</td>
+            <td><app-insignia-estado [insignia]="fila.tiempo" /></td>
+            <td><app-insignia-estado [insignia]="fila.estado" /></td>
+            <td><a class="abrir" [routerLink]="['/siniestros', fila.id]" [attr.aria-label]="t.abrirCaso(fila.codigo)">{{ t.abrir }}</a></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <nav class="paginacion" [attr.aria-label]="t.paginacion">
+      <p class="sub" aria-live="polite">{{ rango() }}</p>
+      <span class="botones">
+        <button class="btn btn--secundario" type="button" [disabled]="pagina() === 0 || cargando()" (click)="anterior()">{{ t.anterior }}</button>
+        <button class="btn btn--secundario" type="button" [disabled]="siguienteCursor() === null || cargando()" (click)="siguiente()">{{ t.siguiente }}</button>
+      </span>
+    </nav>
+  }
+</section>

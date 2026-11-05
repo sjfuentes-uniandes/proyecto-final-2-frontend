@@ -3,12 +3,15 @@
  * Los textos llegan del catálogo de la feature; aquí solo se elige cuál y con qué valores.
  */
 import {
+  AmparoCopia,
   EstadoSiniestro,
   IntegridadEvidencia,
   OrigenSiniestro,
+  PasoTramite,
   PrioridadSiniestro,
   ResultadoCoherencia,
   ResultadoVerificacion,
+  VerificacionCobertura,
 } from './siniestros.modelo';
 import { TextosSiniestros } from './siniestros.i18n';
 
@@ -155,4 +158,132 @@ export function formatearDuracion(t: TextosSiniestros, minutos: number): string 
     return t.duracionHoras(absoluto / MINUTOS_POR_HORA);
   }
   return t.duracionMinutos(absoluto);
+}
+
+// --- Fechas -------------------------------------------------------------------------------------
+
+function partes(locale: string, fecha: Date, opciones: Intl.DateTimeFormatOptions, zona?: string): Record<string, string> {
+  const formato = new Intl.DateTimeFormat(locale, { ...opciones, timeZone: zona, hourCycle: 'h23' });
+  const valores = Object.fromEntries(formato.formatToParts(fecha).map((p) => [p.type, p.value]));
+  // Algunos idiomas omiten el cero de «2-digit» cuando no hay año: se completa siempre.
+  for (const campo of ['day', 'month', 'hour', 'minute']) {
+    if (valores[campo] !== undefined) {
+      valores[campo] = valores[campo].padStart(2, '0');
+    }
+  }
+  return valores;
+}
+
+/** «11/09 16:31» (columna Reportado de H01). `zona` es solo para las pruebas; por omisión, la del usuario. */
+export function fechaCorta(locale: string, iso: string, zona?: string): string {
+  const p = partes(locale, new Date(iso), { day: 'numeric', month: 'numeric', hour: 'numeric', minute: 'numeric' }, zona);
+  return locale === 'en-US' ? `${p['month']}/${p['day']} ${p['hour']}:${p['minute']}` : `${p['day']}/${p['month']} ${p['hour']}:${p['minute']}`;
+}
+
+/** «11/09/2026 · 16:31» (estado del trámite y historial). */
+export function fechaHora(locale: string, iso: string, zona?: string): string {
+  const p = partes(locale, new Date(iso), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }, zona);
+  const dia = locale === 'en-US' ? `${p['month']}/${p['day']}/${p['year']}` : `${p['day']}/${p['month']}/${p['year']}`;
+  return `${dia} · ${p['hour']}:${p['minute']}`;
+}
+
+/** «11/09/2026» desde un día `AAAA-MM-DD` (una vigencia o la fecha de un evento): sin zona horaria. */
+export function fechaDia(locale: string, dia: string): string {
+  const [anio, mes, diaMes] = dia.split('-');
+  return locale === 'en-US' ? `${mes}/${diaMes}/${anio}` : `${diaMes}/${mes}/${anio}`;
+}
+
+// --- Estado del trámite (H03) ---------------------------------------------------------------------
+
+/** Texto del paso; «Recibido» dice por dónde llegó el reporte. */
+export function rotuloPaso(t: TextosSiniestros, paso: PasoTramite, origen: OrigenSiniestro): string {
+  switch (paso) {
+    case 'RECIBIDO':
+      return origen === 'MOVIL' ? t.pasoRecibidoMovil : origen === 'PORTAL' ? t.pasoRecibidoPortal : t.pasoRecibidoParametrico;
+    case 'EVIDENCIAS_VALIDADAS':
+      return t.pasoEvidenciasValidadas;
+    case 'EN_EVALUACION':
+      return t.pasoEnEvaluacion;
+    case 'DECISION':
+      return t.pasoDecision;
+    case 'PAGO_INDEMNIZACION':
+      return t.pasoPago;
+  }
+}
+
+// --- Verificación de cobertura (H03) --------------------------------------------------------------
+
+export interface FilaVerificacion {
+  codigo: string;
+  etiqueta: string;
+  resultado: string;
+  insignia: Insignia;
+}
+
+function entero(valor: string | undefined): number {
+  const n = Number(valor);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Una fila de «Verificación de cobertura» (mockup H03): qué se verificó y el dato que lo sustenta.
+ * `detalle` trae solo parámetros (nunca texto libre); un resultado sin dato muestra «Sin dato».
+ * `amparos` da el nombre del amparo (el detalle trae su código).
+ */
+export function filaVerificacion(
+  t: TextosSiniestros,
+  locale: string,
+  verificacion: VerificacionCobertura,
+  amparos: AmparoCopia[] = [],
+): FilaVerificacion {
+  const d = verificacion.detalle;
+  const cumple = verificacion.resultado === 'CUMPLE';
+  const insignia = insigniaVerificacion(t, verificacion.resultado);
+  const sinDato = verificacion.resultado === 'NO_EVALUABLE';
+  let etiqueta: string;
+  let resultado: string;
+  switch (verificacion.codigo) {
+    case 'VIGENCIA':
+      etiqueta = t.verVigencia;
+      resultado = sinDato || !d['fechaEvento']
+        ? t.resSinDato
+        : cumple
+          ? t.resVigente(fechaDia(locale, d['fechaEvento']))
+          : t.resNoVigente(fechaDia(locale, d['fechaEvento']), fechaDia(locale, d['desde'] ?? d['fechaEvento']), fechaDia(locale, d['hasta'] ?? d['fechaEvento']));
+      break;
+    case 'AMPARO': {
+      etiqueta = t.verAmparo;
+      const nombre = amparos.find((a) => a.codigo === d['amparo'])?.nombre ?? d['amparo'] ?? '';
+      resultado = sinDato || !nombre ? t.resSinDato : cumple ? t.resAmparoIncluido(nombre) : t.resAmparoNoIncluido(nombre);
+      break;
+    }
+    case 'CARENCIA':
+      etiqueta = t.verCarencia;
+      resultado = sinDato ? t.resSinDato : t.resCarencia(entero(d['diasDesdeInicio']), entero(d['carenciaDias']));
+      break;
+    case 'PLAZO_AVISO':
+      etiqueta = t.verPlazo;
+      resultado = sinDato ? t.resSinDato : t.resPlazo(formatearDuracion(t, entero(d['minutosDesdeEvento'])));
+      break;
+    case 'PRIMAS':
+      etiqueta = t.verPrimas;
+      resultado = sinDato ? t.resSinDato : d['primasAlDia'] === 'true' ? t.resPrimasAlDia : t.resPrimasMora;
+      break;
+    case 'SOPORTES':
+      etiqueta = t.verSoportes;
+      resultado = sinDato ? t.resSinDato : t.resSoportes(entero(d['presentes']), entero(d['requeridos']));
+      break;
+  }
+  return { codigo: verificacion.codigo, etiqueta, resultado, insignia };
+}
+
+/** Diferencia de resueltos de esta semana frente a la previa (tarjeta de H01). */
+export function diferenciaSemanal(resueltosSemana: number, resueltosSemanaPrevia: number): number {
+  return resueltosSemana - resueltosSemanaPrevia;
+}
+
+/** Clase global de la insignia (`styles.scss`) para cada tono. */
+export function claseTono(tono: Tono): string {
+  const clases: Record<Tono, string> = { exito: 'tag--ok', alerta: 'tag--alerta', peligro: 'tag--error', info: 'tag--info', neutro: 'tag--neutro' };
+  return `tag ${clases[tono]}`;
 }

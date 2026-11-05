@@ -35,7 +35,7 @@ describe('Textos de los siniestros (HU-W19: es-CO, en-US y pseudo-localización)
     for (const idioma of ['es-CO', 'en-US', 'pseudo'] as const) {
       for (const [clave, valor] of Object.entries(TEXTOS_SINIESTROS[idioma])) {
         if (typeof valor === 'function') {
-          const resultado = (valor as (...args: unknown[]) => string)(2);
+          const resultado = (valor as (...args: unknown[]) => string)(2, 3, 4);
           expect(resultado.length).withContext(`${idioma}.${clave}`).toBeGreaterThan(0);
           expect(resultado).withContext(`${idioma}.${clave}`).not.toContain('undefined');
         }

@@ -39,7 +39,7 @@ describe('Rutas de siniestros por grupo (HU-W19)', () => {
     expect(await navegar('/siniestros')).toBe('/siniestros/bandeja');
     expect(await navegar('/siniestros/sin-asignar')).toBe('/siniestros/sin-asignar');
     expect(TestBed.inject(Title).getTitle()).toBe('Siniestros sin asignar · Solventa');
-    expect((harness?.routeNativeElement as HTMLElement).querySelector('h2')?.textContent).toBe('Siniestros sin asignar');
+    expect((harness?.routeNativeElement as HTMLElement).querySelector('h2')?.textContent).toBe('Cola general');
   });
 
   it('cada bandeja muestra su título en el idioma activo', async () => {
