@@ -11,6 +11,9 @@ import {
   PrioridadSiniestro,
   ResultadoCoherencia,
   ResultadoVerificacion,
+  TipoEvidencia,
+  TipoSoporte,
+  UbicacionSiniestro,
   VerificacionCobertura,
 } from './siniestros.modelo';
 import { TextosSiniestros } from './siniestros.i18n';
@@ -286,4 +289,91 @@ export function diferenciaSemanal(resueltosSemana: number, resueltosSemanaPrevia
 export function claseTono(tono: Tono): string {
   const clases: Record<Tono, string> = { exito: 'tag--ok', alerta: 'tag--alerta', peligro: 'tag--error', info: 'tag--info', neutro: 'tag--neutro' };
   return `tag ${clases[tono]}`;
+}
+
+// --- Detalle (H03, H04, Cobertura e Historial) ----------------------------------------------------
+
+export function textoTipoEvidencia(t: TextosSiniestros, tipo: TipoEvidencia): string {
+  return tipo === 'FOTOGRAFIA' ? t.tipoFotografia : tipo === 'VIDEO' ? t.tipoVideo : t.tipoSoporte;
+}
+
+export function textoSoporte(t: TextosSiniestros, tipo: TipoSoporte): string {
+  switch (tipo) {
+    case 'DOCUMENTO_IDENTIDAD':
+      return t.soporteDocumentoIdentidad;
+    case 'FACTURA_COMPRA':
+      return t.soporteFacturaCompra;
+    case 'CERTIFICADO_REPARACION':
+      return t.soporteCertificadoReparacion;
+    case 'COTIZACION_REPUESTOS':
+      return t.soporteCotizacionRepuestos;
+    case 'DENUNCIA_AUTORIDAD':
+      return t.soporteDenunciaAutoridad;
+    case 'PERITAJE':
+      return t.soportePeritaje;
+  }
+}
+
+/** Nombre de la causa (el código del amparo); un amparo desconocido se muestra por su código. */
+export function textoCausa(t: TextosSiniestros, causa: string): string {
+  const nombres: Record<string, string> = {
+    DANO_ACCIDENTAL: t.causaDanoAccidental,
+    ROBO: t.causaRobo,
+    PERDIDA_EQUIPAJE: t.causaPerdidaEquipaje,
+    INCAPACIDAD_TOTAL: t.causaIncapacidadTotal,
+  };
+  return Object.hasOwn(nombres, causa) ? nombres[causa] : causa;
+}
+
+/** Las coordenadas si las hay; si no, la descripción («Escaneado en el sitio»); si no, «Sin ubicación». */
+export function textoUbicacion(t: TextosSiniestros, locale: string, ubicacion: UbicacionSiniestro | null): string {
+  if (ubicacion?.lat != null && ubicacion.lon != null) {
+    return formatearCoordenadas(t, locale, ubicacion.lat, ubicacion.lon);
+  }
+  return ubicacion?.descripcion ?? t.sinUbicacion;
+}
+
+/** Monto en texto decimal (DS2-16) con su moneda, sin pasar por la aritmética de coma flotante del servidor. */
+export function formatearMonto(locale: string, valor: string, moneda: string): string {
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) {
+    return valor;
+  }
+  return new Intl.NumberFormat(locale, { style: 'currency', currency: moneda, maximumFractionDigits: 0 }).format(numero);
+}
+
+/** Texto de una acción del historial; una acción que este portal aún no conoce se muestra por su código. */
+export function textoAccion(t: TextosSiniestros, accion: string): string {
+  switch (accion) {
+    case 'REPORTADO':
+      return t.accionReportado;
+    case 'EVIDENCIAS_VALIDADAS':
+      return t.accionEvidenciasValidadas;
+    case 'ASIGNADO':
+      return t.accionAsignado;
+    default:
+      return t.accionDesconocida(accion);
+  }
+}
+
+/** Quién hizo la acción: su nombre (un analista) o su rol (el sistema o el cliente). */
+export function textoActor(t: TextosSiniestros, nombre: string | null, rol: string | null): string {
+  if (nombre) {
+    return nombre;
+  }
+  switch (rol) {
+    case 'SISTEMA':
+      return t.actorSistema;
+    case 'CLIENTE':
+      return t.actorCliente;
+    case 'ANALISTA_SINIESTROS':
+      return t.actorAnalista;
+    default:
+      return t.sinActor;
+  }
+}
+
+/** Cómo se cargó el reporte: el texto de «5 archivos · cargados desde …». */
+export function textoCargadoDesde(t: TextosSiniestros, origen: OrigenSiniestro): string {
+  return origen === 'MOVIL' ? t.origenMovilCargado : origen === 'PORTAL' ? t.origenPortalCargado : t.origenParametricoCargado;
 }

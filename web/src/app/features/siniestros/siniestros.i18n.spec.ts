@@ -19,8 +19,8 @@ describe('Textos de los siniestros (HU-W19: es-CO, en-US y pseudo-localización)
   });
 
   it('en-US traduce todos los textos visibles', () => {
-    // Los hemisferios N, S y E se escriben igual en los dos idiomas.
-    const mismaLetra: Clave[] = ['norte', 'sur', 'este'];
+    // Los hemisferios N, S y E, «Video» y el guion de «sin dato» se escriben igual en los dos idiomas.
+    const mismaLetra: Clave[] = ['norte', 'sur', 'este', 'tipoVideo', 'sinActor', 'sinCambioEstado'];
     const iguales = (Object.keys(TEXTOS_SINIESTROS['es-CO']) as Clave[]).filter((clave) => {
       if (mismaLetra.includes(clave)) {
         return false;

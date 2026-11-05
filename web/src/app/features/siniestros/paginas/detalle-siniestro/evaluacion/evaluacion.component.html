@@ -1,0 +1,18 @@
+@let t = textos.t();
+@if (estado.detalle(); as d) {
+  <div class="cols">
+    <div class="columna">
+      <app-tabla-verificaciones [verificaciones]="d.verificacionCobertura" [amparos]="d.poliza.amparos" />
+      @if (aviso(); as texto) {
+        <p class="aviso aviso--alerta" role="status">{{ texto }}</p>
+      } @else {
+        <p class="aviso aviso--ok" role="status">{{ t.soportesAlDia }}</p>
+      }
+      <!-- Hueco del panel de decisión (aprobar, solicitar soporte y rechazar): lo llena W20. -->
+      <!-- Hueco del bloque del evento paramétrico: lo llena W22. -->
+    </div>
+    <div class="columna">
+      <app-linea-tiempo-tramite [pasos]="d.tramite" [origen]="d.origen" />
+    </div>
+  </div>
+}

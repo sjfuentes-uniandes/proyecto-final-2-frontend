@@ -135,9 +135,9 @@ export const DETALLE_COMPLETO: DetalleSiniestro = {
     { paso: 'PAGO_INDEMNIZACION', estado: 'PENDIENTE', ocurridoEn: null, actorNombre: null },
   ],
   historial: [
-    { id: 'h1', accion: 'REPORTADO', estadoAnterior: null, estadoNuevo: 'REPORTADO', actorId: '00000000-0000-4000-8000-000000000001', actorRol: 'CLIENTE', actorNombre: null, justificacion: null, ocurridoEn: '2026-11-05T01:00:00Z' },
-    { id: 'h2', accion: 'EVIDENCIAS_VALIDADAS', estadoAnterior: null, estadoNuevo: null, actorId: null, actorRol: 'SISTEMA', actorNombre: null, justificacion: null, ocurridoEn: '2026-11-05T01:16:00Z' },
-    { id: 'h3', accion: 'ASIGNADO', estadoAnterior: 'REPORTADO', estadoNuevo: 'EN_EVALUACION', actorId: ANALISTA_QA, actorRol: 'ANALISTA_SINIESTROS', actorNombre: 'Luis Mora', justificacion: null, ocurridoEn: '2026-11-05T03:00:00Z' },
+    { id: '00000000-0000-4000-8000-0000000000a1', accion: 'REPORTADO', estadoAnterior: null, estadoNuevo: 'REPORTADO', actorId: '00000000-0000-4000-8000-000000000001', actorRol: 'CLIENTE', actorNombre: null, justificacion: null, ocurridoEn: '2026-11-05T01:00:00Z' },
+    { id: '00000000-0000-4000-8000-0000000000a2', accion: 'EVIDENCIAS_VALIDADAS', estadoAnterior: null, estadoNuevo: null, actorId: null, actorRol: 'SISTEMA', actorNombre: null, justificacion: null, ocurridoEn: '2026-11-05T01:16:00Z' },
+    { id: '00000000-0000-4000-8000-0000000000a3', accion: 'ASIGNADO', estadoAnterior: 'REPORTADO', estadoNuevo: 'EN_EVALUACION', actorId: ANALISTA_QA, actorRol: 'ANALISTA_SINIESTROS', actorNombre: 'Luis Mora', justificacion: null, ocurridoEn: '2026-11-05T03:00:00Z' },
   ],
   liquidacion: null,
   evento: null,

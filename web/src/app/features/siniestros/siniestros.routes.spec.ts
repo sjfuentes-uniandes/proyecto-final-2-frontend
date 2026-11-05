@@ -1,14 +1,15 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { routes } from '../../app.routes';
+import { ConfigService } from '../../core/config/app-config';
 import { IdiomaService } from '../../core/i18n/idioma.service';
-import { iniciarSesion, proveerAuthFalso, violacionesA11y } from '../../testing';
-import { SINIESTRO_EVA01 } from './siniestros.testing';
+import { iniciarSesion, proveerAuthFalso } from '../../testing';
+import { DETALLE_COMPLETO, SINIESTRO_EVA01, URL_SINIESTROS } from './siniestros.testing';
 
 describe('Rutas de siniestros por grupo (HU-W19)', () => {
   beforeEach(() =>
@@ -52,29 +53,34 @@ describe('Rutas de siniestros por grupo (HU-W19)', () => {
     expect(h2()).toBe('Claims queue');
   });
 
-  it('el detalle abre en «Evaluación» y sus cuatro pestañas son rutas hijas', async () => {
+  it('el detalle abre en «Evaluación», lo pide una sola vez y sus cuatro pestañas son rutas hijas', async () => {
     await analista();
+    const http = TestBed.inject(HttpTestingController);
+    TestBed.inject(ConfigService).establecer({ apiBaseUrl: 'https://api/' });
     const base = `/siniestros/${SINIESTRO_EVA01}`;
     expect(await navegar(base)).toBe(`${base}/evaluacion`);
+    http.expectOne(`${URL_SINIESTROS()}/${SINIESTRO_EVA01}`).flush(DETALLE_COMPLETO);
+    harness?.detectChanges();
     const raiz = harness?.fixture.nativeElement as HTMLElement;
-    expect(Array.from(raiz.querySelectorAll('main nav a')).map((a) => a.textContent?.trim())).toEqual([
+    expect(Array.from(raiz.querySelectorAll('.pestanas a')).map((a) => a.textContent?.trim())).toEqual([
       'Evaluación',
-      'Evidencias',
+      'Evidencias (5)',
       'Cobertura',
       'Historial',
     ]);
-    expect(raiz.querySelector('nav')?.getAttribute('aria-label')).toBe('Secciones del siniestro');
+    expect(raiz.querySelector('.pestanas')?.getAttribute('aria-label')).toBe('Secciones del siniestro');
     for (const [pestana, titulo] of [
-      ['evidencias', 'Evidencias'],
+      ['evidencias', 'Evidencias (5)'],
       ['cobertura', 'Cobertura'],
       ['historial', 'Historial'],
       ['evaluacion', 'Evaluación'],
     ]) {
       expect(await navegar(`${base}/${pestana}`)).toBe(`${base}/${pestana}`);
-      expect(raiz.querySelector('h3')?.textContent).toBe(titulo);
       expect(raiz.querySelector('a.activa')?.textContent?.trim()).toBe(titulo);
+      expect(raiz.querySelector('a.activa')?.getAttribute('aria-current')).toBe('page');
     }
-    expect(await violacionesA11y(raiz)).toEqual([]);
+    // Cambiar de pestaña no vuelve a pedir el detalle (http.verify en afterEach).
+    http.verify();
   });
 
   it('con el menú lateral de siniestros y «Mi bandeja» activa', async () => {

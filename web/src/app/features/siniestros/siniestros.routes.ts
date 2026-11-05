@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { requiereGrupo } from '../../core/auth/grupo.guard';
+import { DetalleSiniestroEstado } from './paginas/detalle-siniestro/detalle-siniestro.estado';
 import { SiniestrosLayoutComponent } from './siniestros-layout.component';
 
 /** Grupo de Cognito del analista de siniestros (el BFF vuelve a validarlo). */
@@ -33,6 +34,8 @@ export const routes: Routes = [
         // H03 y H04: el detalle con sus pestañas como rutas hijas.
         path: ':siniestroId',
         title: 'Siniestro · Solventa',
+        // El detalle se pide una vez y lo comparten el contenedor y sus pestañas.
+        providers: [DetalleSiniestroEstado],
         loadComponent: () =>
           import('./paginas/detalle-siniestro/detalle-siniestro.component').then((m) => m.DetalleSiniestroComponent),
         children: [

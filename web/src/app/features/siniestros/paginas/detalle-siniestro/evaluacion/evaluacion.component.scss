@@ -1,0 +1,11 @@
+:host { display: block; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.aviso { margin: 0; padding: 11px 15px 12px; border-left: 4px solid; border-radius: var(--sv-radio); font-size: 13px; line-height: 20px; }
+/* Contraste WCAG AA del texto: naranja y verde más oscuros que los tokens. */
+.aviso--alerta { border-color: var(--sv-naranja); background: var(--sv-naranja-fondo); color: #7a4a00; }
+.aviso--ok { border-color: var(--sv-verde); background: var(--sv-verde-fondo); color: #00663f; }
+/* En tableta (1024 px, con el menú lateral) dos columnas no caben: una sola. */
+@media (max-width: 1100px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}
