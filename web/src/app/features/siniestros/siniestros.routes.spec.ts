@@ -1,0 +1,99 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { Title } from '@angular/platform-browser';
+import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
+
+import { routes } from '../../app.routes';
+import { IdiomaService } from '../../core/i18n/idioma.service';
+import { iniciarSesion, proveerAuthFalso, violacionesA11y } from '../../testing';
+import { SINIESTRO_EVA01 } from './siniestros.testing';
+
+describe('Rutas de siniestros por grupo (HU-W19)', () => {
+  beforeEach(() =>
+    TestBed.configureTestingModule({
+      providers: [provideRouter(routes, withComponentInputBinding()), provideHttpClient(), provideHttpClientTesting(), proveerAuthFalso()],
+    }),
+  );
+  afterEach(() => TestBed.inject(IdiomaService).cambiar('es-CO'));
+
+  let harness: RouterTestingHarness | undefined;
+  afterEach(() => (harness = undefined));
+  const navegar = async (url: string) => {
+    harness ??= await RouterTestingHarness.create();
+    await harness.navigateByUrl(url);
+    harness.detectChanges();
+    return TestBed.inject(Router).url;
+  };
+  const analista = () => iniciarSesion({ name: 'Luis Mora', 'cognito:groups': ['analistas-siniestros'] });
+
+  it('un analista termina en su bandeja desde el inicio', async () => {
+    await analista();
+    expect(await navegar('/')).toBe('/siniestros/bandeja');
+    expect(TestBed.inject(Title).getTitle()).toBe('Mi bandeja · Solventa');
+  });
+
+  it('/siniestros lleva a «Mi bandeja» y «Sin asignar» tiene su ruta y su título', async () => {
+    await analista();
+    expect(await navegar('/siniestros')).toBe('/siniestros/bandeja');
+    expect(await navegar('/siniestros/sin-asignar')).toBe('/siniestros/sin-asignar');
+    expect(TestBed.inject(Title).getTitle()).toBe('Siniestros sin asignar · Solventa');
+    expect((harness?.routeNativeElement as HTMLElement).querySelector('h2')?.textContent).toBe('Siniestros sin asignar');
+  });
+
+  it('cada bandeja muestra su título en el idioma activo', async () => {
+    await analista();
+    await navegar('/siniestros/bandeja');
+    const h2 = () => (harness?.fixture.nativeElement as HTMLElement).querySelector('h2')?.textContent;
+    expect(h2()).toBe('Bandeja de siniestros');
+    TestBed.inject(IdiomaService).cambiar('en-US');
+    harness?.detectChanges();
+    expect(h2()).toBe('Claims queue');
+  });
+
+  it('el detalle abre en «Evaluación» y sus cuatro pestañas son rutas hijas', async () => {
+    await analista();
+    const base = `/siniestros/${SINIESTRO_EVA01}`;
+    expect(await navegar(base)).toBe(`${base}/evaluacion`);
+    const raiz = harness?.fixture.nativeElement as HTMLElement;
+    expect(Array.from(raiz.querySelectorAll('main nav a')).map((a) => a.textContent?.trim())).toEqual([
+      'Evaluación',
+      'Evidencias',
+      'Cobertura',
+      'Historial',
+    ]);
+    expect(raiz.querySelector('nav')?.getAttribute('aria-label')).toBe('Secciones del siniestro');
+    for (const [pestana, titulo] of [
+      ['evidencias', 'Evidencias'],
+      ['cobertura', 'Cobertura'],
+      ['historial', 'Historial'],
+      ['evaluacion', 'Evaluación'],
+    ]) {
+      expect(await navegar(`${base}/${pestana}`)).toBe(`${base}/${pestana}`);
+      expect(raiz.querySelector('h3')?.textContent).toBe(titulo);
+      expect(raiz.querySelector('a.activa')?.textContent?.trim()).toBe(titulo);
+    }
+    expect(await violacionesA11y(raiz)).toEqual([]);
+  });
+
+  it('con el menú lateral de siniestros y «Mi bandeja» activa', async () => {
+    await analista();
+    await navegar('/siniestros/bandeja');
+    const raiz = harness?.fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('a.side__item--activo')?.textContent?.trim()).toBe('✦Mi bandeja');
+  });
+
+  for (const grupos of [['asesores'], ['suscriptores'], ['operacion'], ['administradores']]) {
+    it(`un usuario solo de ${grupos[0]} termina en /sin-acceso en cualquier ruta de siniestros`, async () => {
+      await iniciarSesion({ name: 'Ana', 'cognito:groups': grupos });
+      for (const ruta of ['/siniestros', '/siniestros/bandeja', '/siniestros/sin-asignar', `/siniestros/${SINIESTRO_EVA01}/evidencias`]) {
+        expect(await navegar(ruta)).withContext(ruta).toBe('/sin-acceso');
+      }
+    });
+  }
+
+  it('sin sesión pide ingresar y vuelve después', async () => {
+    expect(await navegar('/siniestros/bandeja')).toBe('/ingresar?volver=%2Fsiniestros%2Fbandeja');
+  });
+});

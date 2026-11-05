@@ -41,6 +41,16 @@ describe('Rutas del portal: inicio por grupo y acceso a perfilamiento', () => {
     expect(await navegar('/contratacion/decisiones')).toBe('/perfilamiento/nuevo');
   });
 
+  it('HU-W19: un analista de siniestros termina en /siniestros/bandeja', async () => {
+    await iniciarSesion({ name: 'Luis Mora', 'cognito:groups': ['analistas-siniestros'] });
+    expect(await navegar('/')).toBe('/siniestros/bandeja');
+  });
+
+  it('HU-W19: quien es asesor y analista sigue entrando por el perfilamiento', async () => {
+    await iniciarSesion({ name: 'Luis Mora', 'cognito:groups': ['analistas-siniestros', 'asesores'] });
+    expect(await navegar('/')).toBe('/perfilamiento/nuevo');
+  });
+
   it('sin sesión, /perfilamiento pide ingresar y vuelve después', async () => {
     expect(await navegar('/perfilamiento')).toBe('/ingresar?volver=%2Fperfilamiento%2Fnuevo');
   });

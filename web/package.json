@@ -11,6 +11,7 @@
     "lint:consentimientos": "eslint src/app/features/consentimientos",
     "lint:contratacion": "eslint src/app/features/contratacion",
     "lint:consulta": "eslint src/app/features/consulta",
+    "lint:siniestros": "eslint src/app/features/siniestros",
     "e2e": "playwright test",
     "test:pact": "playwright test -c pact/playwright.config.ts",
     "typecheck:e2e": "tsc -p tsconfig.e2e.json"
