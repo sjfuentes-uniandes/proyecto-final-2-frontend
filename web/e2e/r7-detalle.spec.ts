@@ -106,6 +106,17 @@ async function simularBff(page: Page, opciones: { cola?: typeof COLA_VACIA } = {
   return bff;
 }
 
+/**
+ * Evidencia visual de cierre (docs/sprint_3/evidencias/hu-w19/capturas): solo con E2E_CAPTURAS=<carpeta>
+ * y en el escritorio de Chromium; sin la variable no hace nada.
+ */
+async function capturar(page: Page, nombre: string, idioma: Idioma, proyecto: string): Promise<void> {
+  const carpeta = process.env['E2E_CAPTURAS'];
+  if (carpeta && proyecto === 'chromium-escritorio') {
+    await page.screenshot({ path: `${carpeta}/${nombre}-${idioma}.png`, fullPage: true });
+  }
+}
+
 const abrir = (page: Page, ruta: string, idioma: Idioma) => page.goto(`${ruta}${ruta.includes('?') ? '&' : '?'}idioma=${idioma}`);
 
 /** Lo que el navegador guardó: la URL prefirmada no puede estar ahí. */
@@ -117,6 +128,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
 
   test.describe(`R7 · ${idioma}`, () => {
     test(`R7 caso feliz: bandeja, tomar el siguiente, detalle, evidencias y visor · ${idioma}`, async ({ page }, testInfo) => {
+      const proyecto = testInfo.project.name;
       await prepararPortal(page, ANALISTA);
       const bff = await simularBff(page);
       const consola: string[] = [];
@@ -129,6 +141,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
       await expect(page.locator('header .sub')).toHaveText(t.subtitulo);
       await expect(page.locator('app-tarjeta-metrica')).toHaveCount(4);
       await expect(page.locator('tbody tr')).toHaveCount(3);
+      await capturar(page, 'h01-bandeja', idioma, proyecto);
       expect(await violacionesGraves(page, testInfo, `axe-bandeja-${idioma}`)).toEqual([]);
 
       // Tomar el siguiente: POST con Idempotency-Key y navega al detalle.
@@ -141,6 +154,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
       await expect(page.getByRole('heading', { level: 2, name: new RegExp(`^${t.cabecera}`) })).toBeVisible();
       await expect(page.getByRole('heading', { level: 3, name: t.verificacion })).toBeVisible();
       await expect(page.locator('app-tabla-verificaciones tbody tr')).toHaveCount(6);
+      await capturar(page, 'h03-evaluacion', idioma, proyecto);
       expect(await violacionesGraves(page, testInfo, `axe-evaluacion-${idioma}`)).toEqual([]);
 
       // H04: archivos y visor.
@@ -148,6 +162,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
       await expect(page).toHaveURL(/\/evidencias/);
       await expect(page.getByRole('heading', { level: 3, name: t.tituloEvidencias })).toBeVisible();
       await expect(page.locator('#titulo-archivos ~ table tbody tr')).toHaveCount(5);
+      await capturar(page, 'h04-evidencias', idioma, proyecto);
       expect(await violacionesGraves(page, testInfo, `axe-evidencias-${idioma}`)).toEqual([]);
 
       const ver = page.getByRole('button', { name: t.ver('evidencia_dano_01.jpg') });
@@ -159,6 +174,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
       await expect(imagen).toBeVisible();
       await expect.poll(() => imagen.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
       expect(bff.enlaces).toEqual([`${API}/siniestros/${SINIESTRO_EVA01}/evidencias/${EVIDENCIA_FOTO_1}/enlace`]);
+      await capturar(page, 'h04-visor', idioma, proyecto);
       expect(await violacionesGraves(page, testInfo, `axe-visor-${idioma}`)).toEqual([]);
 
       // La URL prefirmada solo existe dentro del diálogo.
@@ -187,6 +203,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
       const visor = page.getByRole('dialog', { name: t.visor('evidencia_video.mp4') });
       await expect(visor.getByRole('heading', { level: 3, name: t.noDisponible })).toBeVisible();
       await expect(visor.locator('img, video')).toHaveCount(0);
+      await capturar(page, 'h04-visor-no-disponible', idioma, testInfo.project.name);
       expect(await violacionesGraves(page, testInfo, `axe-visor-no-disponible-${idioma}`)).toEqual([]);
       await visor.getByRole('button', { name: t.cerrar }).click();
       await expect(visor).toBeHidden();
@@ -200,6 +217,7 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
       await expect(page.getByRole('heading', { level: 2, name: t.tituloCola })).toBeVisible();
       await expect(page.getByRole('heading', { level: 3, name: t.colaVacia })).toBeVisible();
       await expect(page.getByRole('link', { name: t.irABandeja })).toHaveAttribute('href', '/siniestros/bandeja');
+      await capturar(page, 'h02-cola-vacia', idioma, testInfo.project.name);
       expect(await violacionesGraves(page, testInfo, `axe-cola-vacia-${idioma}`)).toEqual([]);
     });
 

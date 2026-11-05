@@ -2,4 +2,4 @@
 
 :host { display: inline-block; max-width: 100%; }
 /* Pseudo-localización: un texto más largo parte la palabra antes que desbordar la celda. */
-.tag { max-width: 100%; overflow-wrap: anywhere; white-space: normal; }
+.tag { max-width: 100%; overflow-wrap: break-word; white-space: normal; }

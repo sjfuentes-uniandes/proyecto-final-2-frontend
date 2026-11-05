@@ -30,11 +30,11 @@
               @for (fila of filas(); track fila.evidencia.id) {
                 <tr>
                   <th scope="row" class="archivo">{{ fila.evidencia.nombreArchivo }}</th>
-                  <td>{{ fila.tipo }}</td>
+                  <td class="sin-corte">{{ fila.tipo }}</td>
                   <td class="mono">{{ fila.capturado }}</td>
                   <td>{{ fila.ubicacion }}</td>
                   <td><app-insignia-estado [insignia]="fila.integridad" /></td>
-                  <td>
+                  <td class="sin-corte">
                     <button class="ver" type="button" [attr.aria-label]="t.verArchivo(fila.evidencia.nombreArchivo)" (click)="ver(fila.evidencia, $event)">
                       {{ t.ver }}
                     </button>

@@ -9,6 +9,8 @@ a.btn { text-decoration: none; }
 .archivo { font-weight: 400; text-align: left; text-transform: none; letter-spacing: 0; background: none; color: var(--sv-texto); font-size: 13px; }
 table.data th, table.data td { overflow-wrap: anywhere; }
 td.mono { white-space: normal; }
+/* «Fotografía» y «Ver» no se parten (H04): el resto de columnas sí cede ancho. */
+table.data td.sin-corte { overflow-wrap: normal; white-space: nowrap; }
 .ver { padding: 4px 6px; border: 0; background: none; font: inherit; font-weight: 700; color: var(--sv-azul); cursor: pointer; }
 .ver:focus-visible, .miniatura:focus-visible { outline: 2px solid var(--sv-azul-medio); outline-offset: 2px; }
 
