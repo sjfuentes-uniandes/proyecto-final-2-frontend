@@ -36,7 +36,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.solventa.core.designsystem.CampoEtiquetado
+import com.solventa.core.designsystem.CampoSeleccion
 import com.solventa.core.designsystem.LogotipoSolventa
+import com.solventa.core.designsystem.OpcionSeleccion
 import com.solventa.core.designsystem.SolventaTema
 import com.solventa.core.designsystem.TextoAdvertencia
 import com.solventa.feature.onboardingidentidad.R
@@ -105,12 +107,15 @@ internal fun RegistroScreen(
             Spacer(Modifier.height(20.dp))
             Surface(shape = RoundedCornerShape(20.dp), color = colores.panel, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                    CampoEtiquetado(
+                    CampoSeleccion(
                         etiqueta = stringResource(R.string.onboarding_etiqueta_tipo_documento),
-                        valor = uiState.tipoDocumento,
-                        onValorCambiado = onTipoDocumentoCambiado,
-                        placeholder = stringResource(R.string.onboarding_placeholder_tipo_documento),
-                        mensajeError = if (uiState.mostrarErrorTipoDocumento) stringResource(R.string.onboarding_tipo_documento_invalido) else null,
+                        valorSeleccionado = uiState.tipoDocumento,
+                        opciones = listOf(
+                            OpcionSeleccion("CC", stringResource(R.string.onboarding_tipo_documento_cc)),
+                            OpcionSeleccion("CE", stringResource(R.string.onboarding_tipo_documento_ce)),
+                            OpcionSeleccion("PA", stringResource(R.string.onboarding_tipo_documento_pa)),
+                        ),
+                        onSeleccionado = onTipoDocumentoCambiado,
                     )
                     Spacer(Modifier.height(12.dp))
                     CampoEtiquetado(
