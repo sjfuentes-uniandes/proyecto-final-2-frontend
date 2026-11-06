@@ -26,6 +26,10 @@ import com.solventa.feature.privacidad.datos.RepositorioConsentimientosRed
 import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
 import com.solventa.feature.notificaciones.AlmacenDispositivo
 import com.solventa.feature.notificaciones.AlmacenDispositivoCifrado
+import com.solventa.feature.notificaciones.AvisoSimuladoReceiver
+import com.solventa.feature.notificaciones.NotificacionesSinConfigurar
+import com.solventa.feature.notificaciones.ProcesadorMensajePush
+import com.solventa.feature.notificaciones.ProveedorTokenSimulado
 import com.solventa.feature.notificaciones.ConfiguracionFirebase
 import com.solventa.feature.notificaciones.DependenciasNotificaciones
 import com.solventa.feature.notificaciones.GestorDispositivo
@@ -38,6 +42,7 @@ import com.solventa.feature.onboardingidentidad.verificacion.SesionRegistro
 import com.solventa.feature.onboardingidentidad.verificacion.VerificarIdentidad
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
@@ -89,11 +94,15 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
 
     internal open fun crearAlmacenDispositivo(): AlmacenDispositivo = AlmacenDispositivoCifrado(this)
 
-    internal open fun crearProveedorTokenPush(): ProveedorTokenPush =
-        InicializadorFirebase.inicializar(this, configuracionFirebase())
+    internal open fun crearProveedorTokenPush(): ProveedorTokenPush {
+        val real = InicializadorFirebase.inicializar(this, configuracionFirebase())
+        // Solo debug: sin Firebase se simula el token para poder probar el registro del dispositivo.
+        return if (BuildConfig.DEBUG && real === NotificacionesSinConfigurar) ProveedorTokenSimulado(this) else real
+    }
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) AvisoSimuladoReceiver.registrar(this)
 
         gestorBiometria = GestorBiometria(this)
 
@@ -127,19 +136,42 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
         )
 
         // Sin configuración de Firebase el proveedor es un no-op y la app arranca igual.
+        registroPermisoNotificaciones = RegistroExplicacionPermisoPreferencias(this)
+        val proveedorToken = crearProveedorTokenPush()
         gestorDispositivo = GestorDispositivo(
             red = RedDispositivosBff(bffMovilCliente),
-            proveedorToken = crearProveedorTokenPush(),
-                        almacen = crearAlmacenDispositivo(),
+            proveedorToken = proveedorToken,
+            almacen = crearAlmacenDispositivo(),
             tokenSesion = gestorSesion::actual,
         )
-        registroPermisoNotificaciones = RegistroExplicacionPermisoPreferencias(this)
+        // Sin FCM real (solo debug) un vigilante detecta la póliza nueva y publica el mismo aviso.
+        val vigilante = if (proveedorToken is ProveedorTokenSimulado) {
+            VigilantePolizasSimulado(
+                repositorio = repositorioPolizas,
+                conocidas = PolizasConocidasPreferencias(this),
+                avisar = { polizaId -> ProcesadorMensajePush(this).procesar(datosAvisoEmision(polizaId)) },
+            )
+        } else {
+            null
+        }
         ambitoApp.launch {
+            var vigilancia: Job? = null
             gestorSesion.estado.collect { estado ->
-                if (estado is EstadoSesion.Autenticada) gestorDispositivo.registrar()
+                vigilancia?.cancel()
+                vigilancia = null
+                if (estado is EstadoSesion.Autenticada) {
+                    gestorDispositivo.registrar()
+                    vigilancia = vigilante?.let { launch { it.vigilar() } }
+                }
             }
         }
     }
+
+    private fun datosAvisoEmision(polizaId: String) = mapOf(
+        ProcesadorMensajePush.CLAVE_TIPO to ProcesadorMensajePush.TIPO_POLIZA_EMITIDA,
+        ProcesadorMensajePush.CLAVE_POLIZA_ID to polizaId,
+        ProcesadorMensajePush.CLAVE_EVENT_ID to polizaId,
+    )
 
     private fun crearClienteRegistro(): ClienteRegistro {
         val configuracion = ConfiguracionCognito(

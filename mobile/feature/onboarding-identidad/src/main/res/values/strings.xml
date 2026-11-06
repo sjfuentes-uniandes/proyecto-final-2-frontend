@@ -55,7 +55,15 @@
     <string name="onboarding_interrumpida_titulo">La verificación no terminó</string>
     <string name="onboarding_interrumpida_mensaje">Hubo un problema de comunicación. Puede reintentar: no se creará un segundo registro.</string>
     <string name="onboarding_correo_distinto_titulo">Verifique su identidad de nuevo</string>
-    <string name="onboarding_correo_distinto_mensaje">El correo cambió desde la última verificación. Repita la captura con el correo actual.</string>
+    <string name="onboarding_correo_distinto_mensaje">Debes registrarte con el correo que tu asesor tiene registrado.</string>
+    <string name="onboarding_cliente_no_registrado_titulo">No encontramos tu documento</string>
+    <string name="onboarding_cliente_no_registrado_mensaje">No encontramos tu documento. Contacta a tu asesor para que te registre.</string>
+    <string name="onboarding_etiqueta_tipo_documento">Tipo de documento</string>
+    <string name="onboarding_tipo_documento_cc">Cédula de ciudadanía</string>
+    <string name="onboarding_tipo_documento_ce">Cédula de extranjería</string>
+    <string name="onboarding_tipo_documento_pa">Pasaporte</string>
+    <string name="onboarding_etiqueta_numero_documento">Número de documento</string>
+    <string name="onboarding_numero_documento_invalido">Escribe de 3 a 20 letras o números</string>
     <string name="onboarding_cuenta_existente_titulo">Ya tiene una cuenta</string>
     <string name="onboarding_cuenta_existente_mensaje">Este correo ya está registrado. Inicie sesión para continuar.</string>
     <string name="onboarding_error_titulo">Algo salió mal</string>

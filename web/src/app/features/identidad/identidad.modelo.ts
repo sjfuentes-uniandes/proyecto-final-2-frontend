@@ -11,6 +11,8 @@ export interface SolicitudCliente {
   nombreCompleto: string;
   /** Fecha ISO (AAAA-MM-DD), no futura. */
   fechaNacimiento: string;
+  /** Opcional (3 a 254). Si se omite, no se envía. No actualiza el correo de un cliente ya existente. */
+  correo?: string;
 }
 
 /** Sin PII ni motivo de rechazo. */

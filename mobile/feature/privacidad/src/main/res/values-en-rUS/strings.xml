@@ -6,6 +6,7 @@
     <string name="privacidad_cargando">Loading…</string>
     <string name="privacidad_reintentar">Retry</string>
     <string name="privacidad_volver">Back</string>
+    <string name="privacidad_cerrar_sesion">Sign out</string>
 
     <string name="privacidad_permiso_personales">Personal and financial data</string>
     <string name="privacidad_permiso_personales_descripcion">See how personal and financial data is used</string>

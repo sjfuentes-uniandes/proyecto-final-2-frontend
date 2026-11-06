@@ -1942,6 +1942,14 @@ components:
           format: uuid
           title: Registroid
           description: UUID que genera la app y reutiliza en cada reintento
+        tipoDocumento:
+          type: string
+          pattern: ^[A-Z]{2,3}$
+          title: Tipodocumento
+        numeroDocumento:
+          type: string
+          pattern: ^[A-Za-z0-9]{3,20}$
+          title: Numerodocumento
         correo:
           type: string
           maxLength: 254
@@ -1960,6 +1968,8 @@ components:
       type: object
       required:
       - registroId
+      - tipoDocumento
+      - numeroDocumento
       - correo
       - selfie
       - pruebaDeVida

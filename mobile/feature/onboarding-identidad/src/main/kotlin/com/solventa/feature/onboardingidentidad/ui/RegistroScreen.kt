@@ -36,7 +36,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.solventa.core.designsystem.CampoEtiquetado
+import com.solventa.core.designsystem.CampoSeleccion
 import com.solventa.core.designsystem.LogotipoSolventa
+import com.solventa.core.designsystem.OpcionSeleccion
 import com.solventa.core.designsystem.SolventaTema
 import com.solventa.core.designsystem.TextoAdvertencia
 import com.solventa.feature.onboardingidentidad.R
@@ -52,6 +54,8 @@ internal fun RegistroScreen(
     uiState: RegistroUiState,
     identidadVerificada: Boolean,
     motivoAdvertencia: MotivoCapturaInvalida?,
+    onTipoDocumentoCambiado: (String) -> Unit,
+    onNumeroDocumentoCambiado: (String) -> Unit,
     onCorreoCambiado: (String) -> Unit,
     onContrasenaCambiada: (String) -> Unit,
     onConfirmacionCambiada: (String) -> Unit,
@@ -103,6 +107,24 @@ internal fun RegistroScreen(
             Spacer(Modifier.height(20.dp))
             Surface(shape = RoundedCornerShape(20.dp), color = colores.panel, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+                    CampoSeleccion(
+                        etiqueta = stringResource(R.string.onboarding_etiqueta_tipo_documento),
+                        valorSeleccionado = uiState.tipoDocumento,
+                        opciones = listOf(
+                            OpcionSeleccion("CC", stringResource(R.string.onboarding_tipo_documento_cc)),
+                            OpcionSeleccion("CE", stringResource(R.string.onboarding_tipo_documento_ce)),
+                            OpcionSeleccion("PA", stringResource(R.string.onboarding_tipo_documento_pa)),
+                        ),
+                        onSeleccionado = onTipoDocumentoCambiado,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    CampoEtiquetado(
+                        etiqueta = stringResource(R.string.onboarding_etiqueta_numero_documento),
+                        valor = uiState.numeroDocumento,
+                        onValorCambiado = onNumeroDocumentoCambiado,
+                        mensajeError = if (uiState.mostrarErrorNumeroDocumento) stringResource(R.string.onboarding_numero_documento_invalido) else null,
+                    )
+                    Spacer(Modifier.height(12.dp))
                     CampoEtiquetado(
                         etiqueta = stringResource(R.string.onboarding_etiqueta_correo),
                         valor = uiState.correo,

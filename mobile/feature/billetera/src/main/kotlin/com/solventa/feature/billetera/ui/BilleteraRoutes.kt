@@ -15,6 +15,7 @@ fun BilleteraRoute(
     onAbrirPoliza: (String) -> Unit,
     onAbrirPrivacidad: () -> Unit,
     onIrALogin: () -> Unit,
+    onCerrarSesion: (() -> Unit)? = null,
 ) {
     val estado by viewModel.uiState.collectAsState()
     LaunchedEffect(viewModel) {
@@ -29,6 +30,7 @@ fun BilleteraRoute(
         onAbrirPoliza = onAbrirPoliza,
         onReintentar = viewModel::reintentar,
         onAbrirPrivacidad = onAbrirPrivacidad,
+        onCerrarSesion = onCerrarSesion,
     )
 }
 
@@ -38,6 +40,7 @@ fun DetallePolizaRoute(
     viewModel: DetallePolizaViewModel,
     onVolver: () -> Unit,
     onIrALogin: () -> Unit,
+    onCerrarSesion: (() -> Unit)? = null,
 ) {
     val estado by viewModel.uiState.collectAsState()
     LaunchedEffect(viewModel) {
@@ -47,5 +50,10 @@ fun DetallePolizaRoute(
             }
         }
     }
-    DetallePolizaScreen(estado = estado, onReintentar = viewModel::reintentar, onVolver = onVolver)
+    DetallePolizaScreen(
+        estado = estado,
+        onReintentar = viewModel::reintentar,
+        onVolver = onVolver,
+        onCerrarSesion = onCerrarSesion,
+    )
 }

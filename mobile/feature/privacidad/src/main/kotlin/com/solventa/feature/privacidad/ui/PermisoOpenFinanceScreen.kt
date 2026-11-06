@@ -108,11 +108,16 @@ fun PermisoOpenFinanceScreen(
     onCerrarErrorRevocar: () -> Unit = {},
     onReintentarHistorial: () -> Unit = {},
     onVerHistorialAnterior: (String) -> Unit = {},
+    onCerrarSesion: (() -> Unit)? = null,
 ) {
     // La confirmación sobrevive a rotaciones: guarda el consentimiento que se va a revocar.
     var confirmarRevocacion by rememberSaveable { mutableStateOf<String?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
-        BarraPrivacidad(stringResource(R.string.privacidad_detalle_titulo), onVolver = onVolver)
+        BarraPrivacidad(
+            stringResource(R.string.privacidad_detalle_titulo),
+            onVolver = onVolver,
+            onCerrarSesion = onCerrarSesion,
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()

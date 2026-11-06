@@ -2,16 +2,19 @@ package com.solventa.core.network.modelo
 
 import kotlinx.serialization.Serializable
 
-/** Cuerpo de `POST /v1/registro/verificaciones`. La selfie y el correo no se imprimen en `toString`. */
+/** Cuerpo de `POST /v1/registro/verificaciones`. El documento, la selfie y el correo no se imprimen en `toString`. */
 @Serializable
 data class RegistroVerificacionSolicitud(
     val registroId: String,
+    val tipoDocumento: String,
+    val numeroDocumento: String,
     val correo: String,
     val selfie: String,
     val pruebaDeVida: PruebaDeVidaDto,
 ) {
     override fun toString(): String =
-        "RegistroVerificacionSolicitud(registroId=<redactado>, correo=<redactado>, selfie=<redactada>, pruebaDeVida=$pruebaDeVida)"
+        "RegistroVerificacionSolicitud(registroId=<redactado>, tipoDocumento=$tipoDocumento, numeroDocumento=<redactado>, " +
+            "correo=<redactado>, selfie=<redactada>, pruebaDeVida=$pruebaDeVida)"
 }
 
 @Serializable
