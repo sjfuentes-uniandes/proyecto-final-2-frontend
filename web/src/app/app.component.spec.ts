@@ -58,12 +58,13 @@ describe('AppComponent', () => {
     expect(html(fixture).querySelector('.usuario')?.textContent).toBe('Carlos Portillo · Asesor');
   });
 
-  it('un suscriptor ve Pólizas como enlace a Contratación (HU-W13)', async () => {
+  it('un suscriptor conserva Contratación (HU-W13), sin mostrar Pólizas (HU-W18)', async () => {
     await iniciarSesion({ name: 'Ana Suárez', 'cognito:groups': ['suscriptores'] });
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const polizas = html(fixture).querySelector<HTMLAnchorElement>('a[href="/contratacion"]');
-    expect(polizas?.textContent?.trim()).toBe('Pólizas');
+    expect(polizas?.textContent?.trim()).toBe('Contratación');
+    expect(html(fixture).querySelector('nav')?.textContent).not.toContain('Pólizas');
     expect(html(fixture).querySelector('.usuario')?.textContent).toBe('Ana Suárez · Suscriptor');
   });
 
@@ -73,6 +74,24 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const polizas = html(fixture).querySelector<HTMLAnchorElement>('a[href="/consulta/polizas"]');
     expect(polizas?.textContent?.trim()).toBe('Pólizas');
+  });
+
+  for (const grupos of [[], ['operacion'], ['administradores'], ['administradores-socios'], ['suscriptores', 'operacion']]) {
+    it(`sin asesores no muestra Pólizas, ni siquiera deshabilitada (${grupos.join(', ') || 'sin grupos'})`, async () => {
+      await iniciarSesion({ name: 'Ana', 'cognito:groups': grupos });
+      const fixture = TestBed.createComponent(AppComponent);
+      fixture.detectChanges();
+      expect(html(fixture).querySelector('nav')?.textContent).not.toContain('Pólizas');
+      expect(html(fixture).querySelector('a[href="/consulta/polizas"]')).toBeNull();
+    });
+  }
+
+  it('con asesores y suscriptores ofrece Pólizas y Contratación por separado', async () => {
+    await iniciarSesion({ name: 'Ana', 'cognito:groups': ['asesores', 'suscriptores'] });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    expect(html(fixture).querySelector('a[href="/consulta/polizas"]')?.textContent?.trim()).toBe('Pólizas');
+    expect(html(fixture).querySelector('a[href="/contratacion"]')?.textContent?.trim()).toBe('Contratación');
   });
 
   it('sin el grupo asesores, Cotización sigue deshabilitada', async () => {
