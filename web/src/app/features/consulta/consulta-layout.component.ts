@@ -21,6 +21,9 @@ export class ConsultaLayoutComponent {
   readonly grupos = computed<GrupoSeccion[]>(() => {
     const t = this.textos.t();
     this.sesion.claims();
+    if (!this.sesion.tieneGrupo('asesores')) {
+      return [];
+    }
     return [
       {
         titulo: t.grupoContratacion,

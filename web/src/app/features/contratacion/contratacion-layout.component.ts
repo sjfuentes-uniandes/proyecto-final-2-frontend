@@ -17,8 +17,7 @@ const RUTA_EMISION = /^\/contratacion\/cotizaciones\/[^/?#]+\/(aceptacion|recaud
  * Menú lateral de E01 a E04 (CONTRATACIÓN): la bandeja solo para suscriptores. En la aceptación (F01,
  * HU-W15), el recaudo (HU-W16) y la emisión (HU-W17) «Emisión» queda activo y enlaza a la página
  * actual; fuera de ellas queda pendiente, porque la emisión es de una cotización y no hay un listado.
- * «Cotizaciones» abre "Cotizaciones abiertas" (solo el grupo asesores, como su ruta); Pólizas (HU-W18)
- * llega en otra historia.
+ * «Cotizaciones» abre "Cotizaciones abiertas"; la consulta de Pólizas (HU-W18) solo se muestra a asesores.
  */
 @Component({
   selector: 'app-contratacion-layout',
@@ -61,14 +60,9 @@ export class ContratacionLayoutComponent {
           emision,
         ],
       },
-      {
-        titulo: t.grupoConsulta,
-        items: [
-          this.sesion.tieneGrupo('asesores')
-            ? { etiqueta: t.menuPolizas, icono: '📄', ruta: '/consulta/polizas' }
-            : { etiqueta: t.menuPolizas, icono: '📄', pendiente: t.proximamente },
-        ],
-      },
+      ...(this.sesion.tieneGrupo('asesores')
+        ? [{ titulo: t.grupoConsulta, items: [{ etiqueta: t.menuPolizas, icono: '📄', ruta: '/consulta/polizas' }] }]
+        : []),
     ];
   });
 }

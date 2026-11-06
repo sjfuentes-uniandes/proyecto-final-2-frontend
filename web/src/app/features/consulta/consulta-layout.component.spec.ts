@@ -32,4 +32,14 @@ describe('ConsultaLayoutComponent (HU-W18)', () => {
     expect(main?.id).toBe('contenido');
     expect(main?.getAttribute('tabindex')).toBe('-1');
   });
+
+  it('no muestra menús de consulta si la sesión pierde el grupo asesores', async () => {
+    await iniciarSesion({ name: 'Carlos', 'cognito:groups': ['asesores'] });
+    const fixture = TestBed.createComponent(ConsultaLayoutComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('a[href="/consulta/polizas"]')).not.toBeNull();
+    await iniciarSesion({ name: 'Ana', 'cognito:groups': ['suscriptores'] });
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('a.side__item').length).toBe(0);
+  });
 });

@@ -8,6 +8,7 @@ export const routes: Routes = [
     path: '',
     component: ConsultaLayoutComponent,
     canActivate: [requiereGrupo('asesores')],
+    canActivateChild: [requiereGrupo('asesores')],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'polizas' },
       {
