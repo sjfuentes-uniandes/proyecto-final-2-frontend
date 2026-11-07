@@ -1,0 +1,149 @@
+/* Estilos comunes de la cola de descarte (HU-W24); los globales están en styles.scss. */
+@use '../../../contratacion/contraste';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  color: var(--sv-azul-oscuro);
+}
+h3 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  color: var(--sv-azul-oscuro);
+}
+.sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sv-texto-secundario);
+}
+.crumb {
+  color: var(--sv-texto-secundario);
+}
+.crumb a {
+  color: var(--sv-azul);
+}
+.h-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.seguimiento {
+  font-size: 12px;
+}
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+@media (max-width: 960px) {
+  .columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.kv {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 16px;
+  margin: 0;
+}
+.kv dt {
+  color: var(--sv-texto-secundario);
+}
+.kv dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+.kv .exito {
+  color: #00663f;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+}
+a:focus-visible,
+button:focus-visible,
+.inp:focus-visible,
+.region:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--sv-azul);
+  outline-offset: 2px;
+}
+.btn,
+a.enlace {
+  min-height: 24px;
+  min-width: 24px;
+}
+.enlace {
+  font-weight: 600;
+  color: var(--sv-azul);
+}
+/* WCAG 1.4.3: blanco sobre estos fondos supera 4,5:1. */
+.btn--exito {
+  background: #00663f;
+  color: #fff;
+  border: 1px solid #00663f;
+}
+.btn--peligro {
+  background: #a4161a;
+  color: #fff;
+  border: 1px solid #a4161a;
+}
+.btn--exito:disabled,
+.btn--peligro:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.region {
+  overflow-x: auto;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+pre.contenido {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--sv-fondo, #f4f6f8);
+  border: 1px solid var(--sv-borde);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lateral .btn {
+  width: 100%;
+  justify-content: center;
+}
+/* WCAG 1.4.3: --sv-texto-tenue no llega a 4,5:1 sobre blanco en el texto de ayuda. */
+.fld__ayuda {
+  color: var(--sv-texto-secundario);
+}

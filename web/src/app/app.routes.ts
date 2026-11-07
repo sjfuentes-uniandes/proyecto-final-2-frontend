@@ -36,6 +36,11 @@ export const routes: Routes = [
   { path: 'perfilamiento', loadChildren: () => import('./features/perfilamiento/perfilamiento.routes').then((m) => m.routes) },
   { path: 'contratacion', loadChildren: () => import('./features/contratacion/contratacion.routes').then((m) => m.routes) },
   { path: 'consulta', loadChildren: () => import('./features/consulta/consulta.routes').then((m) => m.routes) },
+  // HU-W24: H10 y H11. Cuando exista la sección Siniestros (HU-W19 a HU-W22), pasa a ser su hija.
+  {
+    path: 'siniestros/parametricos/descarte',
+    loadChildren: () => import('./features/siniestros/parametricos/descarte/descarte.routes').then((m) => m.routes),
+  },
   {
     path: 'sin-acceso',
     title: 'Acceso restringido · Solventa',
