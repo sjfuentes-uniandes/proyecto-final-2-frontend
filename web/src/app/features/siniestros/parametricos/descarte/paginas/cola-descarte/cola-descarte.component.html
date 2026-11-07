@@ -1,0 +1,146 @@
+@let t = textos.t();
+@let l = listado();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaParametricos }} ›
+  <strong>{{ t.migaCola }}</strong>
+</nav>
+
+<div class="h-row">
+  <header>
+    <h2>{{ t.tituloCola }}</h2>
+    @if (l) {
+      <p class="sub">{{ t.subtituloCola(l.total) }}</p>
+    }
+  </header>
+  @if (l && l.total > 0) {
+    <button class="btn btn--primario" type="button" [disabled]="seleccion().size === 0 || enviando()" (click)="reprocesarSeleccionados()">
+      {{ seleccion().size > 0 ? t.reprocesarSeleccionadosN(seleccion().size) : t.reprocesarSeleccionados }}
+    </button>
+  }
+</div>
+
+@if (resultado(); as r) {
+  <div class="alerta alerta--ok" role="status">
+    <div>
+      @if (r.reenviados > 0) {
+        <p>{{ t.reenviados(r.reenviados) }}</p>
+      }
+      @if (r.noEncontrados > 0) {
+        <p>{{ t.noEncontrados(r.noEncontrados) }}</p>
+      }
+    </div>
+  </div>
+}
+
+@if (cargando() && !l) {
+  <div class="card" role="status">
+    <p class="sub">{{ t.cargando }}</p>
+  </div>
+}
+
+@if (error(); as e) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <div>
+      <p>{{ e.mensaje }}</p>
+      @if (e.correlationId) {
+        <p class="seguimiento">
+          {{ t.referenciaSoporte }}:
+          <span class="mono">{{ e.correlationId }}</span>
+        </p>
+      }
+      @if (e.tipo !== 'acceso') {
+        <div class="acciones">
+          <button class="btn btn--secundario" type="button" (click)="reintentar()">
+            {{ t.reintentar }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (l) {
+  @if (l.total === 0) {
+    <div class="card" role="status">
+      <h3>{{ t.vacioTitulo }}</h3>
+      <p class="sub">{{ t.vacioDetalle }}</p>
+    </div>
+  } @else {
+    <div class="nota nota--alerta" role="note"><span aria-hidden="true">⚠</span> {{ t.avisoAislados(l.maxIntentos) }}</div>
+
+    <div class="card region" role="region" [attr.aria-label]="t.regionTabla" tabindex="0">
+      <table class="data">
+        <caption class="sr-only">
+          {{
+            t.captionCola
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">
+              <span class="sr-only">{{ t.colSeleccion }}</span>
+            </th>
+            <th scope="col">{{ t.colEvento }}</th>
+            <th scope="col">{{ t.colRecibido }}</th>
+            <th scope="col">{{ t.colCausa }}</th>
+            <th scope="col">{{ t.colIntentos }}</th>
+            <th scope="col">{{ t.colPoliza }}</th>
+            <th scope="col">
+              <span class="sr-only">{{ t.colAcciones }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track f.messageId) {
+            <tr>
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="f.seleccionado"
+                  [attr.aria-label]="t.seleccionar(f.evento)"
+                  (change)="alternar(f.messageId)"
+                />
+              </td>
+              <td class="mono">{{ f.evento }}</td>
+              <td>{{ f.recibido }}</td>
+              <td>{{ f.causa }}</td>
+              <td>{{ f.intentos }}</td>
+              <td>{{ f.poliza }}</td>
+              <td>
+                <a
+                  class="enlace"
+                  [routerLink]="['/siniestros/parametricos/descarte', f.messageId]"
+                  [attr.aria-label]="t.revisarEvento(f.evento)"
+                  >{{ t.revisar }}</a
+                >
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="columnas">
+      <section class="card" aria-labelledby="titulo-causas">
+        <h3 id="titulo-causas">{{ t.analisisCausas }}</h3>
+        <dl class="kv">
+          @for (c of causas(); track c.causa) {
+            <dt>{{ c.causa }}</dt>
+            <dd>{{ c.cantidad }}</dd>
+          }
+        </dl>
+      </section>
+      <section class="card" aria-labelledby="titulo-porque">
+        <h3 id="titulo-porque">{{ t.porQueTitulo }}</h3>
+        <p class="sub">{{ t.porQueTexto }}</p>
+        <dl class="kv">
+          <dt>{{ t.detenidos(l.total) }}</dt>
+          <dd class="exito">0</dd>
+          <dt>{{ t.conservacion }}</dt>
+          <dd>{{ t.dias(l.retencionDias) }}</dd>
+        </dl>
+      </section>
+    </div>
+  }
+}

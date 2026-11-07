@@ -1,0 +1,180 @@
+@let t = textos.t();
+@let v = vista();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › {{ t.migaParametricos }} ›
+  <a routerLink="/siniestros/parametricos/descarte">{{ t.migaCola }}</a>
+  @if (v) {
+    › <strong class="mono">{{ v.id }}</strong>
+  }
+</nav>
+
+<div class="h-row">
+  <header>
+    <h2>{{ t.tituloReproceso }}</h2>
+    @if (v) {
+      <p class="sub">{{ v.subtitulo }}</p>
+    }
+  </header>
+  <a class="btn btn--secundario" routerLink="/siniestros/parametricos/descarte">{{ t.volverCola }}</a>
+</div>
+
+@if (cargando() && !v) {
+  <div class="card" role="status">
+    <p class="sub">{{ t.cargandoDetalle }}</p>
+  </div>
+}
+
+@if (error(); as e) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <div>
+      <p>{{ e.mensaje }}</p>
+      @if (e.campos.length > 0) {
+        <p class="mono">{{ e.campos.join(', ') }}</p>
+      }
+      @if (e.correlationId) {
+        <p class="seguimiento">
+          {{ t.referenciaSoporte }}:
+          <span class="mono">{{ e.correlationId }}</span>
+        </p>
+      }
+      @if (e.tipo === 'red' || e.tipo === 'degradado' || e.tipo === 'general') {
+        <div class="acciones">
+          <button class="btn btn--secundario" type="button" (click)="reintentar()">
+            {{ t.reintentar }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (resuelto(); as r) {
+  <div class="alerta alerta--ok" role="status">
+    <span aria-hidden="true">✓</span>
+    <div>
+      <p>{{ mensajeResuelto() }}</p>
+      <div class="acciones">
+        <a class="btn btn--secundario" routerLink="/siniestros/parametricos/descarte">{{ t.volverCola }}</a>
+      </div>
+    </div>
+  </div>
+}
+
+@if (v && !resuelto()) {
+  <div class="columnas">
+    <div class="formulario">
+      <section class="card" aria-labelledby="titulo-contenido">
+        <h3 id="titulo-contenido">{{ t.contenidoRecibido }}</h3>
+        @if (v.lineas) {
+          <pre class="contenido mono">{{ v.lineas.join('\n') }}</pre>
+        } @else {
+          <p class="sub">{{ t.contenidoNoJson }}</p>
+          <pre class="contenido mono">{{ v.texto }}</pre>
+        }
+        <div class="alerta alerta--error">
+          <span aria-hidden="true">⚠</span>
+          <div>
+            <p>{{ v.causa }}</p>
+            @if (v.detalle) {
+              <p class="seguimiento">{{ t.detalleTecnico(v.detalle) }}</p>
+            }
+          </div>
+        </div>
+      </section>
+
+      @if (campos().length > 0) {
+        <section class="card" aria-labelledby="titulo-correccion">
+          <h3 id="titulo-correccion">{{ t.correccion }}</h3>
+          <div class="fld">
+            <label for="campo-corregir">{{ t.campoCorregir }}</label>
+            <select id="campo-corregir" class="inp" name="campo" [(ngModel)]="campo">
+              @for (c of campos(); track c) {
+                <option [value]="c">{{ c }}</option>
+              }
+            </select>
+          </div>
+          <div class="fld">
+            <label for="valor-corregido">{{ t.valorCorregido }}</label>
+            <input id="valor-corregido" class="inp" name="valor" [(ngModel)]="valor" aria-describedby="ayuda-valor formato-valor" />
+            <p id="ayuda-valor" class="fld__ayuda">{{ t.ayudaValor }}</p>
+            <p id="formato-valor" class="fld__ayuda" aria-live="polite">
+              {{ formatoValor() }}
+            </p>
+          </div>
+          <div class="fld">
+            <label for="motivo-correccion">{{ t.motivoCorreccion }}</label>
+            <input id="motivo-correccion" class="inp" name="motivoCorreccion" maxlength="500" [(ngModel)]="motivoCorreccion" />
+          </div>
+        </section>
+      }
+    </div>
+
+    <div class="lateral">
+      <section class="card" aria-labelledby="titulo-verificacion">
+        <h3 id="titulo-verificacion">{{ t.verificacion }}</h3>
+        <dl class="kv">
+          @if (v.verificacion) {
+            @for (fila of v.verificacion; track fila.etiqueta) {
+              <dt>{{ fila.etiqueta }}</dt>
+              <dd [class.exito]="fila.ok">{{ fila.valor }}</dd>
+            }
+          }
+          <dt>{{ t.claveIdempotencia }}</dt>
+          <dd class="mono">{{ v.clave }}</dd>
+        </dl>
+        @if (!v.verificacion) {
+          <p class="sub">{{ t.verificacionPendiente }}</p>
+        }
+      </section>
+
+      @if (aviso(); as a) {
+        <p class="fld__error" role="alert">{{ a }}</p>
+      }
+      @if (campos().length > 0) {
+        <button class="btn btn--exito" type="button" [disabled]="enviando()" (click)="corregir()">
+          {{ t.corregirReprocesar }}
+        </button>
+      }
+      <button class="btn btn--secundario" type="button" [disabled]="enviando()" (click)="reprocesarSinCambios()">
+        {{ t.reprocesarSinCambios }}
+      </button>
+      @if (!confirmandoDescarte()) {
+        <button class="btn btn--peligro" type="button" [disabled]="enviando()" (click)="pedirDescarte()">
+          {{ t.descartar }}
+        </button>
+      } @else {
+        <div class="card formulario">
+          <div class="fld">
+            <label for="motivo-descarte">{{ t.motivoDescarte }}</label>
+            <input
+              id="motivo-descarte"
+              class="inp"
+              name="motivoDescarte"
+              maxlength="500"
+              required
+              [(ngModel)]="motivoDescarte"
+              aria-describedby="ayuda-descarte"
+            />
+            <p id="ayuda-descarte" class="fld__ayuda">
+              {{ t.ayudaMotivoDescarte }}
+            </p>
+          </div>
+          <div class="acciones">
+            <button class="btn btn--peligro" type="button" [disabled]="enviando()" (click)="descartar()">
+              {{ t.confirmarDescarte }}
+            </button>
+            <button class="btn btn--secundario" type="button" (click)="cancelarDescarte()">
+              {{ t.cancelar }}
+            </button>
+          </div>
+        </div>
+      }
+      <a class="btn btn--secundario" routerLink="/siniestros/parametricos/descarte">{{ t.dejarEnCola }}</a>
+      <div class="nota" role="note">{{ t.notaIdempotencia }}</div>
+      @if (enviando()) {
+        <p class="sub" role="status">{{ t.procesando }}</p>
+      }
+    </div>
+  </div>
+}

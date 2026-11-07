@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 
 import sinLiteralesEnPlantillas from './eslint/sin-literales-en-plantillas.mjs';
 
-const FEATURES = ['src/app/features/consentimientos', 'src/app/features/contratacion', 'src/app/features/consulta'];
+const FEATURES = ['src/app/features/consentimientos', 'src/app/features/contratacion', 'src/app/features/consulta', 'src/app/features/siniestros'];
 const solventa = { rules: { 'sin-literales-en-plantillas': sinLiteralesEnPlantillas } };
 
 export default tseslint.config(
