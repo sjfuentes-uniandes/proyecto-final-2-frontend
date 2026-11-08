@@ -1,0 +1,9 @@
+/*
+ * Contraste WCAG 2.2 AA (1.4.3) de las insignias de siniestros (H01 a H04): el verde y el naranja de
+ * los tokens globales no alcanzan 4,5:1 sobre sus fondos en 10,5 px. Mismos tonos oscuros que
+ * tarjeta-metrica y contratación; los tokens globales no se tocan. `tag--neutro` (reportado, no
+ * verificable, no evaluable) no existe en styles.scss: gris sobre el fondo de la página.
+ */
+.tag--ok { color: #00663f; }
+.tag--alerta { color: #7a4a00; }
+.tag--neutro { background: var(--sv-fondo); color: var(--sv-texto-secundario); border: 1px solid var(--sv-borde); }

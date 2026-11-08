@@ -76,6 +76,24 @@ describe('AppComponent', () => {
     expect(polizas?.textContent?.trim()).toBe('Pólizas');
   });
 
+  it('HU-W19: un analista de siniestros ve Siniestros como enlace a su bandeja y su rol', async () => {
+    await iniciarSesion({ name: 'Luis Mora', 'cognito:groups': ['analistas-siniestros'] });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const siniestros = html(fixture).querySelector<HTMLAnchorElement>('a[href="/siniestros"]');
+    expect(siniestros?.textContent?.trim()).toBe('Siniestros');
+    expect(html(fixture).querySelector('.usuario')?.textContent).toBe('Luis Mora · Analista de siniestros');
+  });
+
+  it('HU-W19: sin el grupo analistas-siniestros, Siniestros sigue deshabilitado', async () => {
+    await iniciarSesion({ name: 'Carlos Portillo', 'cognito:groups': ['asesores'] });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    expect(html(fixture).querySelector('a[href="/siniestros"]')).toBeNull();
+    const siniestros = Array.from(html(fixture).querySelectorAll('.nav__item')).find((n) => n.textContent?.trim() === 'Siniestros');
+    expect(siniestros?.tagName).not.toBe('A');
+  });
+
   for (const grupos of [[], ['operacion'], ['administradores'], ['administradores-socios'], ['suscriptores', 'operacion']]) {
     it(`sin asesores no muestra Pólizas, ni siquiera deshabilitada (${grupos.join(', ') || 'sin grupos'})`, async () => {
       await iniciarSesion({ name: 'Ana', 'cognito:groups': grupos });

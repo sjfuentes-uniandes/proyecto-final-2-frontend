@@ -19,6 +19,8 @@ export interface UsuarioE2E {
 
 export const ASESOR: UsuarioE2E = { sub: 'sub-asesor-e2e', nombre: 'Asesor Sintético', grupos: ['asesores'] };
 export const SUSCRIPTOR: UsuarioE2E = { sub: 'sub-suscriptor-e2e', nombre: 'Suscriptora Sintética', grupos: ['suscriptores'] };
+/** HU-W19: el analista de siniestros (grupo `analistas-siniestros`). */
+export const ANALISTA: UsuarioE2E = { sub: 'a0a0a0a0-0000-4000-8000-000000000001', nombre: 'Luis Mora', grupos: ['analistas-siniestros'] };
 
 const POOL = 'us-east-1_e2e00000';
 const CLIENTE = 'cliente-e2e-portal';

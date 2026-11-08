@@ -1,0 +1,15 @@
+@let t = textos.t();
+<section class="card" aria-labelledby="titulo-tramite">
+  <h3 id="titulo-tramite">{{ t.tituloTramite }}</h3>
+  <ol class="pasos">
+    @for (fila of filas(); track fila.paso) {
+      <li class="paso" [class]="'paso paso--' + fila.estado.toLowerCase()" [attr.aria-current]="fila.estado === 'ACTUAL' ? 'step' : null">
+        <span class="marca" aria-hidden="true"></span>
+        <div>
+          <p class="rotulo">{{ fila.rotulo }}<span class="sr-only"> · {{ fila.situacion }}</span></p>
+          <p class="detalle">{{ fila.detalle }}</p>
+        </div>
+      </li>
+    }
+  </ol>
+</section>

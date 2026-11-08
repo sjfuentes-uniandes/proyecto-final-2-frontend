@@ -19,6 +19,10 @@ function inicio(): string {
   if (sesion.tieneGrupo('asesores')) {
     return '/perfilamiento';
   }
+  // HU-W19: el analista de siniestros entra a su bandeja (H01).
+  if (sesion.tieneGrupo('analistas-siniestros')) {
+    return '/siniestros';
+  }
   if (sesion.tieneGrupo('administradores-socios')) {
     return '/socios';
   }
@@ -35,12 +39,14 @@ export const routes: Routes = [
   { path: 'consentimientos', loadChildren: () => import('./features/consentimientos/consentimientos.routes').then((m) => m.routes) },
   { path: 'perfilamiento', loadChildren: () => import('./features/perfilamiento/perfilamiento.routes').then((m) => m.routes) },
   { path: 'contratacion', loadChildren: () => import('./features/contratacion/contratacion.routes').then((m) => m.routes) },
-  { path: 'consulta', loadChildren: () => import('./features/consulta/consulta.routes').then((m) => m.routes) },
-  // HU-W24: H10 y H11. Cuando exista la sección Siniestros (HU-W19 a HU-W22), pasa a ser su hija.
+  // HU-W24: H10 y H11. Va antes de `siniestros` (HU-W19) para que `:siniestroId` no capture la ruta; pasará a ser
+  // hija de la sección Siniestros cuando su menú se unifique.
   {
     path: 'siniestros/parametricos/descarte',
     loadChildren: () => import('./features/siniestros/parametricos/descarte/descarte.routes').then((m) => m.routes),
   },
+  { path: 'siniestros', loadChildren: () => import('./features/siniestros/siniestros.routes').then((m) => m.routes) },
+  { path: 'consulta', loadChildren: () => import('./features/consulta/consulta.routes').then((m) => m.routes) },
   {
     path: 'sin-acceso',
     title: 'Acceso restringido · Solventa',

@@ -1,0 +1,114 @@
+@let t = textos.t();
+@if (estado.detalle(); as d) {
+  <div class="h-row">
+    <header>
+      <h3 class="titulo">{{ t.tituloEvidencias }}</h3>
+      <p class="sub">{{ resumen() }}</p>
+    </header>
+    <a class="btn btn--secundario" [routerLink]="['../evaluacion']">{{ t.volverEvaluacion }}</a>
+  </div>
+
+  <div class="cols">
+    <div class="columna">
+      <section class="card" aria-labelledby="titulo-archivos">
+        <h3 id="titulo-archivos">{{ t.tituloArchivos }}</h3>
+        @if (filas().length === 0) {
+          <p class="sub">{{ t.sinArchivos }}</p>
+        } @else {
+          <table class="data" aria-labelledby="titulo-archivos">
+            <thead>
+              <tr>
+                <th scope="col">{{ t.colArchivo }}</th>
+                <th scope="col">{{ t.colTipo }}</th>
+                <th scope="col">{{ t.colCapturado }}</th>
+                <th scope="col">{{ t.colUbicacion }}</th>
+                <th scope="col">{{ t.colIntegridad }}</th>
+                <th scope="col"><span class="sr-only">{{ t.ver }}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of filas(); track fila.evidencia.id) {
+                <tr>
+                  <th scope="row" class="archivo">{{ fila.evidencia.nombreArchivo }}</th>
+                  <td class="sin-corte">{{ fila.tipo }}</td>
+                  <td class="mono">{{ fila.capturado }}</td>
+                  <td>{{ fila.ubicacion }}</td>
+                  <td><app-insignia-estado [insignia]="fila.integridad" /></td>
+                  <td class="sin-corte">
+                    <button class="ver" type="button" [attr.aria-label]="t.verArchivo(fila.evidencia.nombreArchivo)" (click)="ver(fila.evidencia, $event)">
+                      {{ t.ver }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+
+      @if (filas().length) {
+        <section class="card" aria-labelledby="titulo-previa">
+          <h3 id="titulo-previa">{{ t.tituloVistaPrevia }}</h3>
+          <p class="sub">{{ t.vistaPreviaAyuda }}</p>
+          <ul class="previa">
+            @for (fila of filas(); track fila.evidencia.id) {
+              <li>
+                <button
+                  type="button"
+                  class="miniatura"
+                  [class.miniatura--video]="fila.evidencia.tipo === 'VIDEO'"
+                  [attr.aria-label]="t.abrirVistaPrevia(fila.evidencia.nombreArchivo)"
+                  (click)="ver(fila.evidencia, $event)"
+                >
+                  @if (fila.evidencia.tipo === 'VIDEO') {
+                    <span aria-hidden="true">▶ </span>
+                  }
+                  {{ fila.evidencia.nombreArchivo }}
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+
+    <div class="columna">
+      @if (coherencia(); as c) {
+        <section class="card" aria-labelledby="titulo-coherencia">
+          <h3 id="titulo-coherencia" class="con-insignia">
+            {{ t.tituloCoherencia }}
+            <app-insignia-estado [insignia]="c.insignia" />
+          </h3>
+          <dl class="kv">
+            @for (dato of c.datos; track dato.etiqueta) {
+              <div>
+                <dt>{{ dato.etiqueta }}</dt>
+                <dd [class]="dato.tono">{{ dato.valor }}</dd>
+              </div>
+            }
+          </dl>
+        </section>
+      }
+
+      @if (pendientes().length) {
+        <section class="card" aria-labelledby="titulo-pendientes">
+          <h3 id="titulo-pendientes">{{ t.tituloSoportesPendientes }}</h3>
+          <ul class="pendientes">
+            @for (soporte of pendientes(); track soporte.tipo) {
+              <li>
+                <span>{{ soporte.nombre }}</span>
+                <span class="tag tag--alerta">{{ soporte.estado }}</span>
+              </li>
+            }
+          </ul>
+          <!-- «Solicitarlo al cliente» es de W20: hasta entonces, deshabilitado. -->
+          <button class="btn btn--secundario btn--bloque" type="button" disabled [attr.title]="t.proximamente">{{ t.solicitarAlCliente }}</button>
+        </section>
+      }
+
+      <p class="aviso">{{ t.avisoGeoetiqueta }}</p>
+    </div>
+  </div>
+
+  <app-visor-evidencia [siniestroId]="d.id" [evidencia]="abierta()" (cerrado)="cerrarVisor()" />
+}

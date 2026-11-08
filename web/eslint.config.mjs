@@ -1,6 +1,6 @@
 // @ts-check
 // ESLint solo para las features de consentimientos (ADR 0008, PR 3.8) y contratación (HU-W13). No bloqueante: no corre
-// en test:ci, en el build ni en la CI; se ejecuta con `npm run lint:consentimientos` o `npm run lint:contratacion`. El resto
+// en test:ci, en el build ni en la CI; se ejecuta con `npm run lint:<feature>` (consentimientos, contratacion, consulta o siniestros). El resto
 // del proyecto queda fuera aunque se corra `eslint .`.
 import angular from 'angular-eslint';
 import tseslint from 'typescript-eslint';
