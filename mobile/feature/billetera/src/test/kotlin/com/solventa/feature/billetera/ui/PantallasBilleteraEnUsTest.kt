@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -45,17 +46,20 @@ class PantallasBilleteraEnUsTest {
         lista(BilleteraUiState.Contenido(listOf(Muestras.activa, Muestras.vencida)))
 
         compose.onNodeWithText("My Wallet").assertIsDisplayed()
-        compose.onNodeWithText("Policy POL-000123").assertIsDisplayed()
+        compose.onNodeWithText("Your policies").assertIsDisplayed()
+        compose.onNodeWithText("ACTIVE", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("EXPIRED", useUnmergedTree = true).assertIsDisplayed()
+        compose.onAllNodesWithText("View full details", useUnmergedTree = true).assertCountEquals(0)
+        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa")).performClick()
+        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-vencida")).performClick()
         compose.onNodeWithText("Sum insured: $ 300,000,000 COP").assertIsDisplayed()
         compose.onNodeWithText("3 coverages").assertIsDisplayed()
         compose.onNodeWithText("1 coverage").assertIsDisplayed()
-        compose.onNodeWithText("ACTIVE", useUnmergedTree = true).assertIsDisplayed()
-        compose.onNodeWithText("EXPIRED", useUnmergedTree = true).assertIsDisplayed()
         compose.onAllNodesWithText("View full details", useUnmergedTree = true).assertCountEquals(2)
         compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Status: active"))
             .assert(SemanticsMatcher("etiqueta de la acción") {
-                it.config[SemanticsActions.OnClick].label == "Open policy details"
+                it.config[SemanticsActions.OnClick].label == "Show or hide the policy data"
             })
         compose.onNodeWithContentDescription("Consents and privacy").assertIsDisplayed()
     }
@@ -133,7 +137,8 @@ class PantallasBilleteraEnUsTest {
         compose.montar(2f) {
             BilleteraScreen(BilleteraUiState.Contenido(listOf(Muestras.activa)), {}, {}, {})
         }
-        listOf("Policy POL-000123", "Sum insured: $ 300,000,000 COP", "3 coverages").forEach {
+        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa")).performClick()
+        listOf("POL-000123", "Sum insured: $ 300,000,000 COP", "3 coverages").forEach {
             compose.onNodeWithText(it, useUnmergedTree = true).assertTextoCompleto()
         }
         compose.onNodeWithText("View full details", useUnmergedTree = true).assertTextoCompleto()

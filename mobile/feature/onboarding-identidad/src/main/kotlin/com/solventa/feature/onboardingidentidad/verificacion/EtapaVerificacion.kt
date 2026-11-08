@@ -47,7 +47,10 @@ sealed interface EtapaVerificacion {
     /** AC3: la verificación no terminó; reintentar es seguro y no crea otro cliente. */
     data class Interrumpida(val correlationId: String?) : EtapaVerificacion
 
-    /** El correo del formulario no es el de la verificación: hay que verificar de nuevo. */
+    /** El documento no está registrado: la persona debe contactar a su asesor. */
+    data object ClienteNoRegistrado : EtapaVerificacion
+
+    /** El correo del formulario no es el que tiene el asesor: hay que verificar de nuevo. */
     data object CorreoDistinto : EtapaVerificacion
 
     /** Ese correo ya tiene cuenta: la persona debe iniciar sesión. */

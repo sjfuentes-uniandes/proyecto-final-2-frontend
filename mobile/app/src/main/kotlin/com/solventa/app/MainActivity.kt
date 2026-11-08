@@ -11,6 +11,16 @@ import com.solventa.core.auth.EstadoSesion
 import com.solventa.feature.notificaciones.ui.PermisoNotificacionesRoute
 import com.solventa.feature.notificaciones.ui.RegistroExplicacionPermiso
 import kotlinx.coroutines.flow.StateFlow
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +83,7 @@ class MainActivity : FragmentActivity() {
             estadoSesion = app.gestorSesion.estado,
             destinoPendiente = app.destinoPendiente,
             registroPermisoNotificaciones = app.registroPermisoNotificaciones,
+            cerrarSesion = app.gestorSesion::cerrarSesion,
         )
 
         // Rotación o recreación: el intent original ya se procesó la primera vez.
@@ -107,6 +118,7 @@ internal class DependenciasNavegacion(
     val estadoSesion: StateFlow<EstadoSesion>,
     val destinoPendiente: DestinoPendiente,
     val registroPermisoNotificaciones: RegistroExplicacionPermiso,
+    val cerrarSesion: () -> Unit = {},
 )
 
 /** Contenido de [MainActivity], fuera de ella para probar la navegación sin la app real. */
@@ -152,7 +164,61 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
         navegacion.navigate(Rutas.detallePoliza(polizaId)) { launchSingleTop = true }
     }
 
-    NavHost(navController = navegacion, startDestination = Rutas.LOGIN) {
+    val mostrarBarra = rutaActual == Rutas.BILLETERA || rutaActual == Rutas.PRIVACIDAD
+    var confirmarCierre by rememberSaveable { mutableStateOf(false) }
+    val pedirCierreSesion: () -> Unit = { confirmarCierre = true }
+    if (confirmarCierre) {
+        AlertDialog(
+            onDismissRequest = { confirmarCierre = false },
+            title = { Text(stringResource(R.string.cerrar_sesion_titulo)) },
+            text = { Text(stringResource(R.string.cerrar_sesion_mensaje)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmarCierre = false
+                    dependencias.cerrarSesion()
+                    irALogin()
+                }) { Text(stringResource(R.string.cerrar_sesion_confirmar)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmarCierre = false }) {
+                    Text(stringResource(R.string.cerrar_sesion_cancelar))
+                }
+            },
+        )
+    }
+    Scaffold(
+        contentWindowInsets = WindowInsets(0),
+        bottomBar = {
+            if (mostrarBarra) {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = rutaActual == Rutas.BILLETERA,
+                        onClick = {
+                            navegacion.navigate(Rutas.BILLETERA) {
+                                popUpTo(Rutas.BILLETERA) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
+                        icon = { Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_billetera)) },
+                    )
+                    NavigationBarItem(
+                        selected = rutaActual == Rutas.PRIVACIDAD,
+                        onClick = {
+                            navegacion.navigate(Rutas.PRIVACIDAD) { launchSingleTop = true }
+                        },
+                        icon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_privacidad)) },
+                    )
+                }
+            }
+        },
+    ) { relleno ->
+    NavHost(
+        navController = navegacion,
+        startDestination = Rutas.LOGIN,
+        modifier = Modifier.padding(bottom = relleno.calculateBottomPadding()),
+    ) {
         composable(Rutas.LOGIN) {
             val viewModel = viewModel<LoginViewModel>(factory = dependencias.fabricaLogin)
             LoginRoute(
@@ -173,6 +239,7 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
                 onAbrirPoliza = { polizaId -> navegacion.navigate(Rutas.detallePoliza(polizaId)) },
                 onAbrirPrivacidad = { navegacion.navigate(Rutas.PRIVACIDAD) },
                 onIrALogin = irALogin,
+                onCerrarSesion = pedirCierreSesion,
             )
             PermisoNotificacionesRoute(dependencias.registroPermisoNotificaciones)
         }
@@ -185,6 +252,7 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
                 viewModel = viewModel<DetallePolizaViewModel>(factory = dependencias.fabricaDetalle(polizaId)),
                 onVolver = { navegacion.popBackStack() },
                 onIrALogin = irALogin,
+                onCerrarSesion = pedirCierreSesion,
             )
         }
         composable(Rutas.REGISTRO) {
@@ -210,14 +278,17 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
             PrivacidadListaRoute(
                 viewModel = viewModel<PrivacidadViewModel>(viewModelStoreOwner = actividad, factory = fabricaPrivacidad),
                 onAbrirPermiso = { navegacion.navigate(Rutas.PERMISO_OPEN_FINANCE) },
+                onCerrarSesion = pedirCierreSesion,
             )
         }
         composable(Rutas.PERMISO_OPEN_FINANCE) {
             PermisoOpenFinanceRoute(
                 viewModel = viewModel<PrivacidadViewModel>(viewModelStoreOwner = actividad, factory = fabricaPrivacidad),
                 onVolver = { navegacion.popBackStack() },
+                onCerrarSesion = pedirCierreSesion,
             )
         }
+    }
     }
 }
 

@@ -55,7 +55,15 @@
     <string name="onboarding_interrumpida_titulo">The verification did not finish</string>
     <string name="onboarding_interrumpida_mensaje">There was a communication problem. You can retry: a second record will not be created.</string>
     <string name="onboarding_correo_distinto_titulo">Verify your identity again</string>
-    <string name="onboarding_correo_distinto_mensaje">The email changed since the last verification. Repeat the capture with the current email.</string>
+    <string name="onboarding_correo_distinto_mensaje">You must sign up with the email your advisor has on file.</string>
+    <string name="onboarding_cliente_no_registrado_titulo">We could not find your document</string>
+    <string name="onboarding_cliente_no_registrado_mensaje">We could not find your document. Contact your advisor to get registered.</string>
+    <string name="onboarding_etiqueta_tipo_documento">Document type</string>
+    <string name="onboarding_tipo_documento_cc">Citizenship ID (CC)</string>
+    <string name="onboarding_tipo_documento_ce">Foreigner ID (CE)</string>
+    <string name="onboarding_tipo_documento_pa">Passport (PA)</string>
+    <string name="onboarding_etiqueta_numero_documento">Document number</string>
+    <string name="onboarding_numero_documento_invalido">Enter 3 to 20 letters or digits</string>
     <string name="onboarding_cuenta_existente_titulo">You already have an account</string>
     <string name="onboarding_cuenta_existente_mensaje">This email is already registered. Sign in to continue.</string>
     <string name="onboarding_error_titulo">Something went wrong</string>

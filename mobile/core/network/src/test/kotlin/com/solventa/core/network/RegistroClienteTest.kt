@@ -34,7 +34,7 @@ class RegistroClienteTest {
     private fun error(codigo: String, detalles: String = "{}") =
         """{"codigo":"$codigo","mensaje":"x","correlationId":"cid-1","detalles":$detalles}"""
 
-    private suspend fun verificar() = cliente.verificar("reg-1", "a@b.co", "selfie-sintetica-aprobada", true)
+    private suspend fun verificar() = cliente.verificar("reg-1", "CC", "1020456789", "a@b.co", "selfie-sintetica-aprobada", true)
 
     @Test
     fun `envia registroId correo selfie y prueba de vida sin Authorization`() = runTest {
@@ -47,6 +47,8 @@ class RegistroClienteTest {
         assertEquals(null, recibida.getHeader("Authorization"))
         val cuerpo = recibida.body.readUtf8()
         assertTrue(cuerpo.contains(""""registroId":"reg-1""""))
+        assertTrue(cuerpo.contains(""""tipoDocumento":"CC""""))
+        assertTrue(cuerpo.contains(""""numeroDocumento":"1020456789""""))
         assertTrue(cuerpo.contains(""""correo":"a@b.co""""))
         assertTrue(cuerpo.contains(""""pruebaDeVida":{"completado":true}"""))
     }
@@ -81,6 +83,7 @@ class RegistroClienteTest {
     @Test
     fun `errores de verificacion se traducen por codigo`() = runTest {
         responder(503, error("SERVICIO_NO_DISPONIBLE"))
+        responder(404, error("CLIENTE_NO_REGISTRADO"))
         responder(409, error("REGISTRO_CORREO_DISTINTO"))
         responder(409, error("REGISTRO_YA_VINCULADO"))
         responder(422, error("SOLICITUD_INVALIDA", """{"campos":["correo"]}"""))
@@ -89,6 +92,7 @@ class RegistroClienteTest {
         val servicio = verificar()
         assertIs<ResultadoVerificacionRegistro.ServicioNoDisponible>(servicio)
         assertTrue(servicio.esRecuperable)
+        assertIs<ResultadoVerificacionRegistro.ClienteNoRegistrado>(verificar())
         assertIs<ResultadoVerificacionRegistro.CorreoDistinto>(verificar())
         assertIs<ResultadoVerificacionRegistro.YaVinculado>(verificar())
         assertEquals(listOf("correo"), assertIs<ResultadoVerificacionRegistro.SolicitudInvalida>(verificar()).campos)
@@ -140,9 +144,9 @@ class RegistroClienteTest {
     @Test
     fun `los modelos no imprimen datos sensibles`() {
         val s = com.solventa.core.network.modelo.RegistroVerificacionSolicitud(
-            "reg-secreto", "a@b.co", "SELFIE", com.solventa.core.network.modelo.PruebaDeVidaDto(true),
+            "reg-secreto", "CC", "1020456789", "a@b.co", "SELFIE", com.solventa.core.network.modelo.PruebaDeVidaDto(true),
         ).toString()
 
-        assertFalse(s.contains("reg-secreto") || s.contains("a@b.co") || s.contains("SELFIE"))
+        assertFalse(s.contains("reg-secreto") || s.contains("1020456789") || s.contains("a@b.co") || s.contains("SELFIE"))
     }
 }

@@ -392,13 +392,40 @@ for (const idioma of ['es-CO', 'en-US'] as const) {
   });
 }
 
-test('R6 acceso: un usuario del grupo suscriptores va a /sin-acceso', async ({ page }) => {
-  await prepararPortal(page, SUSCRIPTOR);
-  const bff = await simularListado(page);
-  await page.goto('/consulta/polizas');
-  await expect(page).toHaveURL(/\/sin-acceso/);
-  expect(bff.consultas).toHaveLength(0);
-});
+for (const grupos of [[], ['suscriptores'], ['operacion'], ['administradores'], ['administradores-socios'], ['suscriptores', 'operacion']]) {
+  for (const ruta of ['/consulta/polizas', `/consulta/polizas/${POLIZA_VIGENTE_ID}`]) {
+    test(`R6 acceso: sin asesores (${grupos.join(', ') || 'sin grupos'}) rechaza ${ruta} y oculta Pólizas`, async ({ page }) => {
+      await prepararPortal(page, { ...SUSCRIPTOR, grupos });
+      const peticiones: string[] = [];
+      page.on('request', (peticion) => {
+        if (new URL(peticion.url()).pathname.includes('/web/v1/polizas')) {
+          peticiones.push(peticion.url());
+        }
+      });
+      await page.goto(ruta);
+      await expect(page).toHaveURL(/\/sin-acceso/);
+      await expect(page.getByRole('navigation', { name: 'Principal' })).not.toContainText('Pólizas');
+      if (grupos.includes('suscriptores')) {
+        await expect(page.getByRole('link', { name: 'Contratación', exact: true })).toHaveAttribute('href', '/contratacion');
+      }
+      expect(peticiones).toHaveLength(0);
+    });
+  }
+}
+
+for (const grupos of [['asesores'], ['suscriptores', 'asesores']]) {
+  test(`R6 acceso: asesores (${grupos.join(', ')}) conserva el listado y el detalle`, async ({ page }) => {
+    await prepararPortal(page, { ...ASESOR, grupos });
+    await simularListado(page);
+    await simularDetalle(page);
+    await page.goto('/consulta/polizas');
+    await expect(page.getByRole('heading', { name: 'Pólizas', exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: 'Pólizas', exact: true }))
+      .toHaveAttribute('href', '/consulta/polizas');
+    await page.goto(`/consulta/polizas/${POLIZA_VIGENTE_ID}`);
+    await expect(page.getByRole('heading', { level: 2 })).toHaveText(`Póliza ${NUMERO_VIGENTE} Vigente`);
+  });
+}
 
 test('R6 pseudo: listado y detalle sin cortes ni desbordes', async ({ page }, testInfo) => {
   await prepararPortal(page, ASESOR);
