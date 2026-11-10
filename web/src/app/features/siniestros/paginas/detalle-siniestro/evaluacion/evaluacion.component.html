@@ -1,5 +1,19 @@
 @let t = textos.t();
 @if (estado.detalle(); as d) {
+  @if (estado.mensajeDecision(); as mensaje) {
+    <p class="alerta alerta--ok" role="status"><span aria-hidden="true">✓</span><span>{{ mensaje }}</span></p>
+  }
+  @if (estado.errorDecision(); as e) {
+    <div class="alerta alerta--error" role="alert">
+      <span aria-hidden="true">⚠</span>
+      <span>
+        <strong>{{ t.decisionError }}.</strong> {{ e.mensaje }}
+        @if (e.correlationId) {
+          <span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+        }
+      </span>
+    </div>
+  }
   <div class="cols">
     <div class="columna">
       <app-tabla-verificaciones [verificaciones]="d.verificacionCobertura" [amparos]="d.poliza.amparos" />
@@ -8,11 +22,19 @@
       } @else {
         <p class="aviso aviso--ok" role="status">{{ t.soportesAlDia }}</p>
       }
-      <!-- Hueco del panel de decisión (aprobar, solicitar soporte y rechazar): lo llena W20. -->
+      <app-liquidacion [detalle]="d" [formulario]="formulario" [editable]="puedeDecidir()" />
       <!-- Hueco del bloque del evento paramétrico: lo llena W22. -->
     </div>
     <div class="columna">
       <app-linea-tiempo-tramite [pasos]="d.tramite" [origen]="d.origen" />
+      @if (puedeDecidir()) {
+        <app-panel-decision
+          [detalle]="d"
+          [formulario]="formulario"
+          (decidida)="estado.decisionRegistrada($event)"
+          (rechazada)="estado.decisionRechazada($event)"
+        />
+      }
     </div>
   </div>
 }

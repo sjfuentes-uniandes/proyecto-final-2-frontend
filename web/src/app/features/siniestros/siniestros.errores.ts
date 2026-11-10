@@ -29,6 +29,11 @@ export const POR_CODIGO: Record<string, ClaveError> = {
   EVIDENCIA_NO_DISPONIBLE: 'errorEvidenciaNoDisponible',
   COLA_SIN_CASOS: 'errorColaSinCasos',
   IDEMPOTENCIA_CONFLICTO: 'errorIdempotenciaConflicto',
+  JUSTIFICACION_REQUERIDA: 'errorJustificacionRequerida',
+  CAUSAL_INVALIDA: 'errorCausalInvalida',
+  VALOR_FUERA_DE_RANGO: 'errorValorFueraDeRango',
+  TRANSICION_NO_PERMITIDA: 'errorTransicionNoPermitida',
+  CASO_ASIGNADO_A_OTRO: 'errorCasoAsignadoAOtro',
   DEPENDENCIA_NO_DISPONIBLE: 'errorDependenciaNoDisponible',
   SERVICIO_NO_DISPONIBLE: 'errorServicioNoDisponible',
 };

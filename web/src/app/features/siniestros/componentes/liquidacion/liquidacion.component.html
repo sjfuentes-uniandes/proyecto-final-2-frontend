@@ -1,0 +1,104 @@
+@let t = textos.t();
+@if (aprobada(); as a) {
+  <section class="card" [attr.aria-labelledby]="idBase + '-titulo'">
+    <h3 [id]="idBase + '-titulo'">{{ t.liqTitulo }}</h3>
+    <dl class="resumen">
+      <div>
+        <dt>{{ t.liqValorReclamado }}</dt>
+        <dd>{{ a.reclamado }}</dd>
+      </div>
+      <div>
+        <dt>{{ t.liqDeducible }}</dt>
+        <dd>{{ a.deducible }}</dd>
+      </div>
+      <div>
+        <dt>{{ t.liqAIndemnizar }}</dt>
+        <dd class="resumen__total">{{ a.indemnizar }}</dd>
+      </div>
+      @if (a.referencia) {
+        <div>
+          <dt>{{ t.liqReferencia }}</dt>
+          <dd>{{ a.referencia }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+} @else if (editable()) {
+  @let f = formulario();
+  <section class="card" [attr.aria-labelledby]="idBase + '-titulo'">
+    <h3 [id]="idBase + '-titulo'">{{ t.liqTitulo }}</h3>
+    <p class="moneda">{{ t.liqMoneda(moneda()) }}</p>
+    <form class="campos" [formGroup]="f" novalidate (submit)="$event.preventDefault()">
+      <div class="fld">
+        <label [for]="idBase + '-reclamado'">{{ t.liqValorReclamado }}</label>
+        <input
+          [id]="idBase + '-reclamado'"
+          class="inp"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          formControlName="valorReclamado"
+          [readOnly]="valorReclamadoFijo()"
+          [attr.aria-invalid]="errorMonto('valorReclamado') ? 'true' : null"
+          [attr.aria-describedby]="errorMonto('valorReclamado') ? idError('reclamado') : null"
+          (blur)="alSalir('valorReclamado')"
+        />
+        @if (errorMonto('valorReclamado'); as e) {
+          <span class="fld__error" [id]="idError('reclamado')">{{ e }}</span>
+        }
+      </div>
+      <div class="fld">
+        <label [for]="idBase + '-deducible'">{{ t.liqDeducible }}</label>
+        <input
+          [id]="idBase + '-deducible'"
+          class="inp"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          formControlName="deducible"
+          [attr.aria-invalid]="errorMonto('deducible') ? 'true' : null"
+          [attr.aria-describedby]="errorMonto('deducible') ? idError('deducible') : null"
+          (blur)="alSalir('deducible')"
+        />
+        @if (errorMonto('deducible'); as e) {
+          <span class="fld__error" [id]="idError('deducible')">{{ e }}</span>
+        }
+      </div>
+      <div class="fld">
+        <label [for]="idBase + '-indemnizar'">{{ t.liqValorIndemnizar }}</label>
+        <input
+          [id]="idBase + '-indemnizar'"
+          class="inp"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          formControlName="valorIndemnizar"
+          [attr.aria-invalid]="errorMonto('valorIndemnizar') ? 'true' : null"
+          [attr.aria-describedby]="errorMonto('valorIndemnizar') ? idError('indemnizar') : null"
+          (blur)="alSalir('valorIndemnizar')"
+        />
+        @if (errorMonto('valorIndemnizar'); as e) {
+          <span class="fld__error" [id]="idError('indemnizar')">{{ e }}</span>
+        }
+      </div>
+      <div class="fld fld--completo">
+        <label [for]="idBase + '-justificacion'">
+          {{ t.liqJustificacion }} · <span class="obligatoria">{{ t.liqObligatoria }}</span>
+        </label>
+        <textarea
+          [id]="idBase + '-justificacion'"
+          class="inp inp--texto"
+          rows="3"
+          formControlName="justificacion"
+          [attr.maxlength]="maxJustificacion"
+          [attr.aria-required]="'true'"
+          [attr.aria-invalid]="errorJustificacion() ? 'true' : null"
+          [attr.aria-describedby]="errorJustificacion() ? idError('justificacion') : null"
+        ></textarea>
+        @if (errorJustificacion(); as e) {
+          <span class="fld__error" [id]="idError('justificacion')">{{ e }}</span>
+        }
+      </div>
+    </form>
+  </section>
+}

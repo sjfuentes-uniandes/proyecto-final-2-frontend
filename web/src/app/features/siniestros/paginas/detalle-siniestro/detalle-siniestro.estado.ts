@@ -22,15 +22,22 @@ export class DetalleSiniestroEstado implements OnDestroy {
   readonly detalle = signal<DetalleSiniestro | null>(null);
   readonly cargando = signal(false);
   readonly error = signal<ErrorSiniestros | null>(null);
+  /** Resultado de la última decisión del analista (HU-W20): el aviso de éxito o el error que la rechazó. */
+  readonly mensajeDecision = signal<string | null>(null);
+  readonly errorDecision = signal<ErrorSiniestros | null>(null);
 
   private suscripcion: Subscription | null = null;
+  private refresco: Subscription | null = null;
   private ultimoId: string | null = null;
 
   cargar(siniestroId: string): void {
     this.ultimoId = siniestroId;
     this.suscripcion?.unsubscribe();
+    this.refresco?.unsubscribe();
     this.detalle.set(null);
     this.error.set(null);
+    this.mensajeDecision.set(null);
+    this.errorDecision.set(null);
     this.cargando.set(true);
     this.suscripcion = this.servicio.detalle(siniestroId).subscribe({
       next: (detalle) => {
@@ -55,7 +62,31 @@ export class DetalleSiniestroEstado implements OnDestroy {
     }
   }
 
+  /** La decisión quedó registrada: se avisa y se vuelve a pedir el detalle sin vaciar la pantalla. */
+  decisionRegistrada(aviso: string): void {
+    this.mensajeDecision.set(aviso);
+    this.errorDecision.set(null);
+    this.refrescar();
+  }
+
+  /** La decisión no aplicó (el caso cambió, W20-F07): se muestra el error y se recarga el detalle vigente. */
+  decisionRechazada(error: ErrorSiniestros): void {
+    this.errorDecision.set(error);
+    this.mensajeDecision.set(null);
+    this.refrescar();
+  }
+
+  /** Vuelve a pedir el detalle conservando el que se ve; si falla, queda el anterior. */
+  private refrescar(): void {
+    if (!this.ultimoId) {
+      return;
+    }
+    this.refresco?.unsubscribe();
+    this.refresco = this.servicio.detalle(this.ultimoId).subscribe({ next: (detalle) => this.detalle.set(detalle) });
+  }
+
   ngOnDestroy(): void {
     this.suscripcion?.unsubscribe();
+    this.refresco?.unsubscribe();
   }
 }

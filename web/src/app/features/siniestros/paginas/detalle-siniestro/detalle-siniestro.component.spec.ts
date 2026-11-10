@@ -10,10 +10,13 @@ import { IdiomaService } from '../../../../core/i18n/idioma.service';
 import { iniciarSesion, proveerAuthFalso, violacionesA11y } from '../../../../testing';
 import { DetalleSiniestro } from '../../siniestros.modelo';
 import {
+  ANALISTA_QA,
+  DETALLE_APROBADO,
   DETALLE_COMPLETO,
   DETALLE_EVIDENCIA_ALTERADA,
   DETALLE_EVIDENCIA_AUSENTE,
   DETALLE_SIN_COMPOSICION,
+  RESULTADO_APROBACION,
   SINIESTRO_EVA01,
   URL_SINIESTROS,
   errorB2,
@@ -409,6 +412,119 @@ describe('Detalle del siniestro (H03, H04, Cobertura e Historial, HU-W19)', () =
         ...DETALLE_EVIDENCIA_ALTERADA,
         evidencias: DETALLE_EVIDENCIA_ALTERADA.evidencias.map((e, i) => (i === 2 ? { ...e, integridad: 'NO_DISPONIBLE' as const } : e)),
       });
+      expect(await violacionesA11y(html())).toEqual([]);
+    });
+  });
+
+  describe('Decisión del analista (HU-W20)', () => {
+    const boton = (texto: string) => Array.from(html().querySelectorAll('button')).find((b) => b.textContent?.trim() === texto) as HTMLButtonElement;
+    const campo = (sufijo: string) => html().querySelector(`[id$="-${sufijo}"]`) as HTMLInputElement;
+    const escribir = (sufijo: string, valor: string) => {
+      const el = campo(sufijo);
+      el.value = valor;
+      el.dispatchEvent(new Event('input'));
+      el.dispatchEvent(new Event('blur'));
+    };
+    const urlDecision = `${URL_SINIESTROS()}/${SINIESTRO_EVA01}/decision`;
+
+    /** Entra como el analista dueño del caso (su `sub` es el `analistaId`). */
+    async function abrirComoAnalista(detalle: DetalleSiniestro = DETALLE_COMPLETO, sub = ANALISTA_QA): Promise<void> {
+      await iniciarSesion({ sub, name: 'Luis Mora', 'cognito:groups': ['analistas-siniestros'] });
+      harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl(`${base}/evaluacion`);
+      pedidoDetalle().flush(detalle);
+      harness.detectChanges();
+    }
+
+    function completarYConfirmar(): void {
+      escribir('reclamado', '2850000');
+      escribir('deducible', '350000');
+      escribir('indemnizar', '2500000');
+      escribir('justificacion', 'Daño accidental verificado');
+      harness.detectChanges();
+      boton('Aprobar y ordenar el pago').click();
+      harness.detectChanges();
+      boton('Confirmar y ordenar el pago').click();
+    }
+
+    it('con el caso EN_EVALUACION asignado al usuario muestra la liquidación y el panel de decisión', async () => {
+      await abrirComoAnalista();
+      expect(texto('app-liquidacion h3')).toBe('Liquidación');
+      expect(Array.from(html().querySelectorAll('app-panel-decision .panel button')).map((b) => b.textContent?.trim())).toEqual([
+        'Aprobar y ordenar el pago',
+        'Solicitar el soporte faltante',
+        'Rechazar el siniestro',
+      ]);
+    });
+
+    it('no muestra el panel si el caso es de otro analista, o no está EN_EVALUACION', async () => {
+      await abrirComoAnalista(DETALLE_COMPLETO, 'a0a0a0a0-0000-4000-8000-0000000000ff');
+      expect(html().querySelector('app-panel-decision')).toBeNull();
+      expect(html().querySelector('app-liquidacion section')).toBeNull();
+    });
+
+    for (const estado of ['REPORTADO', 'FALTA_SOPORTE', 'RECHAZADO'] as const) {
+      it(`no muestra el panel con el caso ${estado}`, async () => {
+        await abrirComoAnalista({ ...DETALLE_COMPLETO, estado });
+        expect(html().querySelector('app-panel-decision')).toBeNull();
+      });
+    }
+
+    it('con el caso APROBADO muestra la liquidación de solo lectura y «Decisión» completada, sin panel', async () => {
+      await abrirComoAnalista(DETALLE_APROBADO);
+      expect(html().querySelector('app-panel-decision')).toBeNull();
+      expect(texto('app-liquidacion .resumen__total')).toMatch(/2\.500\.000/);
+      const pasos = Array.from(html().querySelectorAll('app-linea-tiempo-tramite li .rotulo')).map((r) => r.textContent?.replace(/\s+/g, ' ').trim());
+      expect(pasos).toContain('Decisión · Completado');
+      expect(pasos).toContain('Pago de la indemnización · Pendiente');
+    });
+
+    it('aprobar envía la decisión, recarga el detalle y muestra el aviso con la liquidación aprobada', async () => {
+      await abrirComoAnalista();
+      completarYConfirmar();
+      const pedido = http.expectOne(urlDecision);
+      expect(pedido.request.headers.get('Idempotency-Key')).toBeTruthy();
+      expect(pedido.request.body.tipo).toBe('APROBAR');
+      pedido.flush(RESULTADO_APROBACION);
+      pedidoDetalle().flush(DETALLE_APROBADO);
+      harness.detectChanges();
+      expect(texto('.alerta--ok')).toContain('Siniestro aprobado. La referencia de pago es IND-88-2026-0442-01.');
+      expect(html().querySelector('app-panel-decision')).toBeNull();
+      expect(texto('app-liquidacion .resumen__total')).toMatch(/2\.500\.000/);
+      expect(texto('h2')).toBe('Siniestro 88-2026-0442 Aprobado');
+    });
+
+    it('el doble clic en «Confirmar» envía una sola decisión', async () => {
+      await abrirComoAnalista();
+      completarYConfirmar();
+      boton('Confirmar y ordenar el pago').click();
+      http.expectOne(urlDecision).flush(RESULTADO_APROBACION);
+      pedidoDetalle().flush(DETALLE_APROBADO);
+    });
+
+    it('un 409 TRANSICION_NO_PERMITIDA muestra el error y recarga el detalle vigente (W20-F07)', async () => {
+      await abrirComoAnalista();
+      completarYConfirmar();
+      http.expectOne(urlDecision).flush(errorB2('TRANSICION_NO_PERMITIDA', 'ya decidido', 'corr-409'), { status: 409, statusText: 'Conflict' });
+      pedidoDetalle().flush(DETALLE_APROBADO);
+      harness.detectChanges();
+      const alerta = texto('.alerta--error') ?? '';
+      expect(alerta).toContain('No se registró la decisión');
+      expect(alerta).toContain('ya no admite esta decisión');
+      expect(alerta).toContain('corr-409');
+      expect(alerta).not.toContain('ya decidido');
+      expect(html().querySelector('app-panel-decision')).toBeNull();
+      expect(texto('h2')).toBe('Siniestro 88-2026-0442 Aprobado');
+    });
+
+    it('la evaluación con el panel y un error de decisión cumple axe-core en es-CO y en-US', async () => {
+      await abrirComoAnalista();
+      expect(await violacionesA11y(html())).toEqual([]);
+      boton('Aprobar y ordenar el pago').click();
+      harness.detectChanges();
+      expect(await violacionesA11y(html())).toEqual([]);
+      TestBed.inject(IdiomaService).cambiar('en-US');
+      harness.detectChanges();
       expect(await violacionesA11y(html())).toEqual([]);
     });
   });
