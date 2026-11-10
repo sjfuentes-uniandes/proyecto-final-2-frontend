@@ -1,4 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { fechaHora, rotuloPaso } from '../../presentacion';
 import { TextosSiniestrosService } from '../../siniestros.i18n';
@@ -19,12 +20,15 @@ interface Paso {
  */
 @Component({
   selector: 'app-linea-tiempo-tramite',
+  imports: [RouterLink],
   templateUrl: './linea-tiempo-tramite.component.html',
   styleUrl: './linea-tiempo-tramite.component.scss',
 })
 export class LineaTiempoTramiteComponent {
   readonly pasos = input.required<PasoTramiteVista[]>();
   readonly origen = input<OrigenSiniestro>('MOVIL');
+  /** Ruta de la página del pago (H08); el paso «Pago de la indemnización» enlaza a ella. Null: sin enlace. */
+  readonly enlacePago = input<string[] | null>(null);
 
   readonly textos = inject(TextosSiniestrosService);
 

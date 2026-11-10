@@ -12,6 +12,7 @@ import {
   ResumenBandeja,
   ResumenSiniestroVista,
 } from './siniestros.modelo';
+import { PagoSiniestroVista } from './siniestros.pago.modelo';
 
 /**
  * HU-W19: siniestros del analista en bff-web (que los reenvía a siniestros). Sin lógica de
@@ -51,6 +52,14 @@ export class SiniestrosService {
 
   detalle(siniestroId: string): Observable<DetalleSiniestro> {
     return this.http.get<DetalleSiniestro>(`${this.base}/${encodeURIComponent(siniestroId)}`);
+  }
+
+  /**
+   * El pago de un siniestro aprobado (H08, HU-W23). 404 `INDEMNIZACION_NO_ENCONTRADA` si el caso
+   * existe pero no está aprobado. Sin datos de la cuenta: solo la enmascarada.
+   */
+  pago(siniestroId: string): Observable<PagoSiniestroVista> {
+    return this.http.get<PagoSiniestroVista>(`${this.base}/${encodeURIComponent(siniestroId)}/pago`);
   }
 
   /** La URL se pide solo al abrir el archivo: quien la recibe no debe guardarla. */

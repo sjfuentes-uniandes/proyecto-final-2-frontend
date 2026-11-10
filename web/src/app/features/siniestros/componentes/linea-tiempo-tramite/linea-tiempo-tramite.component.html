@@ -7,6 +7,9 @@
         <span class="marca" aria-hidden="true"></span>
         <div>
           <p class="rotulo">{{ fila.rotulo }}<span class="sr-only"> · {{ fila.situacion }}</span></p>
+          @if (fila.paso === 'PAGO_INDEMNIZACION' && enlacePago(); as ruta) {
+            <p class="detalle"><a class="enlace" [routerLink]="ruta">{{ t.verPago }}</a></p>
+          }
           <p class="detalle">{{ fila.detalle }}</p>
         </div>
       </li>

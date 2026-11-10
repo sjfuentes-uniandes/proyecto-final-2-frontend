@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { IdiomaService } from '../../../../core/i18n/idioma.service';
 import { violacionesA11y } from '../../../../testing';
@@ -6,6 +7,7 @@ import { DETALLE_COMPLETO } from '../../siniestros.testing';
 import { LineaTiempoTramiteComponent } from './linea-tiempo-tramite.component';
 
 describe('LineaTiempoTramiteComponent (H03: Estado del trámite)', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
   afterEach(() => TestBed.inject(IdiomaService).cambiar('es-CO'));
 
   function montar(cambios: Partial<{ pasos: typeof DETALLE_COMPLETO.tramite; origen: 'MOVIL' | 'PORTAL' | 'PARAMETRICO' }> = {}) {
@@ -47,6 +49,16 @@ describe('LineaTiempoTramiteComponent (H03: Estado del trámite)', () => {
     expect(detalles[0]).toMatch(/^\d{2}\/\d{2}\/2026 · \d{2}:\d{2}$/);
     expect(detalles[2]).toMatch(/^\d{2}\/\d{2}\/2026 · \d{2}:\d{2} · Luis Mora$/);
     expect(detalles.slice(3)).toEqual(['Pendiente', 'Pendiente']);
+  });
+
+  it('el paso del pago enlaza a H08 solo si se le da la ruta (el caso está aprobado)', () => {
+    expect(montar().html.querySelector('a')).toBeNull();
+    const { fixture, html } = montar();
+    fixture.componentRef.setInput('enlacePago', ['/siniestros', 'abc', 'pago']);
+    fixture.detectChanges();
+    const enlaces = Array.from(html.querySelectorAll('a'));
+    expect(enlaces.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([['Ver el pago', '/siniestros/abc/pago']]);
+    expect(enlaces[0].closest('li')?.querySelector('.rotulo')?.textContent).toContain('Pago de la indemnización');
   });
 
   it('«Recibido» depende del origen del reporte', () => {

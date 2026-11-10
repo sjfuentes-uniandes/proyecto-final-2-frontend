@@ -25,6 +25,7 @@ export const POR_CODIGO: Record<string, ClaveError> = {
   NO_AUTENTICADO: 'errorNoAutenticado',
   ROL_NO_AUTORIZADO: 'errorRolNoAutorizado',
   SINIESTRO_NO_ENCONTRADO: 'errorSiniestroNoEncontrado',
+  INDEMNIZACION_NO_ENCONTRADA: 'errorIndemnizacionNoEncontrada',
   EVIDENCIA_NO_ENCONTRADA: 'errorEvidenciaNoEncontrada',
   EVIDENCIA_NO_DISPONIBLE: 'errorEvidenciaNoDisponible',
   COLA_SIN_CASOS: 'errorColaSinCasos',

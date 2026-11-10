@@ -1,4 +1,5 @@
 import { LiquidacionAprobada } from './siniestros.decision.modelo';
+import type { PagoDto } from './siniestros.pago.modelo';
 
 /**
  * Tipos de `bff-web` para los siniestros del analista (HU-W19): copia de los esquemas de
@@ -173,8 +174,8 @@ export interface PolizaVista {
 }
 
 /**
- * Detalle del caso. `evento` y `pago` llegan en null hasta W22 y W23; sus formas se declaran cuando
- * cada historia las usa. `liquidacion` (HU-W20) solo viene con el caso APROBADO.
+ * Detalle del caso. `evento` llega en null hasta W22; su forma se declara cuando esa historia la usa.
+ * `liquidacion` (HU-W20) y `pago` (HU-W23) solo vienen con el caso APROBADO.
  */
 export interface DetalleSiniestro extends ResumenSiniestro {
   causa: string;
@@ -189,7 +190,8 @@ export interface DetalleSiniestro extends ResumenSiniestro {
   historial: EntradaHistorial[];
   liquidacion: LiquidacionAprobada | null;
   evento: unknown;
-  pago: unknown;
+  /** El pago de la indemnización (HU-W23); null mientras el caso no esté APROBADO. */
+  pago: PagoDto | null;
   /** Lo que reclamó el cliente (texto decimal); null si aún no consta. Si consta, la liquidación debe coincidir. */
   valorReclamado: string | null;
   /** IND-<codigo>-01: la referencia única que llevaría la orden de pago (H06). */
