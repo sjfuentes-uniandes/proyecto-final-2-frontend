@@ -351,7 +351,7 @@ const ES = {
   soporteMensajeTitulo: 'Mensaje al cliente',
   soporteMensajeEtiqueta: 'Texto que recibirá en la aplicación',
   soporteMensajePlantilla: (codigo: string, documentos: string, dias: number) =>
-    `Para continuar con tu siniestro ${codigo} necesitamos ${documentos}. Puedes tomarle una foto desde la aplicación y se adjuntará automáticamente. Tienes ${dias} días hábiles para enviarlo.`,
+    `Para continuar con tu siniestro ${codigo} necesitamos lo siguiente: ${documentos}. Puedes tomarle una foto desde la aplicación y se adjuntará automáticamente. Tienes ${dias} días hábiles para enviarlo.`,
   revisarDatos: 'Revisa los datos marcados antes de continuar.',
   soporteUnion: ' y ',
   soporteCanal: 'Canal',
@@ -748,7 +748,7 @@ const EN: TextosSiniestros = {
   soporteMensajeTitulo: 'Message to the customer',
   soporteMensajeEtiqueta: 'Text they will receive in the app',
   soporteMensajePlantilla: (codigo: string, documentos: string, dias: number) =>
-    `To continue with your claim ${codigo} we need ${documentos}. You can take a photo from the app and it will be attached automatically. You have ${dias} business days to send it.`,
+    `To continue with your claim ${codigo} we need the following: ${documentos}. You can take a photo from the app and it will be attached automatically. You have ${dias} business days to send it.`,
   revisarDatos: 'Check the marked fields before continuing.',
   soporteUnion: ' and ',
   soporteCanal: 'Channel',

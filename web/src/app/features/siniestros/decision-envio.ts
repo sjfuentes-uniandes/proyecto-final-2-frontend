@@ -19,7 +19,7 @@ export interface ResultadoEnvio {
 
 /**
  * El envío de una decisión desde las páginas H05 y H07: una sola solicitud a la vez (el doble clic no
- * duplica), la misma `Idempotency-Key` para el mismo cuerpo, y el error por código. Un 403 lleva a
+ * duplica, tampoco tras el éxito), la misma `Idempotency-Key` para el mismo cuerpo, y el error por código. Un 403 lleva a
  * «sin acceso»; un 409 de estado lo atiende quien llama (`alConflicto`); los demás errores quedan en
  * `error` para mostrarlos en la página, sin perder lo que el analista escribió. El cuerpo lleva textos
  * para el cliente (dato sensible): aquí no se registra nada.
@@ -43,7 +43,7 @@ export class DecisionEnvio implements OnDestroy {
     this.error.set(null);
     this.suscripcion = this.servicio.decidir(siniestroId, this.claves.para(solicitud), solicitud).subscribe({
       next: (r) => {
-        this.enviando.set(false);
+        // Queda en «enviando»: la página se cierra al volver a la evaluación y un clic tardío no reenvía.
         resultado.alExito(r);
       },
       error: (e: HttpErrorResponse) => {

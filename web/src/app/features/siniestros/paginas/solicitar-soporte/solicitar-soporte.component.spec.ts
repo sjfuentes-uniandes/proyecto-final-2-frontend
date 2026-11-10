@@ -69,7 +69,7 @@ describe('SolicitarSoporteComponent (H05, W20-F05)', () => {
   it('parte de una plantilla con el código, el documento y el plazo, el canal y el plazo habituales', async () => {
     await abrir();
     expect(campo('texto').value).toBe(
-      'Para continuar con tu siniestro 88-2026-0442 necesitamos certificado de reparación. Puedes tomarle una foto desde la aplicación y se adjuntará automáticamente. Tienes 10 días hábiles para enviarlo.',
+      'Para continuar con tu siniestro 88-2026-0442 necesitamos lo siguiente: certificado de reparación. Puedes tomarle una foto desde la aplicación y se adjuntará automáticamente. Tienes 10 días hábiles para enviarlo.',
     );
     expect(campo('canal').value).toBe('PUSH_Y_CORREO');
     expect(Array.from(campo('plazo').options).map((o) => o.textContent?.trim())).toEqual(['5 días hábiles', '10 días hábiles', '15 días hábiles']);
@@ -80,7 +80,7 @@ describe('SolicitarSoporteComponent (H05, W20-F05)', () => {
     await abrir();
     interruptores()[1].click();
     harness.detectChanges();
-    expect(campo('texto').value).toContain('necesitamos certificado de reparación y cotización de repuestos.');
+    expect(campo('texto').value).toContain('necesitamos lo siguiente: certificado de reparación y cotización de repuestos.');
     campo('plazo').selectedIndex = 2;
     campo('plazo').dispatchEvent(new Event('change'));
     harness.detectChanges();

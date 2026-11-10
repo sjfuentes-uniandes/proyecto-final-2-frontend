@@ -125,6 +125,23 @@ describe('ConfirmarAprobacionComponent (H06, W20-F04)', () => {
     expect(fixture.componentInstance.aprobadas.length).toBe(1);
   });
 
+  it('tras el éxito el botón sigue bloqueado hasta que se cierra el diálogo: un clic tardío no reenvía', () => {
+    abrir();
+    confirmar().click();
+    pedido().flush(RESULTADO_APROBACION);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.aprobadas.length).toBe(1);
+    expect(confirmar().disabled).toBe(true);
+    confirmar().click();
+    http.expectNone(`${URL_SINIESTROS()}/${SINIESTRO_EVA01}/decision`);
+
+    // Al cerrar y volver a abrir, se puede decidir otra vez (con otra clave).
+    fixture.componentInstance.solicitud.set(null);
+    fixture.detectChanges();
+    abrir();
+    expect(confirmar().disabled).toBe(false);
+  });
+
   it('un reintento tras un fallo de red lleva la misma clave; al cerrar y volver a abrir se genera otra', () => {
     abrir();
     confirmar().click();

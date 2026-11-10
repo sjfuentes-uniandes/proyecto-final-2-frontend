@@ -95,7 +95,7 @@ export class ConfirmarAprobacionComponent implements OnDestroy {
     this.error.set(null);
     this.suscripcion = this.servicio.decidir(this.siniestro().id, this.clave, solicitud).subscribe({
       next: (resultado) => {
-        this.enviando.set(false);
+        // Queda en «enviando» hasta que el padre cierre el diálogo: un segundo clic tardío no reenvía.
         this.aprobada.emit(resultado);
       },
       error: (e: HttpErrorResponse) => {
