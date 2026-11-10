@@ -1,4 +1,8 @@
 import {
+  aCentavos,
+  diaDelEvento,
+  diaEnColombia,
+  diasDeVencida,
   claseTono,
   diferenciaSemanal,
   fechaCorta,
@@ -12,9 +16,20 @@ import {
   insigniaIntegridad,
   insigniaPrioridad,
   insigniaVerificacion,
+  errorDeducible,
+  errorValorIndemnizar,
+  errorValorReclamado,
+  montoParaCampo,
+  normalizarMonto,
   rotuloPaso,
+  sumaAseguradaDelAmparo,
+  textoAccion,
+  textoCanal,
+  textoCausal,
+  textoErrorMonto,
   textoOrigen,
   tiempoRestante,
+  ultimosDigitos,
 } from './presentacion';
 import { TEXTOS_SINIESTROS } from './siniestros.i18n';
 import { VerificacionCobertura } from './siniestros.modelo';
@@ -254,5 +269,153 @@ describe('Presentación de los siniestros: fechas, trámite y verificación (H01
       'tag tag--info',
       'tag tag--neutro',
     ]);
+  });
+
+  describe('Decisión del analista (HU-W20): montos como texto decimal', () => {
+    it('normalizarMonto lee el formato del idioma y devuelve texto decimal sin coma flotante', () => {
+      expect(normalizarMonto('es-CO', '2.850.000')).toBe('2850000');
+      expect(normalizarMonto('es-CO', '$ 2.850.000,5')).toBe('2850000.5');
+      expect(normalizarMonto('es-CO', '2850000,50')).toBe('2850000.50');
+      expect(normalizarMonto('en-US', '2,850,000.25')).toBe('2850000.25');
+      expect(normalizarMonto('en-US', '0.50')).toBe('0.50');
+      expect(normalizarMonto('es-CO', '007')).toBe('7');
+    });
+
+    it('rechaza lo que podría leerse mal: el punto de miles solo agrupa de tres en tres', () => {
+      expect(normalizarMonto('es-CO', '2850000.50')).toBeNull();
+      expect(normalizarMonto('es-CO', '2.85')).toBeNull();
+      expect(normalizarMonto('en-US', '2850000,50')).toBeNull();
+      expect(normalizarMonto('es-CO', '1,234')).toBeNull();
+      expect(normalizarMonto('es-CO', '1,23')).toBe('1.23');
+      expect(normalizarMonto('es-CO', '1,234,5')).toBeNull();
+    });
+
+    it('rechaza texto vacío, letras, signos y más de dos decimales', () => {
+      for (const texto of ['', ' ', 'abc', '-5', '12a', '1.5.5', '10,123']) {
+        expect(normalizarMonto('es-CO', texto)).withContext(texto).toBeNull();
+      }
+    });
+
+    it('aCentavos compara sin redondeos de coma flotante', () => {
+      expect(aCentavos('2850000')).toBe(285000000n);
+      expect(aCentavos('0.1') + aCentavos('0.2')).toBe(aCentavos('0.3'));
+      expect(aCentavos('9007199254740993.99')).toBe(900719925474099399n);
+    });
+
+    it('montoParaCampo escribe el monto con el formato del idioma', () => {
+      expect(montoParaCampo('es-CO', '2850000')).toBe('2.850.000');
+      expect(montoParaCampo('es-CO', '2850000.50')).toBe('2.850.000,50');
+      expect(montoParaCampo('en-US', '2850000.50')).toBe('2,850,000.50');
+      expect(montoParaCampo('es-CO', '350.00')).toBe('350');
+      expect(montoParaCampo('es-CO', '999')).toBe('999');
+    });
+
+    it('el valor que se escribe y se vuelve a leer es el mismo en los dos idiomas', () => {
+      for (const locale of ['es-CO', 'en-US']) {
+        expect(normalizarMonto(locale, montoParaCampo(locale, '1234567.89'))).toBe('1234567.89');
+      }
+    });
+  });
+
+  describe('Decisión del analista (HU-W20): validadores de la liquidación', () => {
+    const RECLAMADO = '2.850.000';
+    const SUMA = '3000000.00';
+
+    it('errorValorReclamado: obligatorio, formato y mayor que cero', () => {
+      expect(errorValorReclamado('es-CO', '')).toBe('obligatorio');
+      expect(errorValorReclamado('es-CO', 'mucho')).toBe('formato');
+      expect(errorValorReclamado('es-CO', '0')).toBe('mayorACero');
+      expect(errorValorReclamado('es-CO', '2.850.000')).toBeNull();
+    });
+
+    it('errorDeducible: puede ser cero, no puede superar el reclamado', () => {
+      expect(errorDeducible('es-CO', '', RECLAMADO)).toBe('obligatorio');
+      expect(errorDeducible('es-CO', 'x', RECLAMADO)).toBe('formato');
+      expect(errorDeducible('es-CO', '0', RECLAMADO)).toBeNull();
+      expect(errorDeducible('es-CO', '2.850.000', RECLAMADO)).toBeNull();
+      expect(errorDeducible('es-CO', '2.850.001', RECLAMADO)).toBe('superaReclamado');
+    });
+
+    it('errorDeducible no se queja del tope si el valor reclamado aún no es válido', () => {
+      expect(errorDeducible('es-CO', '350.000', '')).toBeNull();
+    });
+
+    it('errorValorIndemnizar: 0, igual al reclamado y suma asegurada + 1', () => {
+      expect(errorValorIndemnizar('es-CO', '', RECLAMADO, SUMA)).toBe('obligatorio');
+      expect(errorValorIndemnizar('es-CO', 'x', RECLAMADO, SUMA)).toBe('formato');
+      expect(errorValorIndemnizar('es-CO', '0', RECLAMADO, SUMA)).toBe('mayorACero');
+      expect(errorValorIndemnizar('es-CO', '0,01', RECLAMADO, SUMA)).toBeNull();
+      expect(errorValorIndemnizar('es-CO', '2.850.000', RECLAMADO, SUMA)).toBeNull();
+      expect(errorValorIndemnizar('es-CO', '2.850.000,01', RECLAMADO, SUMA)).toBe('superaReclamado');
+    });
+
+    it('errorValorIndemnizar respeta la suma asegurada del amparo reclamado (R-05)', () => {
+      expect(errorValorIndemnizar('es-CO', '3.000.000', '5.000.000', SUMA)).toBeNull();
+      expect(errorValorIndemnizar('es-CO', '3.000.000,01', '5.000.000', SUMA)).toBe('superaSuma');
+      expect(errorValorIndemnizar('es-CO', '4.000.000', '5.000.000', null)).toBeNull();
+    });
+
+    it('textoErrorMonto traduce cada error y el tope lleva la suma asegurada', () => {
+      expect(textoErrorMonto(es, 'obligatorio', '')).toBe(es.liqErrObligatorio);
+      expect(textoErrorMonto(es, 'formato', '')).toBe(es.liqErrFormato);
+      expect(textoErrorMonto(es, 'mayorACero', '')).toBe(es.liqErrMayorACero);
+      expect(textoErrorMonto(es, 'superaReclamado', '')).toBe(es.liqErrSuperaReclamado);
+      expect(textoErrorMonto(en, 'superaSuma', '$3,000,000')).toBe('It cannot exceed the sum insured for the cover ($3,000,000).');
+    });
+
+    it('sumaAseguradaDelAmparo busca el amparo por la causa del siniestro', () => {
+      const amparos = [{ codigo: 'DANO_ACCIDENTAL', nombre: 'Daño accidental', sumaAsegurada: '3000000.00' }];
+      expect(sumaAseguradaDelAmparo('DANO_ACCIDENTAL', amparos)).toBe('3000000.00');
+      expect(sumaAseguradaDelAmparo('ROBO', amparos)).toBeNull();
+    });
+  });
+
+  describe('Decisión del analista (HU-W20): textos del catálogo', () => {
+    it('traduce cada causal y cada canal', () => {
+      expect(textoCausal(es, 'POLIZA_NO_VIGENTE')).toBe('Póliza no vigente');
+      expect(textoCausal(es, 'EVENTO_NO_CUBIERTO')).toBe('Evento no cubierto');
+      expect(textoCausal(es, 'PERIODO_DE_CARENCIA')).toBe('Periodo de carencia');
+      expect(textoCausal(es, 'AVISO_EXTEMPORANEO')).toBe('Aviso extemporáneo');
+      expect(textoCausal(es, 'PRIMAS_EN_MORA')).toBe('Primas en mora');
+      expect(textoCausal(en, 'EVIDENCIA_INCONSISTENTE')).toBe('Inconsistent evidence');
+      expect(textoCausal(en, 'EXCLUSION_CONTRACTUAL')).toBe('Contractual exclusion');
+      expect(textoCanal(es, 'PUSH_Y_CORREO')).toBe('Notificación push y correo');
+      expect(textoCanal(es, 'PUSH')).toBe('Notificación push');
+      expect(textoCanal(en, 'CORREO')).toBe('Email');
+    });
+
+    it('traduce las acciones del historial que escribe la decisión', () => {
+      expect(textoAccion(es, 'APROBADO')).toBe('Aprobado');
+      expect(textoAccion(es, 'RECHAZADO')).toBe('Rechazado');
+      expect(textoAccion(es, 'SOPORTE_SOLICITADO')).toBe('Soporte solicitado');
+      expect(textoAccion(en, 'PLAZO_SOPORTE_VENCIDO')).toBe('Document deadline expired');
+    });
+
+    it('ultimosDigitos deja los cuatro últimos de la cuenta enmascarada', () => {
+      expect(ultimosDigitos('****1004')).toBe('1004');
+      expect(ultimosDigitos('•••• 4417')).toBe('4417');
+      expect(ultimosDigitos('12')).toBe('12');
+    });
+  });
+
+  describe('Rechazo (HU-W20, H07): día del evento y póliza vencida', () => {
+    it('diaEnColombia cuenta el día en UTC−5, no en UTC', () => {
+      expect(diaEnColombia('2026-11-05T00:19:00Z')).toBe('2026-11-04');
+      expect(diaEnColombia('2026-11-05T05:00:00Z')).toBe('2026-11-05');
+    });
+
+    it('diaDelEvento usa el de la verificación de vigencia y, si no hay, el del instante', () => {
+      const vigencia: VerificacionCobertura = { codigo: 'VIGENCIA', resultado: 'NO_CUMPLE', detalle: { fechaEvento: '2026-09-06' } };
+      expect(diaDelEvento('2026-11-05T00:19:00Z', [vigencia])).toBe('2026-09-06');
+      expect(diaDelEvento('2026-11-05T00:19:00Z', [])).toBe('2026-11-04');
+      expect(diaDelEvento('2026-11-05T00:19:00Z', [{ codigo: 'VIGENCIA', resultado: 'NO_EVALUABLE', detalle: {} }])).toBe('2026-11-04');
+    });
+
+    it('diasDeVencida: 33 días de agosto a septiembre; 0 si estaba vigente, el último día o la fecha no se lee', () => {
+      expect(diasDeVencida('2026-09-06', '2026-08-04')).toBe(33);
+      expect(diasDeVencida('2026-08-04', '2026-08-04')).toBe(0);
+      expect(diasDeVencida('2026-07-01', '2026-08-04')).toBe(0);
+      expect(diasDeVencida('no-es-fecha', '2026-08-04')).toBe(0);
+    });
   });
 });

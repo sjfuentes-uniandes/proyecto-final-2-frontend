@@ -31,34 +31,54 @@ export const routes: Routes = [
           import('./paginas/bandeja-siniestros/bandeja-siniestros.component').then((m) => m.BandejaSiniestrosComponent),
       },
       {
-        // H03 y H04: el detalle con sus pestañas como rutas hijas.
+        // Un siniestro: su detalle (H03 y H04) y las páginas de decisión (H05 y H07). El detalle se pide
+        // una vez y lo comparten todas.
         path: ':siniestroId',
-        title: 'Siniestro · Solventa',
-        // El detalle se pide una vez y lo comparten el contenedor y sus pestañas.
         providers: [DetalleSiniestroEstado],
-        loadComponent: () =>
-          import('./paginas/detalle-siniestro/detalle-siniestro.component').then((m) => m.DetalleSiniestroComponent),
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'evaluacion' },
           {
-            path: 'evaluacion',
+            // H05: pedir al cliente el soporte que falta (HU-W20).
+            path: 'solicitar-soporte',
+            title: 'Solicitar soporte · Solventa',
             loadComponent: () =>
-              import('./paginas/detalle-siniestro/evaluacion/evaluacion.component').then((m) => m.EvaluacionComponent),
+              import('./paginas/solicitar-soporte/solicitar-soporte.component').then((m) => m.SolicitarSoporteComponent),
           },
           {
-            path: 'evidencias',
+            // H07: rechazar el siniestro con causal y explicación (HU-W20).
+            path: 'rechazar',
+            title: 'Rechazar siniestro · Solventa',
             loadComponent: () =>
-              import('./paginas/detalle-siniestro/evidencias/evidencias.component').then((m) => m.EvidenciasComponent),
+              import('./paginas/rechazar-siniestro/rechazar-siniestro.component').then((m) => m.RechazarSiniestroComponent),
           },
           {
-            path: 'cobertura',
+            // H03 y H04: el detalle con sus pestañas como rutas hijas.
+            path: '',
+            title: 'Siniestro · Solventa',
             loadComponent: () =>
-              import('./paginas/detalle-siniestro/cobertura/cobertura.component').then((m) => m.CoberturaComponent),
-          },
-          {
-            path: 'historial',
-            loadComponent: () =>
-              import('./paginas/detalle-siniestro/historial/historial.component').then((m) => m.HistorialComponent),
+              import('./paginas/detalle-siniestro/detalle-siniestro.component').then((m) => m.DetalleSiniestroComponent),
+            children: [
+              { path: '', pathMatch: 'full', redirectTo: 'evaluacion' },
+              {
+                path: 'evaluacion',
+                loadComponent: () =>
+                  import('./paginas/detalle-siniestro/evaluacion/evaluacion.component').then((m) => m.EvaluacionComponent),
+              },
+              {
+                path: 'evidencias',
+                loadComponent: () =>
+                  import('./paginas/detalle-siniestro/evidencias/evidencias.component').then((m) => m.EvidenciasComponent),
+              },
+              {
+                path: 'cobertura',
+                loadComponent: () =>
+                  import('./paginas/detalle-siniestro/cobertura/cobertura.component').then((m) => m.CoberturaComponent),
+              },
+              {
+                path: 'historial',
+                loadComponent: () =>
+                  import('./paginas/detalle-siniestro/historial/historial.component').then((m) => m.HistorialComponent),
+              },
+            ],
           },
         ],
       },

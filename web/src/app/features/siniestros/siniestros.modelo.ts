@@ -1,3 +1,5 @@
+import { LiquidacionAprobada } from './siniestros.decision.modelo';
+
 /**
  * Tipos de `bff-web` para los siniestros del analista (HU-W19): copia de los esquemas de
  * `contracts/openapi/bff-web.yaml` (`/v1/siniestros…`). Las fechas llegan como texto ISO-8601 con `Z`
@@ -171,8 +173,8 @@ export interface PolizaVista {
 }
 
 /**
- * Detalle del caso. `liquidacion`, `evento` y `pago` llegan en null hasta W20, W22 y W23; sus formas
- * se declaran cuando cada historia las usa.
+ * Detalle del caso. `evento` y `pago` llegan en null hasta W22 y W23; sus formas se declaran cuando
+ * cada historia las usa. `liquidacion` (HU-W20) solo viene con el caso APROBADO.
  */
 export interface DetalleSiniestro extends ResumenSiniestro {
   causa: string;
@@ -185,9 +187,15 @@ export interface DetalleSiniestro extends ResumenSiniestro {
   soportesPendientes: SoportePendiente[];
   tramite: PasoTramiteVista[];
   historial: EntradaHistorial[];
-  liquidacion: unknown;
+  liquidacion: LiquidacionAprobada | null;
   evento: unknown;
   pago: unknown;
+  /** Lo que reclamó el cliente (texto decimal); null si aún no consta. Si consta, la liquidación debe coincidir. */
+  valorReclamado: string | null;
+  /** IND-<codigo>-01: la referencia única que llevaría la orden de pago (H06). */
+  referenciaPagoPrevista: string;
+  /** Solo en FALTA_SOPORTE: fin del plazo que tiene el cliente. */
+  plazoSoporteVenceEn: string | null;
   clienteNombre: string | null;
   polizaVista: PolizaVista | null;
 }

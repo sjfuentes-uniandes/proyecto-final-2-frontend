@@ -23,6 +23,11 @@ describe('Errores de los siniestros (por código B2, nunca por mensaje)', () => 
       IDEMPOTENCIA_CONFLICTO: t.errorIdempotenciaConflicto,
       DEPENDENCIA_NO_DISPONIBLE: t.errorDependenciaNoDisponible,
       SERVICIO_NO_DISPONIBLE: t.errorServicioNoDisponible,
+      JUSTIFICACION_REQUERIDA: t.errorJustificacionRequerida,
+      CAUSAL_INVALIDA: t.errorCausalInvalida,
+      VALOR_FUERA_DE_RANGO: t.errorValorFueraDeRango,
+      TRANSICION_NO_PERMITIDA: t.errorTransicionNoPermitida,
+      CASO_ASIGNADO_A_OTRO: t.errorCasoAsignadoAOtro,
     };
     expect(Object.keys(codigos).sort()).toEqual(Object.keys(POR_CODIGO).sort());
     for (const [codigo, mensaje] of Object.entries(codigos)) {

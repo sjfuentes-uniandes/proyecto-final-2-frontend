@@ -2,6 +2,7 @@
  * Fixtures de los siniestros (HU-W19) para las pruebas del portal: los de la semilla de QA
  * (`contracts/datos-sinteticos/siniestros-r7.json`). Datos 100 % sintéticos.
  */
+import { CatalogosDecision, ResultadoDecision } from './siniestros.decision.modelo';
 import {
   BandejaSiniestros,
   DetalleSiniestro,
@@ -142,6 +143,9 @@ export const DETALLE_COMPLETO: DetalleSiniestro = {
   liquidacion: null,
   evento: null,
   pago: null,
+  valorReclamado: null,
+  referenciaPagoPrevista: 'IND-88-2026-0442-01',
+  plazoSoporteVenceEn: null,
   polizaVista: {
     polizaId: 'a0000000-0000-4000-8000-000004000000',
     numero: '220-2026-011294',
@@ -153,6 +157,51 @@ export const DETALLE_COMPLETO: DetalleSiniestro = {
     sumaAsegurada: '3000000.00',
     moneda: 'COP',
   },
+};
+
+/** EVA-01 con el valor reclamado que ya consta (lo llena M01): el campo de la liquidación es de solo lectura. */
+export const DETALLE_CON_RECLAMADO: DetalleSiniestro = { ...DETALLE_COMPLETO, valorReclamado: '2850000.00' };
+
+/** EVA-01 ya aprobado: trae la liquidación y el trámite con la decisión completada y el pago en curso. */
+export const DETALLE_APROBADO: DetalleSiniestro = {
+  ...DETALLE_COMPLETO,
+  estado: 'APROBADO',
+  valorReclamado: '2850000.00',
+  liquidacion: {
+    moneda: 'COP',
+    valorReclamado: '2850000.00',
+    deducible: '350000.00',
+    valorIndemnizar: '2500000.00',
+    referenciaPago: 'IND-88-2026-0442-01',
+    aprobadaEn: '2026-11-05T15:00:00Z',
+  },
+  tramite: DETALLE_COMPLETO.tramite.map((p) =>
+    p.paso === 'EN_EVALUACION'
+      ? { ...p, estado: 'COMPLETADO' as const }
+      : p.paso === 'DECISION'
+        ? { ...p, estado: 'COMPLETADO' as const, ocurridoEn: '2026-11-05T15:00:00Z', actorNombre: 'Luis Mora' }
+        : // Como el backend (R-74): al aprobar, el pago es el paso actual; W23 lo completa.
+          p.paso === 'PAGO_INDEMNIZACION'
+          ? { ...p, estado: 'ACTUAL' as const }
+          : p,
+  ),
+};
+
+/** Listas cerradas de la decisión (DS3-12): el portal las traduce. */
+export const CATALOGOS_DECISION: CatalogosDecision = {
+  causales: ['POLIZA_NO_VIGENTE', 'EVENTO_NO_CUBIERTO', 'PERIODO_DE_CARENCIA', 'AVISO_EXTEMPORANEO', 'PRIMAS_EN_MORA', 'EVIDENCIA_INCONSISTENTE', 'EXCLUSION_CONTRACTUAL'],
+  documentos: ['CERTIFICADO_REPARACION', 'COTIZACION_REPUESTOS', 'DENUNCIA_AUTORIDAD', 'PERITAJE'],
+  canales: ['PUSH_Y_CORREO', 'PUSH', 'CORREO'],
+  plazosDiasHabiles: [5, 10, 15],
+};
+
+export const RESULTADO_APROBACION: ResultadoDecision = {
+  siniestroId: SINIESTRO_EVA01,
+  estadoNuevo: 'APROBADO',
+  decisionId: 'd0000000-0000-4000-8000-000000000001',
+  referenciaPago: 'IND-88-2026-0442-01',
+  plazoSoporteVenceEn: null,
+  registradaEn: '2026-11-05T15:00:00Z',
 };
 
 /** AUS-01: un objeto falta en S3; el resto del detalle responde igual (AC4). */

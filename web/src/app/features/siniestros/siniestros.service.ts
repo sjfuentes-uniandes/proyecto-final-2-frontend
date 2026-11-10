@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { ConfigService } from '../../core/config/app-config';
+import { CatalogosDecision, ResultadoDecision, SolicitudDecision } from './siniestros.decision.modelo';
 import {
   BandejaSiniestros,
   DetalleSiniestro,
@@ -15,7 +16,8 @@ import {
 /**
  * HU-W19: siniestros del analista en bff-web (que los reenvía a siniestros). Sin lógica de
  * presentación. «Tomar el siguiente» lleva `Idempotency-Key`: la misma clave en un reintento devuelve
- * el mismo caso.
+ * el mismo caso. HU-W20: la decisión del analista también la lleva, y la misma clave con el mismo
+ * cuerpo devuelve el resultado original sin escribir nada nuevo.
  */
 @Injectable({ providedIn: 'root' })
 export class SiniestrosService {
@@ -55,5 +57,19 @@ export class SiniestrosService {
   enlace(siniestroId: string, evidenciaId: string): Observable<EnlaceEvidencia> {
     const ruta = `${encodeURIComponent(siniestroId)}/evidencias/${encodeURIComponent(evidenciaId)}/enlace`;
     return this.http.post<EnlaceEvidencia>(`${this.base}/${ruta}`, null);
+  }
+
+  /** Causales, documentos, canales y plazos como códigos que el portal traduce (DS3-12). */
+  catalogosDecision(): Observable<CatalogosDecision> {
+    return this.http.get<CatalogosDecision>(`${this.base}/catalogos-decision`);
+  }
+
+  /**
+   * Aprobar, rechazar o solicitar soporte. El cuerpo lleva textos para el cliente (dato sensible):
+   * quien llama no debe registrarlo. `idempotencyKey` se genera una vez por intento de decisión.
+   */
+  decidir(siniestroId: string, idempotencyKey: string, solicitud: SolicitudDecision): Observable<ResultadoDecision> {
+    const headers = new HttpHeaders({ 'Idempotency-Key': idempotencyKey });
+    return this.http.post<ResultadoDecision>(`${this.base}/${encodeURIComponent(siniestroId)}/decision`, solicitud, { headers });
   }
 }

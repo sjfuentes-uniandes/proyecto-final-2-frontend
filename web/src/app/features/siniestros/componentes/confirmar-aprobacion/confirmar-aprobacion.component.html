@@ -1,0 +1,56 @@
+@let t = textos.t();
+<dialog #dialogo class="dialogo" [attr.aria-labelledby]="idTitulo" (cancel)="pedirCierre($event)">
+  @if (filas(); as f) {
+    <div class="contenido">
+      <h2 [id]="idTitulo">{{ t.aprobTitulo }}</h2>
+      <p class="texto">{{ t.aprobTexto(siniestro().codigo) }}</p>
+      <dl class="filas">
+        <div>
+          <dt>{{ t.aprobValorPagar }}</dt>
+          <dd>{{ f.valor }}</dd>
+        </div>
+        <div>
+          <dt>{{ t.aprobBeneficiario }}</dt>
+          <dd>{{ f.beneficiario }}</dd>
+        </div>
+        <div>
+          <dt>{{ t.aprobCuenta }}</dt>
+          <dd>{{ f.cuenta }}</dd>
+        </div>
+        <div>
+          <dt>{{ t.aprobReferencia }}</dt>
+          <dd>{{ f.referencia }}</dd>
+        </div>
+        @if (f.pendientes.length > 0) {
+          <div>
+            <dt>{{ t.aprobSoportePendiente }}</dt>
+            <dd class="pendiente">{{ f.pendientes.join(', ') }}</dd>
+          </div>
+        }
+      </dl>
+      @if (f.pendientes.length > 0) {
+        <p class="aviso-soporte" role="note">{{ t.aprobAvisoSoporte }}</p>
+      }
+      @if (error(); as e) {
+        <div class="alerta alerta--error" role="alert">
+          <span aria-hidden="true">⚠</span>
+          <span>
+            <strong>{{ t.decisionError }}.</strong> {{ e.mensaje }}
+            @if (e.correlationId) {
+              <span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+            }
+          </span>
+        </div>
+      }
+      @if (enviando()) {
+        <p class="estado" role="status">{{ t.aprobEnviando }}</p>
+      }
+      <div class="acciones">
+        <button class="btn btn--texto" type="button" [disabled]="enviando()" (click)="cancelar()">{{ t.aprobCancelar }}</button>
+        <button class="btn btn--confirmar" type="button" [disabled]="enviando()" [attr.aria-busy]="enviando() ? 'true' : null" (click)="confirmar()">
+          {{ t.aprobConfirmar }}
+        </button>
+      </div>
+    </div>
+  }
+</dialog>

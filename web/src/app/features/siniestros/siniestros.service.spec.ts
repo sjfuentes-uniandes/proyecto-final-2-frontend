@@ -83,4 +83,34 @@ describe('SiniestrosService (HU-W19)', () => {
     expect(pedido.request.headers.has('Idempotency-Key')).toBeFalse();
     pedido.flush(ENLACE_FOTO);
   });
+
+  it('pide los catálogos de la decisión con GET', () => {
+    const catalogos = { causales: ['POLIZA_NO_VIGENTE' as const], documentos: ['PERITAJE' as const], canales: ['PUSH' as const], plazosDiasHabiles: [5, 10, 15] };
+    servicio.catalogosDecision().subscribe((c) => expect(c).toEqual(catalogos));
+    const pedido = http.expectOne(`${URL_SINIESTROS()}/catalogos-decision`);
+    expect(pedido.request.method).toBe('GET');
+    pedido.flush(catalogos);
+  });
+
+  it('decide con POST, Idempotency-Key y el cuerpo tal cual (HU-W20)', () => {
+    const solicitud = {
+      tipo: 'APROBAR' as const,
+      justificacion: 'Verificado con evidencia',
+      liquidacion: { valorReclamado: '2850000', deducible: '350000', valorIndemnizar: '2500000', moneda: 'COP' },
+    };
+    const resultado = {
+      siniestroId: SINIESTRO_EVA01,
+      estadoNuevo: 'APROBADO' as const,
+      decisionId: 'd0000000-0000-4000-8000-000000000001',
+      referenciaPago: 'IND-88-2026-0442-01',
+      plazoSoporteVenceEn: null,
+      registradaEn: '2026-11-05T12:00:00Z',
+    };
+    servicio.decidir(SINIESTRO_EVA01, 'clave-decision', solicitud).subscribe((r) => expect(r).toEqual(resultado));
+    const pedido = http.expectOne(`${URL_SINIESTROS()}/${SINIESTRO_EVA01}/decision`);
+    expect(pedido.request.method).toBe('POST');
+    expect(pedido.request.headers.get('Idempotency-Key')).toBe('clave-decision');
+    expect(pedido.request.body).toEqual(solicitud);
+    pedido.flush(resultado);
+  });
 });

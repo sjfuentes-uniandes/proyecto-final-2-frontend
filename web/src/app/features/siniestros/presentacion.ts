@@ -2,6 +2,7 @@
  * Funciones puras de presentación de los siniestros (HU-W19): sin Angular ni E/S, probadas aparte.
  * Los textos llegan del catálogo de la feature; aquí solo se elige cuál y con qué valores.
  */
+import { CanalSoporte, CausalRechazo } from './siniestros.decision.modelo';
 import {
   AmparoCopia,
   EstadoSiniestro,
@@ -351,6 +352,14 @@ export function textoAccion(t: TextosSiniestros, accion: string): string {
       return t.accionEvidenciasValidadas;
     case 'ASIGNADO':
       return t.accionAsignado;
+    case 'APROBADO':
+      return t.accionAprobado;
+    case 'RECHAZADO':
+      return t.accionRechazado;
+    case 'SOPORTE_SOLICITADO':
+      return t.accionSoporteSolicitado;
+    case 'PLAZO_SOPORTE_VENCIDO':
+      return t.accionPlazoSoporteVencido;
     default:
       return t.accionDesconocida(accion);
   }
@@ -376,4 +385,160 @@ export function textoActor(t: TextosSiniestros, nombre: string | null, rol: stri
 /** Cómo se cargó el reporte: el texto de «5 archivos · cargados desde …». */
 export function textoCargadoDesde(t: TextosSiniestros, origen: OrigenSiniestro): string {
   return origen === 'MOVIL' ? t.origenMovilCargado : origen === 'PORTAL' ? t.origenPortalCargado : t.origenParametricoCargado;
+}
+
+// --- Decisión del analista (HU-W20) ---------------------------------------------------------------
+
+export function textoCausal(t: TextosSiniestros, causal: CausalRechazo): string {
+  switch (causal) {
+    case 'POLIZA_NO_VIGENTE':
+      return t.causalPolizaNoVigente;
+    case 'EVENTO_NO_CUBIERTO':
+      return t.causalEventoNoCubierto;
+    case 'PERIODO_DE_CARENCIA':
+      return t.causalPeriodoCarencia;
+    case 'AVISO_EXTEMPORANEO':
+      return t.causalAvisoExtemporaneo;
+    case 'PRIMAS_EN_MORA':
+      return t.causalPrimasMora;
+    case 'EVIDENCIA_INCONSISTENTE':
+      return t.causalEvidenciaInconsistente;
+    case 'EXCLUSION_CONTRACTUAL':
+      return t.causalExclusionContractual;
+  }
+}
+
+export function textoCanal(t: TextosSiniestros, canal: CanalSoporte): string {
+  return canal === 'PUSH_Y_CORREO' ? t.canalPushCorreo : canal === 'PUSH' ? t.canalPush : t.canalCorreo;
+}
+
+/** Los cuatro últimos caracteres de una cuenta enmascarada («****1004» → «1004»). */
+export function ultimosDigitos(cuentaMascarada: string): string {
+  return cuentaMascarada.replace(/[^0-9A-Za-z]/g, '').slice(-4);
+}
+
+/** Por qué un monto de la liquidación no es válido; la pantalla lo traduce. */
+export type ErrorMonto = 'obligatorio' | 'formato' | 'mayorACero' | 'superaReclamado' | 'superaSuma';
+
+function separadores(locale: string): { grupo: string; decimal: string } {
+  return locale === 'en-US' ? { grupo: ',', decimal: '.' } : { grupo: '.', decimal: ',' };
+}
+
+function escapar(caracter: string): string {
+  return caracter.replace(/[.,]/g, '\\$&');
+}
+
+/**
+ * El monto que escribió el analista como texto decimal («2850000.50»), o null si no es un monto
+ * válido en el idioma de la pantalla. Sin aritmética de coma flotante (DS2-16). El separador de
+ * miles solo vale si agrupa de tres en tres: «2850000.50» en es-CO se rechaza en vez de leerse
+ * como 285 millones. Admite hasta dos decimales.
+ */
+export function normalizarMonto(locale: string, texto: string): string | null {
+  const limpio = texto.replace(/[\s\u00a0$]/g, '');
+  const { grupo, decimal } = separadores(locale);
+  const g = escapar(grupo);
+  const d = escapar(decimal);
+  const forma = new RegExp(`^(\\d{1,3}(?:${g}\\d{3})+|\\d+)(?:${d}(\\d{1,2}))?$`);
+  const partes = forma.exec(limpio);
+  if (!partes) {
+    return null;
+  }
+  const entero = partes[1].split(grupo).join('').replace(/^0+(?=\d)/, '');
+  return partes[2] ? `${entero}.${partes[2]}` : entero;
+}
+
+/** Centavos de un monto decimal ya normalizado: comparar sin coma flotante. */
+export function aCentavos(monto: string): bigint {
+  const [entero, decimales = ''] = monto.split('.');
+  return BigInt(entero) * 100n + BigInt(decimales.padEnd(2, '0'));
+}
+
+/** El monto con el formato del idioma, sin símbolo de moneda (para el campo de texto). */
+export function montoParaCampo(locale: string, monto: string): string {
+  const [entero, decimales] = monto.split('.');
+  const { grupo, decimal } = separadores(locale);
+  const miles = entero.replace(/\B(?=(\d{3})+(?!\d))/g, grupo);
+  return decimales && Number(decimales) !== 0 ? `${miles}${decimal}${decimales}` : miles;
+}
+
+export function errorValorReclamado(locale: string, texto: string): ErrorMonto | null {
+  if (texto.trim() === '') {
+    return 'obligatorio';
+  }
+  const monto = normalizarMonto(locale, texto);
+  if (monto === null) {
+    return 'formato';
+  }
+  return aCentavos(monto) > 0n ? null : 'mayorACero';
+}
+
+/** El deducible puede ser cero; no puede superar el valor reclamado (si este ya es válido). */
+export function errorDeducible(locale: string, texto: string, reclamado: string): ErrorMonto | null {
+  if (texto.trim() === '') {
+    return 'obligatorio';
+  }
+  const monto = normalizarMonto(locale, texto);
+  if (monto === null) {
+    return 'formato';
+  }
+  const tope = normalizarMonto(locale, reclamado);
+  return tope !== null && aCentavos(monto) > aCentavos(tope) ? 'superaReclamado' : null;
+}
+
+/** 0 < valor a indemnizar ≤ valor reclamado y ≤ la suma asegurada del amparo (R-05). */
+export function errorValorIndemnizar(locale: string, texto: string, reclamado: string, sumaAsegurada: string | null): ErrorMonto | null {
+  if (texto.trim() === '') {
+    return 'obligatorio';
+  }
+  const monto = normalizarMonto(locale, texto);
+  if (monto === null) {
+    return 'formato';
+  }
+  const centavos = aCentavos(monto);
+  if (centavos <= 0n) {
+    return 'mayorACero';
+  }
+  const tope = normalizarMonto(locale, reclamado);
+  if (tope !== null && centavos > aCentavos(tope)) {
+    return 'superaReclamado';
+  }
+  return sumaAsegurada !== null && centavos > aCentavos(sumaAsegurada) ? 'superaSuma' : null;
+}
+
+/** Texto de un error de monto; `sumaAsegurada` ya formateada, para el mensaje del tope. */
+export function textoErrorMonto(t: TextosSiniestros, error: ErrorMonto, sumaAsegurada: string): string {
+  switch (error) {
+    case 'obligatorio':
+      return t.liqErrObligatorio;
+    case 'formato':
+      return t.liqErrFormato;
+    case 'mayorACero':
+      return t.liqErrMayorACero;
+    case 'superaReclamado':
+      return t.liqErrSuperaReclamado;
+    case 'superaSuma':
+      return t.liqErrSuperaSuma(sumaAsegurada);
+  }
+}
+
+/** Suma asegurada del amparo reclamado (la causa del siniestro es el código del amparo). */
+export function sumaAseguradaDelAmparo(causa: string, amparos: AmparoCopia[]): string | null {
+  return amparos.find((a) => a.codigo === causa)?.sumaAsegurada ?? null;
+}
+
+/** El día `AAAA-MM-DD` de un instante en la hora de Colombia (UTC−5), que es la que usa el servidor. */
+export function diaEnColombia(iso: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
+}
+
+/** El día del evento: el que usó la verificación de vigencia o, si no la hay, el del instante declarado. */
+export function diaDelEvento(fechaEvento: string, verificaciones: VerificacionCobertura[]): string {
+  return verificaciones.find((v) => v.codigo === 'VIGENCIA')?.detalle['fechaEvento'] ?? diaEnColombia(fechaEvento);
+}
+
+/** Días que la póliza llevaba vencida al día del evento (`AAAA-MM-DD`); 0 si estaba vigente. */
+export function diasDeVencida(diaEvento: string, finVigencia: string): number {
+  const dias = (Date.parse(`${diaEvento}T00:00:00Z`) - Date.parse(`${finVigencia}T00:00:00Z`)) / 86_400_000;
+  return Number.isFinite(dias) && dias > 0 ? dias : 0;
 }
