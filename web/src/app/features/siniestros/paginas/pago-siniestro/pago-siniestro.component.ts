@@ -87,7 +87,7 @@ export class PagoSiniestroComponent {
         return {
           tipo: 'info',
           texto: this.estado.seguimientoAgotado() ? t.pagoAvisoPendienteAgotado : t.pagoAvisoPendiente,
-          icono: '…',
+          icono: 'ℹ',
         };
     }
   });
