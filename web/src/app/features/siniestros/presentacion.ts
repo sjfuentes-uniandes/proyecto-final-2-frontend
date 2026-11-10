@@ -526,3 +526,19 @@ export function textoErrorMonto(t: TextosSiniestros, error: ErrorMonto, sumaAseg
 export function sumaAseguradaDelAmparo(causa: string, amparos: AmparoCopia[]): string | null {
   return amparos.find((a) => a.codigo === causa)?.sumaAsegurada ?? null;
 }
+
+/** El día `AAAA-MM-DD` de un instante en la hora de Colombia (UTC−5), que es la que usa el servidor. */
+export function diaEnColombia(iso: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
+}
+
+/** El día del evento: el que usó la verificación de vigencia o, si no la hay, el del instante declarado. */
+export function diaDelEvento(fechaEvento: string, verificaciones: VerificacionCobertura[]): string {
+  return verificaciones.find((v) => v.codigo === 'VIGENCIA')?.detalle['fechaEvento'] ?? diaEnColombia(fechaEvento);
+}
+
+/** Días que la póliza llevaba vencida al día del evento (`AAAA-MM-DD`); 0 si estaba vigente. */
+export function diasDeVencida(diaEvento: string, finVigencia: string): number {
+  const dias = (Date.parse(`${diaEvento}T00:00:00Z`) - Date.parse(`${finVigencia}T00:00:00Z`)) / 86_400_000;
+  return Number.isFinite(dias) && dias > 0 ? dias : 0;
+}

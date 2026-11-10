@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, Injector, afterNextRender, computed, inject, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { ResultadoDecision, SolicitudAprobacion } from '../../siniestros.decision.modelo';
 import { ErrorSiniestros } from '../../siniestros.errores';
@@ -17,7 +18,7 @@ import { FormularioLiquidacion, liquidacionSolicitada } from '../liquidacion/liq
  */
 @Component({
   selector: 'app-panel-decision',
-  imports: [ConfirmarAprobacionComponent],
+  imports: [RouterLink, ConfirmarAprobacionComponent],
   templateUrl: './panel-decision.component.html',
   styleUrls: ['../../siniestros.scss', './panel-decision.component.scss'],
 })
@@ -31,6 +32,7 @@ export class PanelDecisionComponent {
 
   readonly textos = inject(TextosSiniestrosService);
   private readonly documento = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
 
   /** La aprobación que espera confirmación; null con el diálogo cerrado. */
   readonly solicitud = signal<SolicitudAprobacion | null>(null);
@@ -44,12 +46,22 @@ export class PanelDecisionComponent {
     const liquidacion = formulario.valid ? liquidacionSolicitada(formulario, this.textos.locale(), this.moneda()) : null;
     if (!liquidacion) {
       this.hayErrores.set(true);
-      // El foco va al primer campo inválido, cuando Angular ya pintó los errores.
-      setTimeout(() => this.documento.querySelector<HTMLElement>('app-liquidacion [aria-invalid="true"]')?.focus());
+      this.enfocarPrimerError();
       return;
     }
     this.hayErrores.set(false);
     this.solicitud.set({ tipo: 'APROBAR', justificacion: formulario.controls.justificacion.value.trim(), liquidacion });
+  }
+
+  /** El foco va al primer campo inválido; si los errores aún no están pintados, tras el próximo render. */
+  private enfocarPrimerError(): void {
+    const primero = () => this.documento.querySelector<HTMLElement>('app-liquidacion [aria-invalid="true"]');
+    const ya = primero();
+    if (ya) {
+      ya.focus();
+    } else {
+      afterNextRender(() => primero()?.focus(), { injector: this.injector });
+    }
   }
 
   cerrarConfirmacion(): void {

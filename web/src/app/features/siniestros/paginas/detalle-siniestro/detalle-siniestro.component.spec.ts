@@ -450,7 +450,7 @@ describe('Detalle del siniestro (H03, H04, Cobertura e Historial, HU-W19)', () =
     it('con el caso EN_EVALUACION asignado al usuario muestra la liquidación y el panel de decisión', async () => {
       await abrirComoAnalista();
       expect(texto('app-liquidacion h3')).toBe('Liquidación');
-      expect(Array.from(html().querySelectorAll('app-panel-decision .panel button')).map((b) => b.textContent?.trim())).toEqual([
+      expect(Array.from(html().querySelectorAll('app-panel-decision .panel .btn')).map((b) => b.textContent?.trim())).toEqual([
         'Aprobar y ordenar el pago',
         'Solicitar el soporte faltante',
         'Rechazar el siniestro',
@@ -470,13 +470,13 @@ describe('Detalle del siniestro (H03, H04, Cobertura e Historial, HU-W19)', () =
       });
     }
 
-    it('con el caso APROBADO muestra la liquidación de solo lectura y «Decisión» completada, sin panel', async () => {
+    it('con el caso APROBADO muestra la liquidación de solo lectura, «Decisión» completada y el pago en curso, sin panel', async () => {
       await abrirComoAnalista(DETALLE_APROBADO);
       expect(html().querySelector('app-panel-decision')).toBeNull();
       expect(texto('app-liquidacion .resumen__total')).toMatch(/2\.500\.000/);
       const pasos = Array.from(html().querySelectorAll('app-linea-tiempo-tramite li .rotulo')).map((r) => r.textContent?.replace(/\s+/g, ' ').trim());
       expect(pasos).toContain('Decisión · Completado');
-      expect(pasos).toContain('Pago de la indemnización · Pendiente');
+      expect(pasos).toContain('Pago de la indemnización · En curso');
     });
 
     it('aprobar envía la decisión, recarga el detalle y muestra el aviso con la liquidación aprobada', async () => {
@@ -515,6 +515,33 @@ describe('Detalle del siniestro (H03, H04, Cobertura e Historial, HU-W19)', () =
       expect(alerta).not.toContain('ya decidido');
       expect(html().querySelector('app-panel-decision')).toBeNull();
       expect(texto('h2')).toBe('Siniestro 88-2026-0442 Aprobado');
+    });
+
+    it('con el caso en FALTA_SOPORTE avisa el plazo del cliente y no muestra el panel', async () => {
+      await abrirComoAnalista({ ...DETALLE_COMPLETO, estado: 'FALTA_SOPORTE', relojPausado: true, plazoSoporteVenceEn: '2026-11-19T15:00:00Z' });
+      const avisos = Array.from(html().querySelectorAll('.aviso--alerta')).map((a) => a.textContent ?? '');
+      expect(avisos.some((a) => /^El cliente tiene hasta el 19\/11\/2026 · \d{2}:\d{2} para enviar el soporte\./.test(a))).toBeTrue();
+      expect(html().querySelector('app-panel-decision')).toBeNull();
+    });
+
+    it('en «Evidencias», «Solicitarlo al cliente» lleva a H05 si el usuario puede decidir y si no queda deshabilitado', async () => {
+      await iniciarSesion({ sub: ANALISTA_QA, name: 'Luis Mora', 'cognito:groups': ['analistas-siniestros'] });
+      harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl(`${base}/evidencias`);
+      pedidoDetalle().flush(DETALLE_COMPLETO);
+      harness.detectChanges();
+      const enlace = html().querySelector('a.btn--bloque') as HTMLAnchorElement;
+      expect(enlace.textContent?.trim()).toBe('Solicitarlo al cliente');
+      expect(enlace.getAttribute('href')).toBe(`${base}/solicitar-soporte`);
+    });
+
+    it('en «Evidencias», sin ser el analista asignado, «Solicitarlo al cliente» queda deshabilitado con su motivo', async () => {
+      await abrirComoAnalista(DETALLE_COMPLETO, 'a0a0a0a0-0000-4000-8000-0000000000ff');
+      await harness.navigateByUrl(`${base}/evidencias`);
+      const boton = html().querySelector('button.btn--bloque') as HTMLButtonElement;
+      expect(boton.textContent?.trim()).toBe('Solicitarlo al cliente');
+      expect(boton.disabled).toBeTrue();
+      expect(boton.title).toBe('Solo el analista asignado puede pedir el soporte');
     });
 
     it('la evaluación con el panel y un error de decisión cumple axe-core en es-CO y en-US', async () => {

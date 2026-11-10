@@ -162,7 +162,7 @@ export const DETALLE_COMPLETO: DetalleSiniestro = {
 /** EVA-01 con el valor reclamado que ya consta (lo llena M01): el campo de la liquidación es de solo lectura. */
 export const DETALLE_CON_RECLAMADO: DetalleSiniestro = { ...DETALLE_COMPLETO, valorReclamado: '2850000.00' };
 
-/** EVA-01 ya aprobado: trae la liquidación y el trámite con la decisión completada. */
+/** EVA-01 ya aprobado: trae la liquidación y el trámite con la decisión completada y el pago en curso. */
 export const DETALLE_APROBADO: DetalleSiniestro = {
   ...DETALLE_COMPLETO,
   estado: 'APROBADO',
@@ -176,7 +176,14 @@ export const DETALLE_APROBADO: DetalleSiniestro = {
     aprobadaEn: '2026-11-05T15:00:00Z',
   },
   tramite: DETALLE_COMPLETO.tramite.map((p) =>
-    p.paso === 'EN_EVALUACION' ? { ...p, estado: 'COMPLETADO' as const } : p.paso === 'DECISION' ? { ...p, estado: 'COMPLETADO' as const, ocurridoEn: '2026-11-05T15:00:00Z', actorNombre: 'Luis Mora' } : p,
+    p.paso === 'EN_EVALUACION'
+      ? { ...p, estado: 'COMPLETADO' as const }
+      : p.paso === 'DECISION'
+        ? { ...p, estado: 'COMPLETADO' as const, ocurridoEn: '2026-11-05T15:00:00Z', actorNombre: 'Luis Mora' }
+        : // Como el backend (R-74): al aprobar, el pago es el paso actual; W23 lo completa.
+          p.paso === 'PAGO_INDEMNIZACION'
+          ? { ...p, estado: 'ACTUAL' as const }
+          : p,
   ),
 };
 

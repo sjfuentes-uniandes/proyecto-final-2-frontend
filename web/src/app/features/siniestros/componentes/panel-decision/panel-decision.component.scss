@@ -4,3 +4,4 @@
 /* Contraste WCAG AA del texto blanco: verde y rojo más oscuros que los tokens. */
 .btn--aprobar { border: 0; background: #00663f; color: var(--sv-blanco); }
 .btn--rechazar { border: 0; background: #b3261e; color: var(--sv-blanco); }
+a.btn { text-decoration: none; }

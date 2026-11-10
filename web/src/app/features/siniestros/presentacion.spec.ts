@@ -1,5 +1,8 @@
 import {
   aCentavos,
+  diaDelEvento,
+  diaEnColombia,
+  diasDeVencida,
   claseTono,
   diferenciaSemanal,
   fechaCorta,
@@ -392,6 +395,27 @@ describe('Presentación de los siniestros: fechas, trámite y verificación (H01
       expect(ultimosDigitos('****1004')).toBe('1004');
       expect(ultimosDigitos('•••• 4417')).toBe('4417');
       expect(ultimosDigitos('12')).toBe('12');
+    });
+  });
+
+  describe('Rechazo (HU-W20, H07): día del evento y póliza vencida', () => {
+    it('diaEnColombia cuenta el día en UTC−5, no en UTC', () => {
+      expect(diaEnColombia('2026-11-05T00:19:00Z')).toBe('2026-11-04');
+      expect(diaEnColombia('2026-11-05T05:00:00Z')).toBe('2026-11-05');
+    });
+
+    it('diaDelEvento usa el de la verificación de vigencia y, si no hay, el del instante', () => {
+      const vigencia: VerificacionCobertura = { codigo: 'VIGENCIA', resultado: 'NO_CUMPLE', detalle: { fechaEvento: '2026-09-06' } };
+      expect(diaDelEvento('2026-11-05T00:19:00Z', [vigencia])).toBe('2026-09-06');
+      expect(diaDelEvento('2026-11-05T00:19:00Z', [])).toBe('2026-11-04');
+      expect(diaDelEvento('2026-11-05T00:19:00Z', [{ codigo: 'VIGENCIA', resultado: 'NO_EVALUABLE', detalle: {} }])).toBe('2026-11-04');
+    });
+
+    it('diasDeVencida: 33 días de agosto a septiembre; 0 si estaba vigente, el último día o la fecha no se lee', () => {
+      expect(diasDeVencida('2026-09-06', '2026-08-04')).toBe(33);
+      expect(diasDeVencida('2026-08-04', '2026-08-04')).toBe(0);
+      expect(diasDeVencida('2026-07-01', '2026-08-04')).toBe(0);
+      expect(diasDeVencida('no-es-fecha', '2026-08-04')).toBe(0);
     });
   });
 });

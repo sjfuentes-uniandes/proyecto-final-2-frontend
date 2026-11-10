@@ -19,6 +19,8 @@ import { InsigniaEstadoComponent } from '../insignia-estado/insignia-estado.comp
 export class TablaVerificacionesComponent {
   readonly verificaciones = input.required<VerificacionCobertura[]>();
   readonly amparos = input<AmparoCopia[]>([]);
+  /** Otro título (H07: «Verificaciones realizadas»); por omisión, «Verificación de cobertura». */
+  readonly titulo = input<string | null>(null);
   /** Evita ids repetidos si hay más de una tabla en la página. */
   readonly idTitulo = `tabla-verificaciones-${Math.random().toString(36).slice(2, 9)}`;
 

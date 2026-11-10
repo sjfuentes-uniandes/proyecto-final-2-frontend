@@ -5,5 +5,7 @@
  * verificable, no evaluable) no existe en styles.scss: gris sobre el fondo de la página.
  */
 .tag--ok { color: #00663f; }
+/* El aviso de éxito de la decisión (HU-W20): el verde del token no alcanza 4,5:1 sobre su fondo. */
+.alerta--ok { color: #00663f; }
 .tag--alerta { color: #7a4a00; }
 .tag--neutro { background: var(--sv-fondo); color: var(--sv-texto-secundario); border: 1px solid var(--sv-borde); }

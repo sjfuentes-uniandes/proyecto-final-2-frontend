@@ -1,12 +1,11 @@
 import { Component, computed, inject } from '@angular/core';
 
-import { SesionService } from '../../../../../core/auth/sesion.service';
 import { LiquidacionComponent } from '../../../componentes/liquidacion/liquidacion.component';
 import { crearFormularioLiquidacion } from '../../../componentes/liquidacion/liquidacion.formulario';
 import { LineaTiempoTramiteComponent } from '../../../componentes/linea-tiempo-tramite/linea-tiempo-tramite.component';
 import { PanelDecisionComponent } from '../../../componentes/panel-decision/panel-decision.component';
 import { TablaVerificacionesComponent } from '../../../componentes/tabla-verificaciones/tabla-verificaciones.component';
-import { sumaAseguradaDelAmparo, textoSoporte } from '../../../presentacion';
+import { fechaHora, sumaAseguradaDelAmparo, textoSoporte } from '../../../presentacion';
 import { TextosSiniestrosService } from '../../../siniestros.i18n';
 import { DetalleSiniestroEstado } from '../detalle-siniestro.estado';
 
@@ -25,7 +24,6 @@ import { DetalleSiniestroEstado } from '../detalle-siniestro.estado';
 export class EvaluacionComponent {
   readonly estado = inject(DetalleSiniestroEstado);
   readonly textos = inject(TextosSiniestrosService);
-  private readonly sesion = inject(SesionService);
 
   readonly formulario = crearFormularioLiquidacion(() => ({
     locale: this.textos.locale(),
@@ -37,11 +35,15 @@ export class EvaluacionComponent {
     return d ? sumaAseguradaDelAmparo(d.causa, d.poliza.amparos) : null;
   });
 
-  /** El analista decide solo los casos EN_EVALUACION que tiene asignados (el servidor lo vuelve a exigir). */
-  readonly puedeDecidir = computed(() => {
+  readonly puedeDecidir = this.estado.puedeDecidir;
+
+  /** El aviso del plazo del cliente, solo en FALTA_SOPORTE (el reloj está en pausa). */
+  readonly avisoPlazo = computed(() => {
     const d = this.estado.detalle();
-    const usuario = this.sesion.claims()?.sub;
-    return d !== null && d.estado === 'EN_EVALUACION' && !!usuario && d.analistaId === usuario;
+    if (d?.estado !== 'FALTA_SOPORTE' || !d.plazoSoporteVenceEn) {
+      return null;
+    }
+    return this.textos.t().avisoPlazoSoporte(fechaHora(this.textos.locale(), d.plazoSoporteVenceEn));
   });
 
   /** El aviso de lo que falta; null si los soportes requeridos están completos. */

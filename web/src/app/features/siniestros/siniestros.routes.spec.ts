@@ -9,7 +9,7 @@ import { routes } from '../../app.routes';
 import { ConfigService } from '../../core/config/app-config';
 import { IdiomaService } from '../../core/i18n/idioma.service';
 import { iniciarSesion, proveerAuthFalso } from '../../testing';
-import { DETALLE_COMPLETO, SINIESTRO_EVA01, URL_SINIESTROS } from './siniestros.testing';
+import { CATALOGOS_DECISION, DETALLE_COMPLETO, SINIESTRO_EVA01, URL_SINIESTROS } from './siniestros.testing';
 
 describe('Rutas de siniestros por grupo (HU-W19)', () => {
   beforeEach(() =>
@@ -83,6 +83,24 @@ describe('Rutas de siniestros por grupo (HU-W19)', () => {
     http.verify();
   });
 
+  for (const [pagina, titulo] of [
+    ['solicitar-soporte', 'Solicitar soporte · Solventa'],
+    ['rechazar', 'Rechazar siniestro · Solventa'],
+  ]) {
+    it(`/${pagina} (HU-W20) tiene su título, hereda el id del siniestro y pide el detalle y los catálogos`, async () => {
+      await analista();
+      const http = TestBed.inject(HttpTestingController);
+      TestBed.inject(ConfigService).establecer({ apiBaseUrl: 'https://api/' });
+      const ruta = `/siniestros/${SINIESTRO_EVA01}/${pagina}`;
+      expect(await navegar(ruta)).toBe(ruta);
+      expect(TestBed.inject(Title).getTitle()).toBe(titulo);
+      http.expectOne(`${URL_SINIESTROS()}/${SINIESTRO_EVA01}`).flush(DETALLE_COMPLETO);
+      http.expectOne(`${URL_SINIESTROS()}/catalogos-decision`).flush(CATALOGOS_DECISION);
+      harness?.detectChanges();
+      expect((harness?.fixture.nativeElement as HTMLElement).querySelector('nav.crumb')?.textContent).toContain('88-2026-0442');
+    });
+  }
+
   it('con el menú lateral de siniestros y «Mi bandeja» activa', async () => {
     await analista();
     await navegar('/siniestros/bandeja');
@@ -93,7 +111,7 @@ describe('Rutas de siniestros por grupo (HU-W19)', () => {
   for (const grupos of [['asesores'], ['suscriptores'], ['operacion'], ['administradores']]) {
     it(`un usuario solo de ${grupos[0]} termina en /sin-acceso en cualquier ruta de siniestros`, async () => {
       await iniciarSesion({ name: 'Ana', 'cognito:groups': grupos });
-      for (const ruta of ['/siniestros', '/siniestros/bandeja', '/siniestros/sin-asignar', `/siniestros/${SINIESTRO_EVA01}/evidencias`]) {
+      for (const ruta of ['/siniestros', '/siniestros/bandeja', '/siniestros/sin-asignar', `/siniestros/${SINIESTRO_EVA01}/evidencias`, `/siniestros/${SINIESTRO_EVA01}/solicitar-soporte`, `/siniestros/${SINIESTRO_EVA01}/rechazar`]) {
         expect(await navegar(ruta)).withContext(ruta).toBe('/sin-acceso');
       }
     });

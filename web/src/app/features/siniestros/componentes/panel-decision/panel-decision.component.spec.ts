@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { ConfigService } from '../../../../core/config/app-config';
@@ -56,7 +56,7 @@ describe('PanelDecisionComponent (H03, W20-F02)', () => {
 
   it('muestra las tres acciones y el aviso de pago único', () => {
     expect(html().querySelector('section.panel h3')?.textContent).toBe('Decisión sobre el siniestro');
-    expect(Array.from(html().querySelectorAll('.panel button')).map((b) => b.textContent?.trim())).toEqual([
+    expect(Array.from(html().querySelectorAll('.panel .btn')).map((b) => b.textContent?.trim())).toEqual([
       'Aprobar y ordenar el pago',
       'Solicitar el soporte faltante',
       'Rechazar el siniestro',
@@ -65,15 +65,22 @@ describe('PanelDecisionComponent (H03, W20-F02)', () => {
     expect(dialogo().open).toBeFalse();
   });
 
-  it('aprobar con datos inválidos muestra los errores, mueve el foco al primero y no abre el diálogo', fakeAsync(() => {
+  it('aprobar con datos inválidos muestra los errores, mueve el foco al primero y no abre el diálogo', () => {
     boton('Aprobar y ordenar el pago').click();
     fixture.detectChanges();
-    tick();
     expect(html().querySelector('.panel [role=alert]')?.textContent).toContain('Revisa los datos de la liquidación antes de aprobar.');
     expect(html().querySelectorAll('.fld__error').length).toBe(4);
     expect(document.activeElement?.id).toMatch(/-reclamado$/);
     expect(dialogo().open).toBeFalse();
-  }));
+  });
+
+  it('un segundo intento con los errores ya pintados enfoca el primero de inmediato', () => {
+    boton('Aprobar y ordenar el pago').click();
+    fixture.detectChanges();
+    (document.activeElement as HTMLElement).blur();
+    boton('Aprobar y ordenar el pago').click();
+    expect(document.activeElement?.id).toMatch(/-reclamado$/);
+  });
 
   it('con todo válido abre la confirmación con el valor a pagar', () => {
     llenar();
@@ -131,9 +138,12 @@ describe('PanelDecisionComponent (H03, W20-F02)', () => {
     expect(fixture.componentInstance.errores.map((e) => e.codigo)).toEqual(['TRANSICION_NO_PERMITIDA']);
   });
 
-  it('Solicitar soporte y Rechazar quedan deshabilitados hasta W20-F05 y W20-F06', () => {
-    expect(boton('Solicitar el soporte faltante').disabled).toBeTrue();
-    expect(boton('Rechazar el siniestro').disabled).toBeTrue();
+  it('Solicitar soporte y Rechazar son enlaces a las páginas H05 y H07', () => {
+    const enlaces = Array.from(html().querySelectorAll('.panel a.btn')) as HTMLAnchorElement[];
+    expect(enlaces.map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
+      ['Solicitar el soporte faltante', `/siniestros/${SINIESTRO_EVA01}/solicitar-soporte`],
+      ['Rechazar el siniestro', `/siniestros/${SINIESTRO_EVA01}/rechazar`],
+    ]);
   });
 
   it('cumple WCAG 2.2 AA en es-CO y en-US', async () => {

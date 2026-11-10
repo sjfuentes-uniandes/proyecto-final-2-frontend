@@ -3,11 +3,14 @@ import { expect, test } from '@playwright/test';
 
 import {
   BANDEJA_MIA,
+  CATALOGOS_DECISION,
   DETALLE_COMPLETO,
   ENLACE_FOTO,
   EVIDENCIA_FOTO_1,
+  RESULTADO_APROBACION,
   SINIESTRO_EVA01,
 } from '../src/app/features/siniestros/siniestros.testing';
+import { CatalogosDecision, ResultadoDecision, SolicitudDecision } from '../src/app/features/siniestros/siniestros.decision.modelo';
 import { BandejaSiniestros, DetalleSiniestro, EnlaceEvidencia } from '../src/app/features/siniestros/siniestros.modelo';
 import { ACEPTA_JSON, nuevoPacto } from './pacto';
 
@@ -25,6 +28,13 @@ const { boolean, decimal, eachLike, equal, integer, like, regex, uuid } = Matche
  * W22 o W23 los llenen, esas historias amplían este pacto. El portal manda el `Authorization` de la
  * sesión y API Gateway lo traduce en los encabezados del grupo: el verificador del proveedor envía los
  * de un usuario del grupo `analistas-siniestros`.
+ *
+ * HU-W20 amplía el pacto con GET …/catalogos-decision, las tres decisiones de POST …/{id}/decision
+ * (aprobar, rechazar y solicitar soporte) y su 409 TRANSICION_NO_PERMITIDA. El detalle suma
+ * `valorReclamado` (null hasta que M01 lo llene), `referenciaPagoPrevista` y `plazoSoporteVenceEn`
+ * (null fuera de FALTA_SOPORTE). El resultado de una decisión trae null en `referenciaPago` o en
+ * `plazoSoporteVenceEn` según el caso (R-53): cada decisión es su propia interacción, con su estado del
+ * proveedor, y en cada una el campo que no aplica se pacta en null, igual que los demás.
  */
 const pacto = nuevoPacto();
 
@@ -154,6 +164,10 @@ function detalle(d: DetalleSiniestro) {
     liquidacion: equal(null),
     evento: equal(null),
     pago: equal(null),
+    // HU-W20: aún sin reclamado (lo llena M01), con la referencia de pago prevista y sin plazo de soporte.
+    valorReclamado: equal(null),
+    referenciaPagoPrevista: regex(/^IND-88-\d{4}-\d{4,}-01$/, d.referenciaPagoPrevista),
+    plazoSoporteVenceEn: equal(null),
     polizaVista: {
       polizaId: uuid(v.polizaId),
       numero: regex(NUMERO_POLIZA, v.numero),
@@ -277,5 +291,206 @@ test('la evidencia cuyo archivo no está en el almacén es 404 EVIDENCIA_NO_DISP
       const respuesta = await fetch(`${servidor.url}${RUTA_ENLACE}`, { method: 'POST', headers: ACEPTA_JSON });
       expect(respuesta.status).toBe(404);
       expect((await respuesta.json()).codigo).toBe('EVIDENCIA_NO_DISPONIBLE');
+    });
+});
+
+// --- HU-W20: la decisión del analista -------------------------------------------------------------
+
+const RUTA_CATALOGOS = '/v1/siniestros/catalogos-decision';
+const RUTA_DECISION = `${RUTA_DETALLE}/decision`;
+const CLAVE_IDEMPOTENCIA = 'c0c0c0c0-0000-4000-8000-000000000001';
+const CLAVE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const ENCABEZADOS_DECISION = {
+  ...ACEPTA_JSON,
+  'Content-Type': 'application/json',
+  'Idempotency-Key': regex(CLAVE, CLAVE_IDEMPOTENCIA),
+};
+const JSON_RESPUESTA = { 'Content-Type': 'application/json' };
+
+function catalogos(c: CatalogosDecision) {
+  return {
+    causales: eachLike(enumerado(c.causales, c.causales[0])),
+    documentos: eachLike(enumerado(c.documentos, c.documentos[0])),
+    canales: eachLike(enumerado(c.canales, c.canales[0])),
+    plazosDiasHabiles: eachLike(integer(c.plazosDiasHabiles[0])),
+  };
+}
+
+/** El resultado de una decisión: el estado nuevo exacto (el portal arma su aviso con él). */
+function resultado(r: ResultadoDecision, campos: { referenciaPago: unknown; plazoSoporteVenceEn: unknown }) {
+  return {
+    siniestroId: uuid(r.siniestroId),
+    estadoNuevo: equal(r.estadoNuevo),
+    decisionId: uuid(r.decisionId),
+    referenciaPago: campos.referenciaPago,
+    plazoSoporteVenceEn: campos.plazoSoporteVenceEn,
+    registradaEn: instante(r.registradaEn),
+  };
+}
+
+async function decidir(url: string, solicitud: SolicitudDecision): Promise<Response> {
+  return fetch(`${url}${RUTA_DECISION}`, {
+    method: 'POST',
+    headers: { ...ACEPTA_JSON, 'Content-Type': 'application/json', 'Idempotency-Key': CLAVE_IDEMPOTENCIA },
+    body: JSON.stringify(solicitud),
+  });
+}
+
+const APROBAR: SolicitudDecision = {
+  tipo: 'APROBAR',
+  justificacion: 'Daño accidental verificado con evidencia',
+  liquidacion: { valorReclamado: '2850000', deducible: '350000', valorIndemnizar: '2500000', moneda: 'COP' },
+};
+const RECHAZAR: SolicitudDecision = {
+  tipo: 'RECHAZAR',
+  justificacion: 'La póliza estaba vencida al evento',
+  causal: 'POLIZA_NO_VIGENTE',
+  explicacionCliente: 'Tu póliza venció antes del evento.',
+};
+const SOLICITAR_SOPORTE: SolicitudDecision = {
+  tipo: 'SOLICITAR_SOPORTE',
+  justificacion: 'Falta el certificado del taller',
+  documentos: ['CERTIFICADO_REPARACION'],
+  mensajeCliente: 'Necesitamos el certificado de reparación.',
+  canal: 'PUSH_Y_CORREO',
+  plazoDiasHabiles: 10,
+};
+
+/** El cuerpo que espera el proveedor: los enumerados exactos y los textos por tipo. */
+function cuerpoAprobar(s: Extract<SolicitudDecision, { tipo: 'APROBAR' }>) {
+  const monto = (valor: string) => regex(/^\d+(\.\d+)?$/, valor);
+  return {
+    tipo: equal('APROBAR'),
+    justificacion: like(s.justificacion),
+    liquidacion: {
+      valorReclamado: monto(s.liquidacion.valorReclamado),
+      deducible: monto(s.liquidacion.deducible),
+      valorIndemnizar: monto(s.liquidacion.valorIndemnizar),
+      moneda: regex(/^[A-Z]{3}$/, s.liquidacion.moneda),
+    },
+  };
+}
+
+test('el analista pide las listas de la decisión: causales, documentos, canales y plazos', async () => {
+  await pacto
+    .addInteraction()
+    .given('el analista puede decidir siniestros')
+    .uponReceiving('la consulta de los catálogos de la decisión')
+    .withRequest('GET', RUTA_CATALOGOS, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(200, (respuesta) => respuesta.headers(JSON_RESPUESTA).jsonBody(catalogos(CATALOGOS_DECISION)))
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${RUTA_CATALOGOS}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(200);
+      const cuerpo = (await respuesta.json()) as CatalogosDecision;
+      expect(cuerpo.causales.length).toBeGreaterThan(0);
+      expect(cuerpo.plazosDiasHabiles.length).toBeGreaterThan(0);
+    });
+});
+
+test('el analista aprueba un siniestro EN_EVALUACION y recibe la referencia de pago', async () => {
+  const resultadoAprobar = { ...RESULTADO_APROBACION };
+  await pacto
+    .addInteraction()
+    .given('el analista tiene un siniestro EN_EVALUACION asignado', { siniestroId: SINIESTRO_EVA01 })
+    .uponReceiving('la aprobación de un siniestro')
+    .withRequest('POST', RUTA_DECISION, (pedido) => pedido.headers(ENCABEZADOS_DECISION).jsonBody(cuerpoAprobar(APROBAR as Extract<SolicitudDecision, { tipo: 'APROBAR' }>)))
+    .willRespondWith(200, (respuesta) =>
+      respuesta.headers(JSON_RESPUESTA).jsonBody(
+        resultado(resultadoAprobar, {
+          referenciaPago: regex(/^IND-88-\d{4}-\d{4,}-01$/, resultadoAprobar.referenciaPago as string),
+          plazoSoporteVenceEn: equal(null),
+        }),
+      ),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await decidir(servidor.url, APROBAR);
+      expect(respuesta.status).toBe(200);
+      const cuerpo = (await respuesta.json()) as ResultadoDecision;
+      expect(cuerpo.estadoNuevo).toBe('APROBADO');
+      expect(cuerpo.referenciaPago).toMatch(/^IND-88-/);
+    });
+});
+
+test('el analista rechaza un siniestro con causal y explicación y no recibe referencia de pago', async () => {
+  const resultadoRechazar: ResultadoDecision = { ...RESULTADO_APROBACION, estadoNuevo: 'RECHAZADO', referenciaPago: null };
+  await pacto
+    .addInteraction()
+    .given('el analista tiene un siniestro EN_EVALUACION asignado', { siniestroId: SINIESTRO_EVA01 })
+    .uponReceiving('el rechazo de un siniestro')
+    .withRequest('POST', RUTA_DECISION, (pedido) =>
+      pedido.headers(ENCABEZADOS_DECISION).jsonBody({
+        tipo: equal('RECHAZAR'),
+        justificacion: like(RECHAZAR.justificacion),
+        causal: enumerado(CATALOGOS_DECISION.causales, 'POLIZA_NO_VIGENTE'),
+        explicacionCliente: like('Tu póliza venció antes del evento.'),
+      }),
+    )
+    .willRespondWith(200, (respuesta) =>
+      respuesta.headers(JSON_RESPUESTA).jsonBody(resultado(resultadoRechazar, { referenciaPago: equal(null), plazoSoporteVenceEn: equal(null) })),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await decidir(servidor.url, RECHAZAR);
+      expect(respuesta.status).toBe(200);
+      const cuerpo = (await respuesta.json()) as ResultadoDecision;
+      expect(cuerpo.estadoNuevo).toBe('RECHAZADO');
+      expect(cuerpo.referenciaPago).toBeNull();
+    });
+});
+
+test('el analista solicita soporte y recibe el fin del plazo en días hábiles', async () => {
+  const resultadoSoporte: ResultadoDecision = {
+    ...RESULTADO_APROBACION,
+    estadoNuevo: 'FALTA_SOPORTE',
+    referenciaPago: null,
+    plazoSoporteVenceEn: '2026-11-19T15:00:00Z',
+  };
+  await pacto
+    .addInteraction()
+    .given('el analista tiene un siniestro EN_EVALUACION asignado', { siniestroId: SINIESTRO_EVA01 })
+    .uponReceiving('la solicitud de soporte de un siniestro')
+    .withRequest('POST', RUTA_DECISION, (pedido) =>
+      pedido.headers(ENCABEZADOS_DECISION).jsonBody({
+        tipo: equal('SOLICITAR_SOPORTE'),
+        justificacion: like(SOLICITAR_SOPORTE.justificacion),
+        documentos: eachLike(enumerado(CATALOGOS_DECISION.documentos, 'CERTIFICADO_REPARACION')),
+        mensajeCliente: like('Necesitamos el certificado de reparación.'),
+        canal: enumerado(CATALOGOS_DECISION.canales, 'PUSH_Y_CORREO'),
+        plazoDiasHabiles: integer(10),
+      }),
+    )
+    .willRespondWith(200, (respuesta) =>
+      respuesta.headers(JSON_RESPUESTA).jsonBody(
+        resultado(resultadoSoporte, { referenciaPago: equal(null), plazoSoporteVenceEn: instante(resultadoSoporte.plazoSoporteVenceEn as string) }),
+      ),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await decidir(servidor.url, SOLICITAR_SOPORTE);
+      expect(respuesta.status).toBe(200);
+      const cuerpo = (await respuesta.json()) as ResultadoDecision;
+      expect(cuerpo.estadoNuevo).toBe('FALTA_SOPORTE');
+      expect(cuerpo.plazoSoporteVenceEn).toMatch(INSTANTE);
+    });
+});
+
+test('decidir un siniestro que ya no admite la decisión es 409 TRANSICION_NO_PERMITIDA con el estado vigente', async () => {
+  await pacto
+    .addInteraction()
+    .given('el siniestro ya fue aprobado', { siniestroId: SINIESTRO_EVA01 })
+    .uponReceiving('una decisión sobre un siniestro ya decidido')
+    .withRequest('POST', RUTA_DECISION, (pedido) => pedido.headers(ENCABEZADOS_DECISION).jsonBody(cuerpoAprobar(APROBAR as Extract<SolicitudDecision, { tipo: 'APROBAR' }>)))
+    .willRespondWith(409, (respuesta) =>
+      respuesta.jsonBody({
+        codigo: equal('TRANSICION_NO_PERMITIDA'),
+        mensaje: like('Mensaje'),
+        correlationId: like('corr-pact'),
+        detalles: { estadoActual: enumerado(['APROBADO', 'RECHAZADO', 'FALTA_SOPORTE', 'REPORTADO', 'EN_EVALUACION'], 'APROBADO') },
+      }),
+    )
+    .executeTest(async (servidor) => {
+      const respuesta = await decidir(servidor.url, APROBAR);
+      expect(respuesta.status).toBe(409);
+      const cuerpo = await respuesta.json();
+      expect(cuerpo.codigo).toBe('TRANSICION_NO_PERMITIDA');
+      expect(cuerpo.detalles.estadoActual).toBe('APROBADO');
     });
 });

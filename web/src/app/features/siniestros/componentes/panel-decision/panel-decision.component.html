@@ -5,9 +5,9 @@
     <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ t.liqRevisar }}</span></p>
   }
   <button class="btn btn--bloque btn--aprobar" type="button" (click)="aprobar()">{{ t.accionAprobar }}</button>
-  <!-- Solicitar soporte y rechazar son las páginas H05 y H07 (W20-F05 y F06). -->
-  <button class="btn btn--bloque btn--secundario" type="button" disabled [attr.title]="t.proximamente">{{ t.accionSolicitarSoporte }}</button>
-  <button class="btn btn--bloque btn--rechazar" type="button" disabled [attr.title]="t.proximamente">{{ t.accionRechazar }}</button>
+  <!-- Solicitar soporte y rechazar son páginas (H05 y H07): enlaces, no botones. -->
+  <a class="btn btn--bloque btn--secundario" [routerLink]="['/siniestros', detalle().id, 'solicitar-soporte']">{{ t.accionSolicitarSoporte }}</a>
+  <a class="btn btn--bloque btn--rechazar" [routerLink]="['/siniestros', detalle().id, 'rechazar']">{{ t.accionRechazar }}</a>
   <p class="nota">{{ t.avisoPagoUnico }}</p>
 </section>
 <app-confirmar-aprobacion

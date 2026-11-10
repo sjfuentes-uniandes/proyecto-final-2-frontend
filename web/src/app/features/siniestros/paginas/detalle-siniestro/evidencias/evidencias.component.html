@@ -101,8 +101,11 @@
               </li>
             }
           </ul>
-          <!-- «Solicitarlo al cliente» es de W20: hasta entonces, deshabilitado. -->
-          <button class="btn btn--secundario btn--bloque" type="button" disabled [attr.title]="t.proximamente">{{ t.solicitarAlCliente }}</button>
+          @if (estado.puedeDecidir()) {
+            <a class="btn btn--secundario btn--bloque" [routerLink]="['/siniestros', d.id, 'solicitar-soporte']">{{ t.solicitarAlCliente }}</a>
+          } @else {
+            <button class="btn btn--secundario btn--bloque" type="button" disabled [attr.title]="t.solicitarSoloAsignado">{{ t.solicitarAlCliente }}</button>
+          }
         </section>
       }
 

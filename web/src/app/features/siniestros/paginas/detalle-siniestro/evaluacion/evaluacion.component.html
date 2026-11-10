@@ -22,6 +22,9 @@
       } @else {
         <p class="aviso aviso--ok" role="status">{{ t.soportesAlDia }}</p>
       }
+      @if (avisoPlazo(); as plazo) {
+        <p class="aviso aviso--alerta" role="status">{{ plazo }}</p>
+      }
       <app-liquidacion [detalle]="d" [formulario]="formulario" [editable]="puedeDecidir()" />
       <!-- Hueco del bloque del evento paramétrico: lo llena W22. -->
     </div>
