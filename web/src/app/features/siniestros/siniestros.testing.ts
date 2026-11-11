@@ -3,6 +3,7 @@
  * (`contracts/datos-sinteticos/siniestros-r7.json`). Datos 100 % sintéticos.
  */
 import { CatalogosDecision, ResultadoDecision } from './siniestros.decision.modelo';
+import { IndemnizacionVista, PagoSiniestroVista } from './siniestros.pago.modelo';
 import {
   BandejaSiniestros,
   DetalleSiniestro,
@@ -167,6 +168,8 @@ export const DETALLE_APROBADO: DetalleSiniestro = {
   ...DETALLE_COMPLETO,
   estado: 'APROBADO',
   valorReclamado: '2850000.00',
+  // Como el backend (HU-W23): un caso APROBADO sin resultado de dinero trae el pago PENDIENTE, derivado al leer.
+  pago: { estado: 'PENDIENTE', referencia: 'IND-88-2026-0442-01', transaccionId: null, motivo: null, intentos: 0, duplicadosDescartados: 0 },
   liquidacion: {
     moneda: 'COP',
     valorReclamado: '2850000.00',
@@ -186,6 +189,62 @@ export const DETALLE_APROBADO: DetalleSiniestro = {
           : p,
   ),
 };
+
+/** El pago de H08 (HU-W23): EVA-01 aprobado por Luis Mora; 17 h 12 min de trámite, valor y deducible del mockup. */
+const HISTORIAL_PAGO = [
+  ...DETALLE_COMPLETO.historial,
+  { id: '00000000-0000-4000-8000-0000000000a4', accion: 'APROBADO', estadoAnterior: 'EN_EVALUACION' as const, estadoNuevo: 'APROBADO' as const, actorId: ANALISTA_QA, actorRol: 'ANALISTA_SINIESTROS', actorNombre: 'Luis Mora', justificacion: 'Daño verificado', ocurridoEn: '2026-11-05T18:10:00Z' },
+];
+
+export const INDEMNIZACION_CONFIRMADA: IndemnizacionVista = {
+  referencia: 'IND-88-2026-0442-01',
+  estado: 'CONFIRMADO',
+  monto: '2500000.00',
+  moneda: 'COP',
+  transaccionId: 'TRX-889214477',
+  motivo: null,
+  intentos: 1,
+  duplicadosDescartados: 0,
+  confirmadaEn: '2026-11-05T18:12:00Z',
+};
+
+function vistaDePago(cambios: Partial<PagoSiniestroVista>): PagoSiniestroVista {
+  return {
+    siniestroId: SINIESTRO_EVA01,
+    codigo: '88-2026-0442',
+    estado: 'APROBADO',
+    clienteNombre: 'Natalia González Ruiz',
+    reportadoEn: '2026-11-05T01:00:00Z',
+    compromisoHoras: 48,
+    liquidacion: { ...DETALLE_APROBADO.liquidacion!, aprobadaEn: '2026-11-05T18:10:00Z' },
+    cuentaMascarada: '****4417',
+    autorizadoPor: 'Luis Mora',
+    historial: HISTORIAL_PAGO,
+    indemnizacion: null,
+    ...cambios,
+  };
+}
+
+/** Confirmado por la pasarela: un intento, cero duplicados. */
+export const PAGO_CONFIRMADO: PagoSiniestroVista = vistaDePago({
+  indemnizacion: INDEMNIZACION_CONFIRMADA,
+  historial: [
+    ...HISTORIAL_PAGO,
+    { id: '00000000-0000-4000-8000-0000000000a5', accion: 'PAGO_CONFIRMADO', estadoAnterior: null, estadoNuevo: null, actorId: null, actorRol: 'SISTEMA', actorNombre: null, justificacion: null, ocurridoEn: '2026-11-05T18:12:00Z' },
+  ],
+});
+
+/** La pasarela rechazó la orden: «Pago por gestionar». */
+export const PAGO_RECHAZADO: PagoSiniestroVista = vistaDePago({
+  indemnizacion: { ...INDEMNIZACION_CONFIRMADA, estado: 'RECHAZADO', transaccionId: null, motivo: 'BENEFICIARIO_NO_HABILITADO', confirmadaEn: null },
+  historial: [
+    ...HISTORIAL_PAGO,
+    { id: '00000000-0000-4000-8000-0000000000a6', accion: 'PAGO_RECHAZADO', estadoAnterior: null, estadoNuevo: null, actorId: null, actorRol: 'SISTEMA', actorNombre: null, justificacion: null, ocurridoEn: '2026-11-05T18:12:00Z' },
+  ],
+});
+
+/** Aprobado y sin resultado de `dinero` todavía: no hay datos de la pasarela. */
+export const PAGO_PENDIENTE: PagoSiniestroVista = vistaDePago({});
 
 /** Listas cerradas de la decisión (DS3-12): el portal las traduce. */
 export const CATALOGOS_DECISION: CatalogosDecision = {

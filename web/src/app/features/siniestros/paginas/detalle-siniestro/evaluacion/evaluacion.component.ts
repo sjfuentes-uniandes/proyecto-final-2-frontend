@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { LiquidacionComponent } from '../../../componentes/liquidacion/liquidacion.component';
 import { crearFormularioLiquidacion } from '../../../componentes/liquidacion/liquidacion.formulario';
@@ -17,7 +18,7 @@ import { DetalleSiniestroEstado } from '../detalle-siniestro.estado';
  */
 @Component({
   selector: 'app-pestana-evaluacion',
-  imports: [TablaVerificacionesComponent, LineaTiempoTramiteComponent, LiquidacionComponent, PanelDecisionComponent],
+  imports: [RouterLink, TablaVerificacionesComponent, LineaTiempoTramiteComponent, LiquidacionComponent, PanelDecisionComponent],
   templateUrl: './evaluacion.component.html',
   styleUrls: ['../../../siniestros.scss', './evaluacion.component.scss'],
 })
@@ -36,6 +37,12 @@ export class EvaluacionComponent {
   });
 
   readonly puedeDecidir = this.estado.puedeDecidir;
+
+  /** La página del pago (H08): solo un siniestro con pago (el aprobado, aunque esté pendiente) la tiene. */
+  readonly enlacePago = computed(() => {
+    const d = this.estado.detalle();
+    return d?.pago ? ['/siniestros', d.id, 'pago'] : null;
+  });
 
   /** El aviso del plazo del cliente, solo en FALTA_SOPORTE (el reloj está en pausa). */
   readonly avisoPlazo = computed(() => {

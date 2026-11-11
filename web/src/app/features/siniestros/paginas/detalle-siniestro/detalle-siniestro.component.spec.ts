@@ -479,6 +479,19 @@ describe('Detalle del siniestro (H03, H04, Cobertura e Historial, HU-W19)', () =
       expect(pasos).toContain('Pago de la indemnización · En curso');
     });
 
+    it('con el caso APROBADO el paso del pago y el aviso de la aprobación enlazan a H08 («Ver el pago»); sin aprobar, no hay enlace', async () => {
+      await abrirComoAnalista(DETALLE_COMPLETO);
+      expect(Array.from(html().querySelectorAll('a')).filter((a) => a.textContent?.trim() === 'Ver el pago')).toEqual([]);
+      completarYConfirmar();
+      http.expectOne(urlDecision).flush(RESULTADO_APROBACION);
+      pedidoDetalle().flush(DETALLE_APROBADO);
+      harness.detectChanges();
+      const enlaces = Array.from(html().querySelectorAll('a')).filter((a) => a.textContent?.trim() === 'Ver el pago');
+      expect(enlaces.map((a) => a.getAttribute('href'))).toEqual([`/siniestros/${SINIESTRO_EVA01}/pago`, `/siniestros/${SINIESTRO_EVA01}/pago`]);
+      expect(enlaces[0].closest('.alerta--ok')).not.toBeNull();
+      expect(enlaces[1].closest('li')?.querySelector('.rotulo')?.textContent).toContain('Pago de la indemnización');
+    });
+
     it('aprobar envía la decisión, recarga el detalle y muestra el aviso con la liquidación aprobada', async () => {
       await abrirComoAnalista();
       completarYConfirmar();

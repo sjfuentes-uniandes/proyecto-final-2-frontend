@@ -1,7 +1,7 @@
 @let t = textos.t();
 @if (estado.detalle(); as d) {
   @if (estado.mensajeDecision(); as mensaje) {
-    <p class="alerta alerta--ok" role="status"><span aria-hidden="true">✓</span><span>{{ mensaje }}</span></p>
+    <p class="alerta alerta--ok" role="status"><span aria-hidden="true">✓</span><span>{{ mensaje }}</span>@if (enlacePago(); as ruta) {<a class="enlace-pago" [routerLink]="ruta">{{ t.verPago }}</a>}</p>
   }
   @if (estado.errorDecision(); as e) {
     <div class="alerta alerta--error" role="alert">
@@ -29,7 +29,7 @@
       <!-- Hueco del bloque del evento paramétrico: lo llena W22. -->
     </div>
     <div class="columna">
-      <app-linea-tiempo-tramite [pasos]="d.tramite" [origen]="d.origen" />
+      <app-linea-tiempo-tramite [pasos]="d.tramite" [origen]="d.origen" [enlacePago]="enlacePago()" />
       @if (puedeDecidir()) {
         <app-panel-decision
           [detalle]="d"

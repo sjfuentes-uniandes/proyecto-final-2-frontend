@@ -1,0 +1,38 @@
+/* Pago ordenado (H08): indicadores, trazabilidad y detalle del pago. Los globales están en styles.scss. */
+.indicadores { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { padding: 18px; }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.acciones a.btn { text-decoration: none; }
+.seguimiento { font-size: 12px; }
+
+/* Trazabilidad: la misma línea de tiempo del estado del trámite (H03), todos los pasos cumplidos. */
+.pasos { margin: 0; padding: 0; list-style: none; }
+.paso { position: relative; display: flex; gap: 12px; padding-bottom: 18px; }
+.paso:last-child { padding-bottom: 0; }
+.paso:not(:last-child)::before { content: ''; position: absolute; left: 8px; top: 18px; bottom: 0; width: 2px; background: #00663f; }
+.marca {
+  flex-shrink: 0; width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%;
+  border: 2px solid #00663f; background: #00663f; box-shadow: inset 0 0 0 3px var(--sv-blanco);
+}
+.rotulo { margin: 0 0 2px; font-size: 13.5px; font-weight: 700; color: var(--sv-texto); }
+.detalle { margin: 0; font-size: 12px; color: var(--sv-texto-secundario); }
+
+/* Detalle del pago: pares etiqueta y valor con una línea entre filas. */
+.filas { display: flex; flex-direction: column; margin: 0; }
+.filas > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13.5px; }
+.filas > div:last-child { border-bottom: 0; }
+dt { color: var(--sv-texto-secundario); }
+dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.texto { margin: 0; font-size: 13px; line-height: 1.6; color: var(--sv-texto); }
+
+@media (max-width: 1100px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .indicadores { grid-template-columns: minmax(0, 1fr); }
+}

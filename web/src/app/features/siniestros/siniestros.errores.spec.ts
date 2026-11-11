@@ -17,6 +17,7 @@ describe('Errores de los siniestros (por código B2, nunca por mensaje)', () => 
       NO_AUTENTICADO: t.errorNoAutenticado,
       ROL_NO_AUTORIZADO: t.errorRolNoAutorizado,
       SINIESTRO_NO_ENCONTRADO: t.errorSiniestroNoEncontrado,
+      INDEMNIZACION_NO_ENCONTRADA: t.errorIndemnizacionNoEncontrada,
       EVIDENCIA_NO_ENCONTRADA: t.errorEvidenciaNoEncontrada,
       EVIDENCIA_NO_DISPONIBLE: t.errorEvidenciaNoDisponible,
       COLA_SIN_CASOS: t.errorColaSinCasos,

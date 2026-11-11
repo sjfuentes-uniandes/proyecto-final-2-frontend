@@ -7,11 +7,15 @@ import {
   DETALLE_COMPLETO,
   ENLACE_FOTO,
   EVIDENCIA_FOTO_1,
+  PAGO_CONFIRMADO,
+  PAGO_PENDIENTE,
+  PAGO_RECHAZADO,
   RESULTADO_APROBACION,
   SINIESTRO_EVA01,
 } from '../src/app/features/siniestros/siniestros.testing';
 import { CatalogosDecision, ResultadoDecision, SolicitudDecision } from '../src/app/features/siniestros/siniestros.decision.modelo';
 import { BandejaSiniestros, DetalleSiniestro, EnlaceEvidencia } from '../src/app/features/siniestros/siniestros.modelo';
+import { PagoSiniestroVista } from '../src/app/features/siniestros/siniestros.pago.modelo';
 import { ACEPTA_JSON, nuevoPacto } from './pacto';
 
 const { boolean, decimal, eachLike, equal, integer, like, regex, uuid } = MatchersV3;
@@ -35,6 +39,13 @@ const { boolean, decimal, eachLike, equal, integer, like, regex, uuid } = Matche
  * (null fuera de FALTA_SOPORTE). El resultado de una decisión trae null en `referenciaPago` o en
  * `plazoSoporteVenceEn` según el caso (R-53): cada decisión es su propia interacción, con su estado del
  * proveedor, y en cada una el campo que no aplica se pacta en null, igual que los demás.
+ *
+ * HU-W23 amplía el pacto con GET …/{id}/pago (H08) en sus tres variantes —confirmado, rechazado y
+ * pendiente (`indemnizacion` en null)— y con su 404 INDEMNIZACION_NO_ENCONTRADA. Cada variante es su
+ * propia interacción, con su estado del proveedor, y en cada una el campo que no aplica va en null
+ * (`transaccionId` y `confirmadaEn` en el rechazo, `motivo` en la confirmación). El historial pacta solo
+ * lo que toda entrada trae (`id`, `accion` y `ocurridoEn`): `actorNombre` y los estados son null en las
+ * entradas del sistema y Pact no expresa «null o texto»; el portal los trata como opcionales.
  */
 const pacto = nuevoPacto();
 
@@ -492,5 +503,149 @@ test('decidir un siniestro que ya no admite la decisión es 409 TRANSICION_NO_PE
       const cuerpo = await respuesta.json();
       expect(cuerpo.codigo).toBe('TRANSICION_NO_PERMITIDA');
       expect(cuerpo.detalles.estadoActual).toBe('APROBADO');
+    });
+});
+
+// --- HU-W23: el pago de la indemnización (H08) ----------------------------------------------------
+
+const RUTA_PAGO = `${RUTA_DETALLE}/pago`;
+const MONTO = /^-?\d+(\.\d+)?$/;
+const MONEDA = /^[A-Z]{3}$/;
+const REFERENCIA_PAGO = /^IND-88-\d{4}-\d{4,}-\d{2}$/;
+const MOTIVO_PAGO = /^[A-Z][A-Z_]{2,59}$/;
+
+function indemnizacion(v: PagoSiniestroVista) {
+  const i = v.indemnizacion;
+  if (i === null) {
+    return equal(null);
+  }
+  const confirmado = i.estado === 'CONFIRMADO';
+  return {
+    referencia: regex(REFERENCIA_PAGO, i.referencia),
+    estado: equal(i.estado),
+    monto: regex(MONTO, i.monto),
+    moneda: regex(MONEDA, i.moneda),
+    // Sin null en el mismo campo: la confirmación trae la transacción y no el motivo; el rechazo, al revés.
+    transaccionId: confirmado ? like(i.transaccionId as string) : equal(null),
+    motivo: confirmado ? equal(null) : regex(MOTIVO_PAGO, i.motivo as string),
+    intentos: integer(i.intentos),
+    duplicadosDescartados: integer(i.duplicadosDescartados),
+    confirmadaEn: confirmado ? instante(i.confirmadaEn as string) : equal(null),
+  };
+}
+
+function pago(v: PagoSiniestroVista) {
+  const l = v.liquidacion;
+  return {
+    siniestroId: uuid(v.siniestroId),
+    codigo: regex(CODIGO_SINIESTRO, v.codigo),
+    estado: equal('APROBADO'),
+    clienteNombre: like(v.clienteNombre as string),
+    reportadoEn: instante(v.reportadoEn),
+    compromisoHoras: integer(v.compromisoHoras),
+    liquidacion: {
+      moneda: regex(MONEDA, l.moneda),
+      valorReclamado: regex(MONTO, l.valorReclamado as string),
+      deducible: regex(MONTO, l.deducible as string),
+      valorIndemnizar: regex(MONTO, l.valorIndemnizar as string),
+      referenciaPago: regex(REFERENCIA_PAGO, l.referenciaPago as string),
+      aprobadaEn: instante(l.aprobadaEn as string),
+    },
+    // Nunca la cuenta completa: solo la enmascarada.
+    cuentaMascarada: regex(/^\*{4}[0-9A-Za-z]{2,6}$/, v.cuentaMascarada as string),
+    autorizadoPor: like(v.autorizadoPor as string),
+    historial: eachLike({
+      id: uuid(v.historial[0].id),
+      accion: regex(/^[A-Z_]{3,40}$/, v.historial[0].accion),
+      ocurridoEn: instante(v.historial[0].ocurridoEn),
+    }),
+    indemnizacion: indemnizacion(v),
+  };
+}
+
+async function consultarPago(url: string): Promise<{ status: number; cuerpo: PagoSiniestroVista }> {
+  const respuesta = await fetch(`${url}${RUTA_PAGO}`, { headers: ACEPTA_JSON });
+  return { status: respuesta.status, cuerpo: (await respuesta.json()) as PagoSiniestroVista };
+}
+
+test('el analista abre el pago de un siniestro aprobado y confirmado por la pasarela', async () => {
+  await pacto
+    .addInteraction()
+    .given('el siniestro está aprobado y su pago fue confirmado', { siniestroId: SINIESTRO_EVA01 })
+    .uponReceiving('la consulta del pago de un siniestro con el pago confirmado')
+    .withRequest('GET', RUTA_PAGO, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(200, (respuesta) => respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(pago(PAGO_CONFIRMADO)))
+    .executeTest(async (servidor) => {
+      const { status, cuerpo } = await consultarPago(servidor.url);
+      expect(status).toBe(200);
+      expect(cuerpo.estado).toBe('APROBADO');
+      expect(cuerpo.indemnizacion?.estado).toBe('CONFIRMADO');
+      expect(cuerpo.indemnizacion?.transaccionId).toBeTruthy();
+      expect(cuerpo.indemnizacion?.motivo).toBeNull();
+      expect(cuerpo.indemnizacion?.confirmadaEn).toMatch(INSTANTE);
+      // Sin datos de la cuenta: solo la enmascarada.
+      expect(cuerpo.cuentaMascarada).toMatch(/^\*{4}/);
+      expect(Object.keys(cuerpo).sort()).not.toContain('cuenta');
+    });
+});
+
+test('el analista abre el pago de un siniestro cuya orden rechazó la pasarela', async () => {
+  await pacto
+    .addInteraction()
+    .given('el siniestro está aprobado y su pago fue rechazado por la pasarela', { siniestroId: SINIESTRO_EVA01 })
+    .uponReceiving('la consulta del pago de un siniestro con el pago rechazado')
+    .withRequest('GET', RUTA_PAGO, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(200, (respuesta) => respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(pago(PAGO_RECHAZADO)))
+    .executeTest(async (servidor) => {
+      const { status, cuerpo } = await consultarPago(servidor.url);
+      expect(status).toBe(200);
+      expect(cuerpo.indemnizacion?.estado).toBe('RECHAZADO');
+      expect(cuerpo.indemnizacion?.motivo).toMatch(MOTIVO_PAGO);
+      expect(cuerpo.indemnizacion?.transaccionId).toBeNull();
+      expect(cuerpo.indemnizacion?.confirmadaEn).toBeNull();
+    });
+});
+
+test('el analista abre el pago de un siniestro aprobado cuya pasarela aún no responde', async () => {
+  await pacto
+    .addInteraction()
+    .given('el siniestro está aprobado y su pago aún no tiene resultado', { siniestroId: SINIESTRO_EVA01 })
+    .uponReceiving('la consulta del pago de un siniestro con el pago pendiente')
+    .withRequest('GET', RUTA_PAGO, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(200, (respuesta) => respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(pago(PAGO_PENDIENTE)))
+    .executeTest(async (servidor) => {
+      const { status, cuerpo } = await consultarPago(servidor.url);
+      expect(status).toBe(200);
+      // Sin resultado de dinero: el portal lo muestra «Pendiente» y no inventa intentos ni duplicados.
+      expect(cuerpo.indemnizacion).toBeNull();
+      expect(cuerpo.liquidacion.referenciaPago).toMatch(REFERENCIA_PAGO);
+    });
+});
+
+test('un siniestro que no está aprobado es 404 INDEMNIZACION_NO_ENCONTRADA', async () => {
+  await pacto
+    .addInteraction()
+    .given('el siniestro existe pero no está aprobado', { siniestroId: SINIESTRO_EVA01 })
+    .uponReceiving('la consulta del pago de un siniestro sin pago ordenado')
+    .withRequest('GET', RUTA_PAGO, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(404, (respuesta) => respuesta.jsonBody(error('INDEMNIZACION_NO_ENCONTRADA')))
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${RUTA_PAGO}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(404);
+      expect((await respuesta.json()).codigo).toBe('INDEMNIZACION_NO_ENCONTRADA');
+    });
+});
+
+test('un usuario sin el grupo analistas-siniestros no ve el pago: 403 ROL_NO_AUTORIZADO', async () => {
+  await pacto
+    .addInteraction()
+    .given('el usuario no pertenece al grupo analistas-siniestros')
+    .uponReceiving('la consulta del pago de un siniestro sin el grupo')
+    .withRequest('GET', RUTA_PAGO, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(403, (respuesta) => respuesta.jsonBody(error('ROL_NO_AUTORIZADO')))
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${RUTA_PAGO}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(403);
+      expect((await respuesta.json()).codigo).toBe('ROL_NO_AUTORIZADO');
     });
 });

@@ -18,6 +18,7 @@ import {
   VerificacionCobertura,
 } from './siniestros.modelo';
 import { TextosSiniestros } from './siniestros.i18n';
+import { ACCION_AVISO_CLIENTE } from './siniestros.pago.modelo';
 
 /**
  * Variante visual de una insignia (texto + color, WCAG 1.4.1). Como la de contratación, más `info`
@@ -360,6 +361,12 @@ export function textoAccion(t: TextosSiniestros, accion: string): string {
       return t.accionSoporteSolicitado;
     case 'PLAZO_SOPORTE_VENCIDO':
       return t.accionPlazoSoporteVencido;
+    case 'PAGO_CONFIRMADO':
+      return t.accionPagoConfirmado;
+    case 'PAGO_RECHAZADO':
+      return t.accionPagoRechazado;
+    case ACCION_AVISO_CLIENTE:
+      return t.accionAvisoCliente;
     default:
       return t.accionDesconocida(accion);
   }

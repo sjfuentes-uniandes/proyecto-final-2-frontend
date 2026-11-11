@@ -8,6 +8,7 @@ import {
   BANDEJA_MIA,
   DETALLE_COMPLETO,
   ENLACE_FOTO,
+  PAGO_CONFIRMADO,
   EVIDENCIA_FOTO_1,
   RESUMEN_BANDEJA,
   SINIESTRO_EVA01,
@@ -73,6 +74,16 @@ describe('SiniestrosService (HU-W19)', () => {
     http.expectOne(`${URL_SINIESTROS()}/${SINIESTRO_EVA01}`).flush(DETALLE_COMPLETO);
     servicio.detalle('a/b').subscribe();
     http.expectOne(`${URL_SINIESTROS()}/a%2Fb`).flush(DETALLE_COMPLETO);
+  });
+
+  it('pide el pago con GET, sin cuerpo ni Idempotency-Key, y codifica el id (HU-W23)', () => {
+    servicio.pago(SINIESTRO_EVA01).subscribe((p) => expect(p).toEqual(PAGO_CONFIRMADO));
+    const pedido = http.expectOne(`${URL_SINIESTROS()}/${SINIESTRO_EVA01}/pago`);
+    expect(pedido.request.method).toBe('GET');
+    expect(pedido.request.headers.has('Idempotency-Key')).toBeFalse();
+    pedido.flush(PAGO_CONFIRMADO);
+    servicio.pago('a/b').subscribe();
+    http.expectOne(`${URL_SINIESTROS()}/a%2Fb/pago`).flush(PAGO_CONFIRMADO);
   });
 
   it('pide el enlace de una evidencia con POST y sin cuerpo (la URL no se guarda aquí)', () => {

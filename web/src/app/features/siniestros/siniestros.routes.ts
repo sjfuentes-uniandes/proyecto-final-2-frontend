@@ -31,8 +31,8 @@ export const routes: Routes = [
           import('./paginas/bandeja-siniestros/bandeja-siniestros.component').then((m) => m.BandejaSiniestrosComponent),
       },
       {
-        // Un siniestro: su detalle (H03 y H04) y las páginas de decisión (H05 y H07). El detalle se pide
-        // una vez y lo comparten todas.
+        // Un siniestro: su detalle (H03 y H04), las páginas de decisión (H05 y H07) y su pago (H08). El
+        // detalle se pide una vez y lo comparten las que lo usan.
         path: ':siniestroId',
         providers: [DetalleSiniestroEstado],
         children: [
@@ -49,6 +49,13 @@ export const routes: Routes = [
             title: 'Rechazar siniestro · Solventa',
             loadComponent: () =>
               import('./paginas/rechazar-siniestro/rechazar-siniestro.component').then((m) => m.RechazarSiniestroComponent),
+          },
+          {
+            // H08: el pago único de la indemnización del siniestro aprobado (HU-W23).
+            path: 'pago',
+            title: 'Pago del siniestro · Solventa',
+            loadComponent: () =>
+              import('./paginas/pago-siniestro/pago-siniestro.component').then((m) => m.PagoSiniestroComponent),
           },
           {
             // H03 y H04: el detalle con sus pestañas como rutas hijas.
