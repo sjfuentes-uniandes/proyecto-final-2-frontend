@@ -12,6 +12,7 @@
     "lint:contratacion": "eslint src/app/features/contratacion",
     "lint:consulta": "eslint src/app/features/consulta",
     "lint:siniestros": "eslint src/app/features/siniestros",
+    "lint:continuidad": "eslint src/app/features/operacion/continuidad",
     "e2e": "playwright test",
     "test:pact": "playwright test -c pact/playwright.config.ts",
     "typecheck:e2e": "tsc -p tsconfig.e2e.json"

@@ -1,0 +1,153 @@
+@let tx = t();
+<nav class="crumb" [attr.aria-label]="tx.migas">
+  <span class="crumb__link">{{ tx.migaInicio }}</span> › <span class="crumb__link">{{ tx.migaOperacion }}</span> ›
+  <a class="crumb__link" routerLink="..">{{ tx.migaContinuidad }}</a> › <strong>{{ tx.migaConciliacion }}</strong>
+</nav>
+
+@if (informe(); as inf) {
+  <header class="h-row">
+    <div>
+      <div class="titulo">
+        <h2>{{ tx.tituloConciliacion(inf.experimento) }}</h2>
+        <span class="tag" data-testid="estado" [class]="claseEstado[inf.estado]">{{ tx.estadoConciliacion[inf.estado] }}</span>
+      </div>
+      <p class="sub" data-testid="subtitulo">
+        {{ tx.ventanaAnalizada(hora(inf.ventana.desde), hora(inf.ventana.hasta)) }} · {{ tx.generado(fecha(inf.generado)) }}
+      </p>
+    </div>
+    <div class="acciones">
+      <button type="button" class="btn btn--secundario" (click)="exportar()">{{ tx.exportar }}</button>
+    </div>
+  </header>
+
+  <p class="alerta" role="status" data-testid="banner" [class]="claseBanner[inf.estado]">{{ tx.bannerConciliacion[inf.estado] }}</p>
+
+  <section class="kpis" [attr.aria-label]="tx.resumenInforme" data-testid="kpis">
+    <div class="kpi">
+      <span class="kpi__etiqueta">{{ tx.kpiConfirmadas }}</span>
+      <span class="kpi__valor">{{ numero(inf.resumen.confirmadas) }}</span>
+      <span class="kpi__detalle">{{ tx.kpiConfirmadasDetalle }}</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi__etiqueta">{{ tx.kpiPerdidas }}</span>
+      <span class="kpi__valor" [class.kpi__valor--ok]="inf.resumen.perdidas === 0" [class.kpi__valor--error]="inf.resumen.perdidas > 0">{{
+        numero(inf.resumen.perdidas)
+      }}</span>
+      <span class="kpi__detalle">{{ tx.kpiPerdidasDetalle }}</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi__etiqueta">{{ tx.kpiDuplicadas }}</span>
+      <span class="kpi__valor" [class.kpi__valor--ok]="inf.resumen.duplicadas === 0" [class.kpi__valor--error]="inf.resumen.duplicadas > 0">{{
+        numero(inf.resumen.duplicadas)
+      }}</span>
+      <span class="kpi__detalle">{{ tx.kpiDuplicadasDetalle }}</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi__etiqueta">{{ tx.kpiCobros }}</span>
+      <span
+        class="kpi__valor"
+        [class.kpi__valor--ok]="inf.resumen.cobrosDuplicados === 0"
+        [class.kpi__valor--error]="inf.resumen.cobrosDuplicados > 0"
+        >{{ numero(inf.resumen.cobrosDuplicados) }}</span
+      >
+      <span class="kpi__detalle">{{ tx.kpiCobrosDetalle }}</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi__etiqueta">{{ tx.kpiDlq }}</span>
+      <span
+        class="kpi__valor"
+        [class.kpi__valor--ok]="inf.resumen.dlqSinExplicacion === 0"
+        [class.kpi__valor--error]="inf.resumen.dlqSinExplicacion > 0"
+        >{{ numero(inf.resumen.dlqSinExplicacion) }}</span
+      >
+      <span class="kpi__detalle">{{ tx.kpiDlqDetalle(inf.dlq.explicados.length) }}</span>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="titulo-resultado">
+      <h3 id="titulo-resultado">{{ tx.tituloResultado }}</h3>
+      <div class="tabla-scroll" role="region" [attr.aria-label]="tx.regionVerificaciones" tabindex="0">
+        <table class="data" data-testid="verificaciones">
+          <thead>
+            <tr>
+              <th scope="col">{{ tx.colVerificacion }}</th>
+              <th scope="col">{{ tx.colEsperado }}</th>
+              <th scope="col">{{ tx.colObservado }}</th>
+              <th scope="col">{{ tx.colResultado }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (v of inf.verificaciones; track v.id) {
+              <tr>
+                <th scope="row">{{ nombre(v) }}</th>
+                <td class="mono">{{ numero(v.esperado) }}</td>
+                <td class="mono">{{ numero(v.observado) }}</td>
+                <td>
+                  <span class="tag" [class]="claseResultado[v.resultado]">{{ tx.resultado[v.resultado] }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (inf.dlq.explicados.length) {
+        <ul class="explicados" data-testid="explicados">
+          @for (d of inf.dlq.explicados; track d.messageId) {
+            <li>
+              <span class="mono">{{ d.cola }}</span> · {{ d.motivo }}
+            </li>
+          }
+        </ul>
+      }
+      @if (r5Pendiente()) {
+        <p class="nota" data-testid="nota-r5">{{ tx.notaR5 }}</p>
+      }
+    </section>
+
+    <div class="lateral">
+      <section class="card" aria-labelledby="titulo-cierre">
+        <h3 id="titulo-cierre">{{ tx.tituloCierre }}</h3>
+        <dl class="kv" data-testid="cierre">
+          @if (inf.continuidad; as c) {
+            <dt>{{ tx.cierreRedireccion }}</dt>
+            <dd>{{ c.redireccionSegundos === null ? tx.sinDato : duracion(c.redireccionSegundos) }}</dd>
+            <dt>{{ tx.cierreObjetivo }}</dt>
+            <dd>≤ {{ duracion(c.objetivoSegundos) }}</dd>
+            <dt>{{ tx.cierreCumple }}</dt>
+            <dd [class.si]="c.cumpleObjetivo" [class.no]="!c.cumpleObjetivo">{{ c.cumpleObjetivo ? tx.si : tx.no }}</dd>
+          }
+          <dt>{{ tx.cierreSolicitudes }}</dt>
+          <dd>{{ numero(inf.resumen.solicitudes) }}</dd>
+          <dt>{{ tx.cierreErrores }}</dt>
+          <dd>{{ tx.cierreErroresValor(inf.resumen.solicitudesConError, pct(inf.resumen.porcentajeError)) }}</dd>
+          <dt>{{ tx.cierrePendientes }}</dt>
+          <dd>{{ numero(inf.resumen.pendientesOutbox) }}</dd>
+        </dl>
+      </section>
+
+      <section class="card" aria-labelledby="titulo-evidencia">
+        <h3 id="titulo-evidencia">{{ tx.tituloEvidencia }}</h3>
+        <p class="texto">{{ tx.textoEvidencia }}</p>
+        <a class="btn btn--secundario btn--bloque" routerLink="..">{{ tx.volver }}</a>
+      </section>
+    </div>
+  </div>
+} @else {
+  <header class="h-row">
+    <div>
+      <h2>{{ tx.migaConciliacion }}</h2>
+      <p class="sub" data-testid="subtitulo">{{ cargando() ? tx.cargandoInforme : '' }}</p>
+    </div>
+  </header>
+  @if (error(); as err) {
+    @if (err.sinInforme) {
+      <section class="card">
+        <p class="tenue" data-testid="sin-informe">{{ err.mensaje }}</p>
+        <a class="btn btn--secundario" routerLink="..">{{ tx.volver }}</a>
+      </section>
+    } @else {
+      <p class="aviso" role="alert">{{ err.mensaje }}</p>
+    }
+  }
+}

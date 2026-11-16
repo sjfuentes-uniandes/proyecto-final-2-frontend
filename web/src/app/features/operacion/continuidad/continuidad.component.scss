@@ -1,0 +1,92 @@
+@use 'continuidad';
+
+.cronologia {
+  margin: 0;
+  padding: 0 0 0 4px;
+  list-style: none;
+}
+
+.hito {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 0 14px 22px;
+  border-left: 2px solid var(--sv-borde);
+  font-size: 13px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: -7px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--sv-verde);
+  }
+
+  &:last-child {
+    border-left-color: transparent;
+  }
+}
+
+.hito--falla::before {
+  background: var(--sv-error);
+}
+
+.hito--curso::before {
+  background: var(--sv-azul-medio);
+}
+
+.hito__detalle {
+  color: var(--sv-texto);
+}
+
+.recorridos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--sv-borde);
+    font-size: 14px;
+  }
+}
+
+.barra {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  background: var(--sv-borde);
+  overflow: hidden;
+}
+
+.barra__relleno {
+  display: block;
+  height: 100%;
+  background: var(--sv-verde);
+}
+
+.ventana {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--sv-texto-secundario);
+}
+
+.texto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--sv-texto-secundario);
+}

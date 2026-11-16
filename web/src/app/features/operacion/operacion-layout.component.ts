@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { ConfigService } from '../../core/config/app-config';
 import { ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 
-/** Menú de Operación. Tablero abre CloudWatch; Continuidad llega en otra historia. */
+/** Menú de Operación. Tablero abre CloudWatch (el panel I01 de HU-W08 usará /operacion/tablero). */
 @Component({
   selector: 'app-operacion-layout',
   imports: [SeccionLayoutComponent],
@@ -16,6 +16,6 @@ export class OperacionLayoutComponent {
     { etiqueta: 'Tablero', icono: '📈', href: this.dashboardUrl || undefined, pendiente: 'Configure dashboardUrl en config.json' },
     { etiqueta: 'Trazas', icono: '🔍', ruta: 'trazas' },
     { etiqueta: 'Alertas', icono: '🔔', ruta: 'alertas' },
-    { etiqueta: 'Continuidad', icono: '🛡' },
+    { etiqueta: 'Continuidad', icono: '🛡', ruta: 'continuidad' },
   ];
 }
