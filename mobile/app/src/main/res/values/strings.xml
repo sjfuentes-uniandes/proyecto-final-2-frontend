@@ -4,6 +4,7 @@
     <string name="cuenta_creada_mensaje">Su identidad fue verificada y su cuenta se creó correctamente. Ya puede iniciar sesión.</string>
     <string name="cuenta_creada_aceptar">Aceptar</string>
     <string name="nav_billetera">Billetera</string>
+    <string name="nav_siniestros">Siniestros</string>
     <string name="nav_privacidad">Privacidad</string>
     <string name="cerrar_sesion_titulo">Cerrar sesión</string>
     <string name="cerrar_sesion_mensaje">¿Quieres cerrar tu sesión en este dispositivo?</string>

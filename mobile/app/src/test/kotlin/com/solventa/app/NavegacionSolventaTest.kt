@@ -93,6 +93,12 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import com.solventa.feature.billetera.R as RBilletera
 import com.solventa.feature.billetera.dominio.Resultado as ResultadoPolizas
+import com.solventa.feature.siniestros.SiniestrosViewModelFactory
+import com.solventa.feature.siniestros.dominio.AlmacenEvidencias
+import com.solventa.feature.siniestros.dominio.LimitesSiniestros
+import com.solventa.feature.siniestros.dominio.RepositorioSiniestros
+import com.solventa.feature.siniestros.dominio.Resultado as ResultadoSiniestros
+import com.solventa.feature.siniestros.SiniestrosViewModel
 import com.solventa.feature.login.R as RLogin
 import com.solventa.feature.onboardingidentidad.R as ROnboarding
 import com.solventa.feature.privacidad.R as RPrivacidad
@@ -141,6 +147,18 @@ class NavegacionSolventaTest {
     private val clienteRegistro = mockk<ClienteRegistro>()
     private val repositorio = RepositorioEnMemoria()
     private val polizas = RepositorioPolizasFalso()
+    private val siniestros = mockk<RepositorioSiniestros> {
+        coEvery { limites() } returns ResultadoSiniestros.Exito(
+            LimitesSiniestros(10, listOf("image/jpeg"), listOf("video/mp4"), 10_485_760, 52_428_800, 60, 300),
+        )
+        coEvery { listar() } returns ResultadoSiniestros.Exito(emptyList())
+    }
+    private val almacenEvidencias = object : AlmacenEvidencias {
+        override fun crearArchivo(extension: String) = java.io.File.createTempFile("test-", ".$extension", contexto.cacheDir)
+        override fun eliminar(archivo: java.io.File) {
+            archivo.delete()
+        }
+    }
     private val acciones = mutableListOf<AccionBiometrica>()
     private val verificador = VerificadorBiometrico { accion ->
         acciones += accion
@@ -172,6 +190,9 @@ class NavegacionSolventaTest {
             sesionRegistro = sesionRegistro,
             fabricaBilletera = contando(BilleteraViewModelFactory(polizas, gestorSesion)),
             fabricaDetalle = { id -> contando(DetallePolizaViewModelFactory(id, polizas, gestorSesion)) },
+            fabricaSiniestros = contando(
+                SiniestrosViewModelFactory(siniestros, polizas, almacenEvidencias, gestorSesion),
+            ),
             estadoSesion = gestorSesion.estado,
             destinoPendiente = destino,
             registroPermisoNotificaciones = explicacionPermiso,
@@ -234,6 +255,18 @@ class NavegacionSolventaTest {
         compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).assertIsDisplayed()
         compose.onAllNodes(hasText(texto(RLogin.string.login_boton_ingresar))).assertCountEquals(0)
         assertEquals(1, creados[LoginViewModel::class.java]?.size)
+    }
+
+    @Test
+    fun `pestana siniestros abre el listado integrado`() {
+        montar()
+        ingresar()
+
+        compose.onNodeWithText(texto(R.string.nav_siniestros)).performClick()
+        compose.onNodeWithText(texto(com.solventa.feature.siniestros.R.string.siniestros_lista_titulo)).assertIsDisplayed()
+        compose.onNodeWithTag(com.solventa.feature.siniestros.EtiquetasSiniestros.LISTA_VACIA).assertIsDisplayed()
+        compose.onNodeWithTag(com.solventa.feature.siniestros.EtiquetasSiniestros.REPORTAR).assertIsDisplayed()
+        assertEquals(1, creados[SiniestrosViewModel::class.java]?.size)
     }
 
     @Test

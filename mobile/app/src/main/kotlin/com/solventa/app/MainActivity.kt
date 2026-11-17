@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -45,6 +46,9 @@ import com.solventa.feature.billetera.DetallePolizaViewModel
 import com.solventa.feature.billetera.DetallePolizaViewModelFactory
 import com.solventa.feature.billetera.ui.BilleteraRoute
 import com.solventa.feature.billetera.ui.DetallePolizaRoute
+import com.solventa.feature.siniestros.SiniestrosViewModel
+import com.solventa.feature.siniestros.SiniestrosViewModelFactory
+import com.solventa.feature.siniestros.ui.SiniestrosRoute
 import com.solventa.feature.login.LoginRoute
 import com.solventa.feature.login.LoginViewModel
 import com.solventa.feature.login.LoginViewModelFactory
@@ -80,6 +84,12 @@ class MainActivity : FragmentActivity() {
             sesionRegistro = app.sesionRegistro,
             fabricaBilletera = BilleteraViewModelFactory(app.repositorioPolizas, app.gestorSesion),
             fabricaDetalle = { polizaId -> DetallePolizaViewModelFactory(polizaId, app.repositorioPolizas, app.gestorSesion) },
+            fabricaSiniestros = SiniestrosViewModelFactory(
+                app.repositorioSiniestros,
+                app.repositorioPolizas,
+                app.almacenEvidencias,
+                app.gestorSesion,
+            ),
             estadoSesion = app.gestorSesion.estado,
             destinoPendiente = app.destinoPendiente,
             registroPermisoNotificaciones = app.registroPermisoNotificaciones,
@@ -115,6 +125,7 @@ internal class DependenciasNavegacion(
     val fabricaBilletera: ViewModelProvider.Factory,
     /** El `polizaId` llega por argumento de navegación: la fábrica del detalle lo recibe. */
     val fabricaDetalle: (polizaId: String) -> ViewModelProvider.Factory,
+    val fabricaSiniestros: ViewModelProvider.Factory,
     val estadoSesion: StateFlow<EstadoSesion>,
     val destinoPendiente: DestinoPendiente,
     val registroPermisoNotificaciones: RegistroExplicacionPermiso,
@@ -135,6 +146,7 @@ private object Rutas {
     const val PRIVACIDAD = "privacidad"
     const val PERMISO_OPEN_FINANCE = "privacidad/open-finance"
     const val BILLETERA = "billetera"
+    const val SINIESTROS = "siniestros"
     const val ARG_POLIZA_ID = "polizaId"
     const val DETALLE_POLIZA = "billetera/{$ARG_POLIZA_ID}"
 
@@ -164,7 +176,7 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
         navegacion.navigate(Rutas.detallePoliza(polizaId)) { launchSingleTop = true }
     }
 
-    val mostrarBarra = rutaActual == Rutas.BILLETERA || rutaActual == Rutas.PRIVACIDAD
+    val mostrarBarra = rutaActual == Rutas.BILLETERA || rutaActual == Rutas.SINIESTROS || rutaActual == Rutas.PRIVACIDAD
     var confirmarCierre by rememberSaveable { mutableStateOf(false) }
     val pedirCierreSesion: () -> Unit = { confirmarCierre = true }
     if (confirmarCierre) {
@@ -201,6 +213,17 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
                         },
                         icon = { Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null) },
                         label = { Text(stringResource(R.string.nav_billetera)) },
+                    )
+                    NavigationBarItem(
+                        selected = rutaActual == Rutas.SINIESTROS,
+                        onClick = {
+                            navegacion.navigate(Rutas.SINIESTROS) {
+                                popUpTo(Rutas.BILLETERA) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
+                        icon = { Icon(Icons.Filled.Description, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_siniestros)) },
                     )
                     NavigationBarItem(
                         selected = rutaActual == Rutas.PRIVACIDAD,
@@ -242,6 +265,12 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
                 onCerrarSesion = pedirCierreSesion,
             )
             PermisoNotificacionesRoute(dependencias.registroPermisoNotificaciones)
+        }
+        composable(Rutas.SINIESTROS) {
+            SiniestrosRoute(
+                viewModel = viewModel<SiniestrosViewModel>(factory = dependencias.fabricaSiniestros),
+                onIrALogin = irALogin,
+            )
         }
         composable(
             Rutas.DETALLE_POLIZA,

@@ -25,6 +25,16 @@ import com.solventa.core.network.modelo.VerificacionIdentidadDto
 import com.solventa.core.network.modelo.VerificacionIdentidadSolicitud
 import com.solventa.core.network.modelo.VinculacionDto
 import com.solventa.core.network.modelo.VinculacionSolicitud
+import com.solventa.core.network.modelo.BorradorDetalleDto
+import com.solventa.core.network.modelo.BorradorDto
+import com.solventa.core.network.modelo.CargaRenovadaDto
+import com.solventa.core.network.modelo.EvidenciaConfirmadaDto
+import com.solventa.core.network.modelo.EvidenciaDto
+import com.solventa.core.network.modelo.LimitesSiniestrosDto
+import com.solventa.core.network.modelo.ListadoBorradoresDto
+import com.solventa.core.network.modelo.SolicitudBorradorDto
+import com.solventa.core.network.modelo.SolicitudFotoEvidenciaDto
+import com.solventa.core.network.modelo.SolicitudVideoEvidenciaDto
 
 /** Rutas de bff-movil usadas por la app (contrato: contracts/openapi/bff-movil.yaml). */
 interface BffMovilApi {
@@ -89,4 +99,43 @@ interface BffMovilApi {
         @Query("proposito") proposito: String,
         @Query("idioma") idioma: String,
     ): Response<TextoVigenteDto>
+
+    @GET("v1/siniestros/limites")
+    suspend fun limitesSiniestros(): Response<LimitesSiniestrosDto>
+
+    @GET("v1/siniestros/borradores")
+    suspend fun listarBorradores(): Response<ListadoBorradoresDto>
+
+    @GET("v1/siniestros/borradores/{borradorId}")
+    suspend fun borrador(@Path("borradorId") borradorId: String): Response<BorradorDetalleDto>
+
+    @POST("v1/siniestros/borradores")
+    suspend fun crearBorrador(
+        @Header("Idempotency-Key") claveIdempotencia: String,
+        @Body solicitud: SolicitudBorradorDto,
+    ): Response<BorradorDto>
+
+    @POST("v1/siniestros/borradores/{borradorId}/evidencias")
+    suspend fun agregarFoto(
+        @Path("borradorId") borradorId: String,
+        @Body solicitud: SolicitudFotoEvidenciaDto,
+    ): Response<EvidenciaDto>
+
+    @POST("v1/siniestros/borradores/{borradorId}/evidencias")
+    suspend fun agregarVideo(
+        @Path("borradorId") borradorId: String,
+        @Body solicitud: SolicitudVideoEvidenciaDto,
+    ): Response<EvidenciaDto>
+
+    @POST("v1/siniestros/borradores/{borradorId}/evidencias/{evidenciaId}/confirmacion")
+    suspend fun confirmarEvidencia(
+        @Path("borradorId") borradorId: String,
+        @Path("evidenciaId") evidenciaId: String,
+    ): Response<EvidenciaConfirmadaDto>
+
+    @POST("v1/siniestros/borradores/{borradorId}/evidencias/{evidenciaId}/carga")
+    suspend fun renovarCarga(
+        @Path("borradorId") borradorId: String,
+        @Path("evidenciaId") evidenciaId: String,
+    ): Response<CargaRenovadaDto>
 }

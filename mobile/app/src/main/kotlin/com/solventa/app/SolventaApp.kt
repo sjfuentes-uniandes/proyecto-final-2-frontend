@@ -17,10 +17,16 @@ import com.solventa.core.network.BffMovilCliente
 import com.solventa.core.network.ConsentimientosCliente
 import com.solventa.core.network.RedModule
 import com.solventa.core.network.RegistroCliente
+import com.solventa.core.network.SiniestrosCliente
 import com.solventa.core.security.AlmacenSesionSeguraKeystore
 import com.solventa.core.security.GestorBiometria
 import com.solventa.feature.billetera.datos.RepositorioPolizasRed
 import com.solventa.feature.billetera.dominio.RepositorioPolizas
+import com.solventa.feature.siniestros.datos.AlmacenEvidenciasPrivado
+import com.solventa.feature.siniestros.datos.CargaS3
+import com.solventa.feature.siniestros.datos.RepositorioSiniestrosRed
+import com.solventa.feature.siniestros.dominio.AlmacenEvidencias
+import com.solventa.feature.siniestros.dominio.RepositorioSiniestros
 import com.solventa.feature.privacidad.biometria.VerificadorBiometricoPrompt
 import com.solventa.feature.privacidad.datos.RepositorioConsentimientosRed
 import com.solventa.feature.privacidad.dominio.RepositorioConsentimientos
@@ -60,6 +66,10 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
     lateinit var repositorioConsentimientos: RepositorioConsentimientos
         private set
     lateinit var repositorioPolizas: RepositorioPolizas
+        private set
+    lateinit var repositorioSiniestros: RepositorioSiniestros
+        private set
+    lateinit var almacenEvidencias: AlmacenEvidencias
         private set
     /** Uno por proceso: la actividad en pantalla se adjunta al crearse y se suelta al destruirse. */
     lateinit var verificadorBiometrico: VerificadorBiometricoPrompt
@@ -120,6 +130,8 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
         bffMovilCliente = BffMovilCliente(api)
         repositorioConsentimientos = RepositorioConsentimientosRed(ConsentimientosCliente(api))
         repositorioPolizas = RepositorioPolizasRed(bffMovilCliente)
+        repositorioSiniestros = RepositorioSiniestrosRed(SiniestrosCliente(api), CargaS3())
+        almacenEvidencias = AlmacenEvidenciasPrivado(this)
         verificadorBiometrico = VerificadorBiometricoPrompt(gestorBiometria)
         verificarIdentidad = VerificarIdentidad(
             cliente = RegistroCliente(api),
