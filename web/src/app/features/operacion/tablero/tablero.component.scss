@@ -1,0 +1,194 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Migas: el separador sale de CSS, para que la plantilla no tenga literales.
+.migas ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  // WCAG 1.4.3: --sv-texto-tenue no llega a 4,5:1 sobre el fondo en 12 px.
+  color: var(--sv-texto-secundario);
+
+  li + li::before {
+    content: '›';
+    margin-right: 6px;
+  }
+
+  [aria-current] {
+    font-weight: 600;
+    color: var(--sv-azul-oscuro);
+  }
+}
+
+.h-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    color: var(--sv-azul-oscuro);
+  }
+
+  .sub {
+    margin: 0;
+    font-size: 13px;
+    color: var(--sv-texto-secundario);
+  }
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  align-items: start;
+  gap: 10px;
+}
+
+.principal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.vacio {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--sv-texto-secundario);
+}
+
+.grafico {
+  margin: 0;
+}
+
+.barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 120px;
+  border-bottom: 1px solid var(--sv-borde);
+}
+
+.barra {
+  flex: 1;
+  min-width: 0;
+  border-radius: 2px 2px 0 0;
+  background-color: var(--sv-azul-medio);
+}
+
+.muestra {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+  background-color: var(--sv-azul-medio);
+}
+
+// El escalado se distingue por color y además por el rayado (WCAG 1.4.1: el color no es la única señal).
+.barra--escalado,
+.muestra--escalado {
+  background-color: var(--sv-naranja);
+  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 60%) 0 2px, transparent 2px 5px);
+}
+
+.eje {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--sv-texto-secundario);
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 10px 0 14px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--sv-texto-secundario);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+
+  dt {
+    font-size: 12px;
+    color: var(--sv-texto-secundario);
+  }
+
+  dd {
+    margin: 2px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--sv-azul-oscuro);
+  }
+}
+
+.ayuda {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  line-height: 17px;
+  color: var(--sv-texto-secundario);
+}
+
+.accesos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .btn {
+    width: 100%;
+  }
+}
+
+// Foco visible con el teclado en enlaces y botones de la página.
+a:focus-visible {
+  outline: 2px solid var(--sv-azul-medio);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1000px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .cifras {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
