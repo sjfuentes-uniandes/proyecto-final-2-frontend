@@ -85,17 +85,22 @@ describe('ConciliacionComponent (HU-W29, I05)', () => {
     expect(texto('[data-testid=banner]')).toContain('cada operación confirmada existe una vez');
     expect(html().querySelector('[data-testid=banner]')?.className).toBe('alerta alerta--ok');
     const kpis = Array.from(html().querySelectorAll('[data-testid=kpis] .kpi__valor')).map((k) => k.textContent?.trim());
-    expect(kpis).toEqual(['1.284', '0', '0', '0', '0']);
+    expect(kpis).toEqual(['1.464', '0', '0', '0', '0']);
     expect(texto('[data-testid=kpis] .kpi:last-child .kpi__detalle')).toBe('2 mensajes explicados');
   });
 
-  it('muestra cada verificación, los mensajes explicados y la nota de R5', async () => {
+  it('muestra cada verificación de R1, R3 y R5 y los mensajes explicados', async () => {
     await abrir();
     expect(filas('[data-testid=verificaciones]')).toEqual([
       ['Cotizaciones confirmadas registradas una vez', '1.170', '1.170', 'Coincide'],
       ['Aceptaciones confirmadas registradas una vez', '114', '114', 'Coincide'],
+      ['Eventos de telemetría recibidos una vez', '180', '180', 'Coincide'],
       ['Cada aceptación con su cobro', '114', '114', 'Coincide'],
       ['Cobros duplicados por reintento', '0', '0', 'Coincide'],
+      ['Eventos de telemetría evaluados una vez', '180', '180', 'Coincide'],
+      ['Cada activación con su siniestro paramétrico', '180', '180', 'Coincide'],
+      ['Siniestros paramétricos duplicados', '0', '0', 'Coincide'],
+      ['Indemnizaciones duplicadas', '0', '0', 'Coincide'],
       ['Mensajes en DLQ sin explicación', '0', '0', 'Coincide'],
       ['Eventos pendientes de entrega', '0', '0', 'Coincide'],
     ]);
@@ -103,7 +108,7 @@ describe('ConciliacionComponent (HU-W29, I05)', () => {
       'solventa-exp-avisos-dlq · Aviso de texto en reintento',
       'solventa-exp-avisos-dlq · Aviso de texto en reintento',
     ]);
-    expect(texto('[data-testid=nota-r5]')).toContain('(R5) todavía no se concilian');
+    expect(html().querySelector('[data-testid=nota-r5]')).toBeNull();
   });
 
   it('muestra el cierre con el objetivo de recuperación', async () => {
@@ -128,18 +133,18 @@ describe('ConciliacionComponent (HU-W29, I05)', () => {
     expect(pares().map(([dt]) => dt)).toEqual(['Solicitudes en la ventana', 'Solicitudes con error', 'Eventos pendientes de entrega']);
   });
 
-  it('pendiente, con una verificación desconocida, sin R5 pendiente y sin explicados', async () => {
+  it('pendiente, con una verificación desconocida, sin carga de R5 y sin explicados', async () => {
     await abrir({
       ...INFORME,
       estado: 'PENDIENTE',
       verificaciones: [{ id: 'nueva', descripcion: 'Verificación nueva', esperado: 1, observado: 0, resultado: 'PENDIENTE', detalle: [] }],
-      recorridos: { R5: { estado: 'SIN_RECONCILIAR' } },
+      recorridos: { R5: { estado: 'SIN_CARGA' } },
       continuidad: { ...INFORME.continuidad!, redireccionSegundos: null, cumpleObjetivo: false },
       dlq: { total: 0, explicados: [] },
     });
     expect(html().querySelector('[data-testid=banner]')?.className).toBe('alerta nota--alerta');
     expect(filas('[data-testid=verificaciones]')).toEqual([['Verificación nueva', '1', '0', 'Pendiente']]);
-    expect(html().querySelector('[data-testid=nota-r5]')).toBeNull();
+    expect(texto('[data-testid=nota-r5]')).toBe('Esta corrida no incluyó carga de siniestros paramétricos (R5).');
     expect(html().querySelector('[data-testid=explicados]')).toBeNull();
     expect(pares().slice(0, 3)).toEqual([['Tiempo de redirección', '—'], ['Objetivo de recuperación', '≤ 10 min 00 s'], ['¿Cumple el objetivo?', 'No']]);
   });

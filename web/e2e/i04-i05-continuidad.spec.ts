@@ -84,7 +84,7 @@ test.describe('I05 Conciliación', () => {
 
     await expect(page.getByRole('heading', { level: 2, name: 'Conciliación del incidente EXPabc123' })).toBeVisible();
     await expect(page.getByTestId('estado')).toHaveText('Sin diferencias');
-    await expect(page.getByTestId('verificaciones').getByRole('row')).toHaveCount(7);
+    await expect(page.getByTestId('verificaciones').getByRole('row')).toHaveCount(12);
     await expect(page.getByTestId('cierre')).toContainText('38 s');
 
     const descarga = page.waitForEvent('download');

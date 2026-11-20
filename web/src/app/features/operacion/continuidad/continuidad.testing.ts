@@ -62,7 +62,7 @@ export const INFORME: InformeConciliacion = {
   ventana: { desde: '2026-11-20T14:02:00Z', hasta: '2026-11-20T14:19:00Z' },
   estado: 'SIN_DIFERENCIAS',
   resumen: {
-    confirmadas: 1284,
+    confirmadas: 1464,
     perdidas: 0,
     duplicadas: 0,
     cobrosDuplicados: 0,
@@ -75,15 +75,20 @@ export const INFORME: InformeConciliacion = {
   verificaciones: [
     { id: 'cotizaciones', descripcion: 'Cotizaciones confirmadas (R1 y R3) registradas una vez', esperado: 1170, observado: 1170, resultado: 'COINCIDE', detalle: [] },
     { id: 'aceptaciones', descripcion: 'Aceptaciones confirmadas (R3) registradas una vez', esperado: 114, observado: 114, resultado: 'COINCIDE', detalle: [] },
+    { id: 'eventos_recibidos', descripcion: 'Eventos de telemetría confirmados (R5) recibidos una vez', esperado: 180, observado: 180, resultado: 'COINCIDE', detalle: [] },
     { id: 'cobro_por_aceptacion', descripcion: 'Cada aceptación confirmada tiene un cobro', esperado: 114, observado: 114, resultado: 'COINCIDE', detalle: [] },
     { id: 'cobros_duplicados', descripcion: 'Cobros duplicados por reintento', esperado: 0, observado: 0, resultado: 'COINCIDE', detalle: [] },
+    { id: 'eventos_evaluados', descripcion: 'Eventos confirmados (R5) evaluados una vez', esperado: 180, observado: 180, resultado: 'COINCIDE', detalle: [] },
+    { id: 'siniestro_por_activacion', descripcion: 'Cada activación (R5) tiene un siniestro paramétrico', esperado: 180, observado: 180, resultado: 'COINCIDE', detalle: [] },
+    { id: 'siniestros_duplicados', descripcion: 'Siniestros paramétricos duplicados por reentrega', esperado: 0, observado: 0, resultado: 'COINCIDE', detalle: [] },
+    { id: 'pagos_duplicados', descripcion: 'Indemnizaciones duplicadas por siniestro', esperado: 0, observado: 0, resultado: 'COINCIDE', detalle: [] },
     { id: 'dlq_sin_explicacion', descripcion: 'Mensajes en DLQ sin explicación', esperado: 0, observado: 0, resultado: 'COINCIDE', detalle: [] },
     { id: 'outbox_pendiente', descripcion: 'Eventos pendientes de entrega (Outbox)', esperado: 0, observado: 0, resultado: 'COINCIDE', detalle: [] },
   ],
   recorridos: {
     R1: { intentos: 1180, confirmadas: 1060, errores: 11, erroresPorEstado: { '503': 11 } },
     R3: { intentos: 230, confirmadas: 224, errores: 2, erroresPorEstado: { '0': 2 } },
-    R5: { estado: 'PENDIENTE_HU_W21_W22' },
+    R5: { intentos: 184, confirmadas: 180, errores: 4, erroresPorEstado: { '503': 4 } },
   },
   continuidad: { inyeccion: INYECCION, redireccionSegundos: 38, objetivoSegundos: 600, cumpleObjetivo: true, umbralErrorPorcentaje: 1, serie: [] },
   dlq: { total: 2, explicados: [

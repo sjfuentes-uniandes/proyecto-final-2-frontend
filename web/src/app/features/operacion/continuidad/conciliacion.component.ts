@@ -37,7 +37,8 @@ export class ConciliacionComponent implements OnInit {
   readonly claseResultado = CLASE_RESULTADO;
   readonly claseBanner = CLASE_BANNER;
 
-  readonly r5Pendiente = computed(() => this.informe()?.recorridos['R5']?.['estado'] === 'PENDIENTE_HU_W21_W22');
+  /** carga.js con R5=0: el informe no concilia siniestros paramétricos en esta corrida. */
+  readonly r5SinCarga = computed(() => this.informe()?.recorridos['R5']?.['estado'] === 'SIN_CARGA');
 
   ngOnInit(): void {
     this.servicio.conciliacion().subscribe({
