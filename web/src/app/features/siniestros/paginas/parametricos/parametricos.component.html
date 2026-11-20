@@ -1,0 +1,142 @@
+@let t = textos.t();
+@let r = estado.resumen();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › <a routerLink="/siniestros/bandeja">{{ t.migaSiniestros }}</a> › <strong>{{ t.migaParametricos }}</strong>
+</nav>
+
+<div class="h-row">
+  <header>
+    <h2>{{ t.tituloParametricos }}</h2>
+    <p class="sub">{{ subtitulo() }}</p>
+  </header>
+  <div class="acciones">
+    <label class="selector">
+      <span>{{ t.paramSelectorEtiqueta }}</span>
+      <select class="inp" name="eventoOrigen" (change)="elegir($any($event.target).value)">
+        <option value="" [selected]="estado.elegido() === null">{{ t.paramSelectorMasReciente }}</option>
+        @for (opcion of opciones(); track opcion.valor) {
+          <option [value]="opcion.valor" [selected]="estado.elegido() === opcion.valor">{{ opcion.texto }}</option>
+        }
+      </select>
+    </label>
+    <button class="btn btn--secundario" type="button" (click)="estado.actualizar()">{{ t.paramActualizar }}</button>
+    <button class="btn btn--secundario" type="button" disabled [attr.title]="t.proximamente">{{ t.paramTablero }}</button>
+  </div>
+</div>
+
+<p class="nota nota--proceso" role="note">
+  <strong>{{ t.paramAvisoTitulo }}</strong> {{ t.paramAvisoTexto }}
+</p>
+
+@if (estado.error(); as error) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <p>
+      {{ error.mensaje }}
+      @if (error.correlationId) {
+        <br /><span class="seguimiento">{{ t.codigoSeguimiento(error.correlationId) }}</span>
+      }
+    </p>
+  </div>
+  <div class="acciones">
+    <button class="btn btn--secundario" type="button" (click)="estado.actualizar()">{{ t.reintentar }}</button>
+  </div>
+} @else if (r) {
+  <section class="indicadores" [attr.aria-label]="t.paramIndicadores">
+    @for (indicador of indicadores(); track indicador.etiqueta) {
+      <div class="indicador">
+        <h3 class="etiqueta">{{ indicador.etiqueta }}</h3>
+        <p class="valor" [class]="'valor valor--' + indicador.tono">{{ indicador.valor }}</p>
+        <p class="detalle">{{ indicador.detalle }}</p>
+      </div>
+    }
+  </section>
+
+  <div class="cols">
+    <div class="columna">
+      <section class="card" aria-labelledby="param-ritmo">
+        <h3 id="param-ritmo">{{ t.paramRitmoTitulo }}</h3>
+        @if (ritmo(); as ritmoPresentado) {
+          <p class="sr-only">{{ ritmoPresentado.resumen }}</p>
+          <ol class="barras" role="list" [attr.aria-label]="ritmoPresentado.resumen">
+            @for (barra of ritmoPresentado.barras; track $index) {
+              <li class="barra" [attr.title]="barra.etiqueta">
+                <span class="barra__relleno" [style.height.%]="barra.altura" aria-hidden="true"></span>
+                <span class="sr-only">{{ barra.etiqueta }}</span>
+              </li>
+            }
+          </ol>
+        }
+        @if (cola(); as c) {
+          <div class="cola">
+            <div>
+              <p class="cola__fila"><span>{{ t.paramProfundidad }}</span><strong>{{ c.profundidad }}</strong></p>
+            </div>
+            <div>
+              <p class="cola__fila"><span id="param-consumidores">{{ t.paramConsumidores }}</span><strong>{{ c.consumidores }}</strong></p>
+              @if (c.avance !== null) {
+                <div class="meter" role="meter" aria-labelledby="param-consumidores" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="c.avance" [attr.aria-valuetext]="c.consumidores">
+                  <span [style.width.%]="c.avance"></span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+        @if (avisoP95(); as aviso) {
+          <p class="alerta alerta--ok" role="status"><span>{{ aviso }}</span></p>
+        }
+      </section>
+
+      <section class="card" aria-labelledby="param-pagos">
+        <h3 id="param-pagos">{{ t.paramPagosTitulo }}</h3>
+        @if (pagos().length === 0) {
+          <p class="sub" role="status">{{ t.paramPagosVacio }}</p>
+        } @else {
+          <div class="tabla">
+            <table class="data">
+              <caption class="sr-only">{{ t.paramPagosDescripcion }}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{{ t.paramColSiniestro }}</th>
+                  <th scope="col">{{ t.paramColPoliza }}</th>
+                  <th scope="col">{{ t.paramColDisparador }}</th>
+                  <th scope="col">{{ t.paramColValor }}</th>
+                  <th scope="col">{{ t.paramColEstado }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (pago of pagos(); track pago.id) {
+                  <tr>
+                    <th scope="row" class="codigo">
+                      <a [routerLink]="['/siniestros', pago.id]" [attr.aria-label]="t.abrirCaso(pago.codigo)">{{ pago.codigo }}</a>
+                    </th>
+                    <td class="mono">{{ pago.poliza }}</td>
+                    <td>{{ pago.disparador }}</td>
+                    <td class="mono">{{ pago.valor }}</td>
+                    <td><app-insignia-estado [insignia]="pago.insignia" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+
+    <div class="columna">
+      <section class="card" aria-labelledby="param-garantias">
+        <h3 id="param-garantias">{{ t.paramGarantiasTitulo }}</h3>
+        <dl class="filas">
+          <div><dt>{{ t.paramGarEntrega }}</dt><dd>{{ t.paramGarEntregaValor }}</dd></div>
+          <div><dt>{{ t.paramGarEfecto }}</dt><dd>{{ t.paramGarEfectoValor }}</dd></div>
+          <div><dt>{{ t.paramGarReintentos }}</dt><dd>{{ t.paramGarReintentosValor }}</dd></div>
+          <div><dt>{{ t.paramGarOrden }}</dt><dd>{{ t.paramGarOrdenValor }}</dd></div>
+        </dl>
+      </section>
+      <a class="btn btn--secundario btn--bloque" routerLink="/siniestros/parametricos/descarte">{{ t.paramVerDescarte }}</a>
+      <p class="nota" role="note">{{ t.paramNotaContrato }}</p>
+    </div>
+  </div>
+} @else if (estado.cargando()) {
+  <p class="sub" role="status">{{ t.paramCargando }}</p>
+}

@@ -5,7 +5,7 @@ import { IdiomaService } from '../../../../core/i18n/idioma.service';
 import { violacionesA11y } from '../../../../testing';
 import { TextosSiniestrosService } from '../../siniestros.i18n';
 import { DetalleSiniestro } from '../../siniestros.modelo';
-import { DETALLE_APROBADO, DETALLE_COMPLETO, DETALLE_CON_RECLAMADO } from '../../siniestros.testing';
+import { DETALLE_APROBADO, DETALLE_COMPLETO, DETALLE_CON_RECLAMADO, DETALLE_PARAMETRICO } from '../../siniestros.testing';
 import { LiquidacionComponent } from './liquidacion.component';
 import { crearFormularioLiquidacion, liquidacionSolicitada } from './liquidacion.formulario';
 
@@ -72,6 +72,18 @@ describe('LiquidacionComponent (H03, W20-F03)', () => {
       ['Referencia de pago', 'IND-88-2026-0442-01'],
     ]);
     expect(html().querySelector('input')).toBeNull();
+  });
+
+  it('un siniestro paramétrico no trae reclamo: la liquidación aprobada omite esa fila (HU-W22)', () => {
+    fixture.componentInstance.detalle.set(DETALLE_PARAMETRICO);
+    fixture.componentInstance.editable.set(false);
+    fixture.detectChanges();
+    const filas = Array.from(html().querySelectorAll('dl > div')).map((d) => [d.querySelector('dt')?.textContent, d.querySelector('dd')?.textContent?.replace(/\s+/g, ' ')]);
+    expect(filas).toEqual([
+      ['Deducible aplicable', '$ 0'],
+      ['A indemnizar', '$ 1.400.000'],
+      ['Referencia de pago', 'IND-88-2026-0604-01'],
+    ]);
   });
 
   it('el valor reclamado que ya consta se precarga con el formato del idioma y es de solo lectura', () => {

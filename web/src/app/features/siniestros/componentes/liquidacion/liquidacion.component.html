@@ -3,10 +3,12 @@
   <section class="card" [attr.aria-labelledby]="idBase + '-titulo'">
     <h3 [id]="idBase + '-titulo'">{{ t.liqTitulo }}</h3>
     <dl class="resumen">
-      <div>
-        <dt>{{ t.liqValorReclamado }}</dt>
-        <dd>{{ a.reclamado }}</dd>
-      </div>
+      @if (a.reclamado !== null) {
+        <div>
+          <dt>{{ t.liqValorReclamado }}</dt>
+          <dd>{{ a.reclamado }}</dd>
+        </div>
+      }
       <div>
         <dt>{{ t.liqDeducible }}</dt>
         <dd>{{ a.deducible }}</dd>

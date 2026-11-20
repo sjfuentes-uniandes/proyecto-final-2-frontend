@@ -12,6 +12,7 @@
     <string name="onboarding_ocultar_contrasena">Hide password</string>
     <string name="onboarding_contrasenas_no_coinciden">Passwords do not match</string>
     <string name="onboarding_correo_invalido">Enter a valid email</string>
+    <string name="onboarding_correo_ayuda">Use an email you can access. It can differ from the one your advisor entered; we will use it to create and confirm your account.</string>
     <string name="onboarding_contrasena_politica">At least 10 characters, with an uppercase letter, a lowercase letter and a number</string>
     <string name="onboarding_etiqueta_biometria">Register biometric verification</string>
     <string name="onboarding_boton_registrar_biometria">Register my biometrics</string>
@@ -54,8 +55,8 @@
     <string name="onboarding_rechazada_generico">The verification could not be completed.</string>
     <string name="onboarding_interrumpida_titulo">The verification did not finish</string>
     <string name="onboarding_interrumpida_mensaje">There was a communication problem. You can retry: a second record will not be created.</string>
-    <string name="onboarding_correo_distinto_titulo">Verify your identity again</string>
-    <string name="onboarding_correo_distinto_mensaje">You must sign up with the email your advisor has on file.</string>
+    <string name="onboarding_correo_distinto_titulo">Registration started with another email</string>
+    <string name="onboarding_correo_distinto_mensaje">This document already has a registration in progress with another email. Continue with the email you used to start that registration. It does not have to match the one your advisor entered.</string>
     <string name="onboarding_cliente_no_registrado_titulo">We could not find your document</string>
     <string name="onboarding_cliente_no_registrado_mensaje">We could not find your document. Contact your advisor to get registered.</string>
     <string name="onboarding_etiqueta_tipo_documento">Document type</string>

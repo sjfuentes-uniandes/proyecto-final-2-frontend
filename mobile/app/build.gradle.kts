@@ -72,6 +72,7 @@ dependencies {
     implementation(project(":feature:login"))
     implementation(project(":feature:privacidad"))
     implementation(project(":feature:billetera"))
+    implementation(project(":feature:siniestros"))
     implementation(project(":feature:notificaciones"))
     implementation(project(":feature:onboarding-identidad"))
 

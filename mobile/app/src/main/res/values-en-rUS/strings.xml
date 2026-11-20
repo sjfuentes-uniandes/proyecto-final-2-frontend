@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Solventa</string>
+    <string name="cuenta_creada_titulo">Account created</string>
+    <string name="cuenta_creada_mensaje">Your identity was verified and your account was created. You can now sign in.</string>
+    <string name="cuenta_creada_aceptar">OK</string>
+    <string name="nav_billetera">Wallet</string>
+    <string name="nav_siniestros">Claims</string>
+    <string name="nav_privacidad">Privacy</string>
+    <string name="cerrar_sesion_titulo">Sign out</string>
+    <string name="cerrar_sesion_mensaje">Do you want to sign out on this device?</string>
+    <string name="cerrar_sesion_confirmar">Sign out</string>
+    <string name="cerrar_sesion_cancelar">Cancel</string>
+    <string name="cuenta_existente_titulo">Account already exists</string>
+    <string name="cuenta_existente_mensaje">This registration is already associated with an account. Sign in to continue.</string>
+    <string name="cuenta_ingreso_pendiente_mensaje">Your account was created, but we couldn’t sign you in. Sign in to continue.</string>
+</resources>

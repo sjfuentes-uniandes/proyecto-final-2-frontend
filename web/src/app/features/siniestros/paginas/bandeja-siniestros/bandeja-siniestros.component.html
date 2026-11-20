@@ -86,7 +86,7 @@
         <p>{{ t.colaVaciaTexto }}</p>
         <div class="acciones">
           <a class="btn btn--primario" routerLink="/siniestros/bandeja">{{ t.irMiBandeja(resumen()?.asignadosAlActor ?? 0) }}</a>
-          <button class="btn btn--secundario" type="button" disabled [attr.title]="t.proximamente">{{ t.verParametricos }}</button>
+          <a class="btn btn--secundario" routerLink="/siniestros/parametricos">{{ t.verParametricos }}</a>
         </div>
       </div>
     } @else {
