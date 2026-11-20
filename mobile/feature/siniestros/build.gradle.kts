@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.video)
     implementation(libs.okhttp.core)
+    implementation(libs.play.services.location)
     debugImplementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 

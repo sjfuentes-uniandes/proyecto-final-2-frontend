@@ -23,9 +23,11 @@ import com.solventa.core.security.GestorBiometria
 import com.solventa.feature.billetera.datos.RepositorioPolizasRed
 import com.solventa.feature.billetera.dominio.RepositorioPolizas
 import com.solventa.feature.siniestros.datos.AlmacenEvidenciasPrivado
+import com.solventa.feature.siniestros.datos.AlmacenPendientesCifrado
 import com.solventa.feature.siniestros.datos.CargaS3
 import com.solventa.feature.siniestros.datos.RepositorioSiniestrosRed
 import com.solventa.feature.siniestros.dominio.AlmacenEvidencias
+import com.solventa.feature.siniestros.dominio.AlmacenPendientes
 import com.solventa.feature.siniestros.dominio.RepositorioSiniestros
 import com.solventa.feature.privacidad.biometria.VerificadorBiometricoPrompt
 import com.solventa.feature.privacidad.datos.RepositorioConsentimientosRed
@@ -70,6 +72,8 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
     lateinit var repositorioSiniestros: RepositorioSiniestros
         private set
     lateinit var almacenEvidencias: AlmacenEvidencias
+        private set
+    lateinit var almacenPendientes: AlmacenPendientes
         private set
     /** Uno por proceso: la actividad en pantalla se adjunta al crearse y se suelta al destruirse. */
     lateinit var verificadorBiometrico: VerificadorBiometricoPrompt
@@ -132,6 +136,7 @@ open class SolventaApp : Application(), DependenciasNotificaciones {
         repositorioPolizas = RepositorioPolizasRed(bffMovilCliente)
         repositorioSiniestros = RepositorioSiniestrosRed(SiniestrosCliente(api), CargaS3())
         almacenEvidencias = AlmacenEvidenciasPrivado(this)
+        almacenPendientes = AlmacenPendientesCifrado(this, almacenEvidencias, gestorSesion::actual)
         verificadorBiometrico = VerificadorBiometricoPrompt(gestorBiometria)
         verificarIdentidad = VerificarIdentidad(
             cliente = RegistroCliente(api),

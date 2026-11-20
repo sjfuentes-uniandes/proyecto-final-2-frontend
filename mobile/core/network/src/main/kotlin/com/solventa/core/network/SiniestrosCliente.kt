@@ -11,8 +11,15 @@ import com.solventa.core.network.modelo.ListadoBorradoresDto
 import com.solventa.core.network.modelo.SolicitudBorradorDto
 import com.solventa.core.network.modelo.SolicitudFotoEvidenciaDto
 import com.solventa.core.network.modelo.SolicitudVideoEvidenciaDto
+import com.solventa.core.network.modelo.ActualizacionBorradorDto
+import com.solventa.core.network.modelo.EnvioSiniestroDto
+import com.solventa.core.network.modelo.ListadoSiniestrosDto
+import com.solventa.core.network.modelo.SiniestroDetalleDto
+import com.solventa.core.network.modelo.EnlaceEvidenciaDto
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import retrofit2.Response
 import java.io.IOException
 
@@ -35,6 +42,35 @@ class SiniestrosCliente(
         solicitud: SolicitudBorradorDto,
     ): ResultadoSiniestros<BorradorDto> =
         llamar { api.crearBorrador(claveIdempotencia, solicitud) }
+
+    suspend fun actualizar(borradorId: String, solicitud: ActualizacionBorradorDto): ResultadoSiniestros<BorradorDetalleDto> =
+        llamar { api.actualizarBorrador(borradorId, solicitud) }
+
+    suspend fun enviar(borradorId: String, clave: String): ResultadoSiniestros<EnvioSiniestroDto> =
+        llamar { api.enviarBorrador(borradorId, clave) }
+
+    suspend fun historial(cursor: String?): ResultadoSiniestros<ListadoSiniestrosDto> =
+        llamar { api.listarSiniestros(cursor) }
+
+    suspend fun siniestro(siniestroId: String): ResultadoSiniestros<SiniestroDetalleDto> =
+        llamar { api.siniestro(siniestroId) }
+
+    suspend fun enlaceEvidencia(siniestroId: String, evidenciaId: String):
+        ResultadoSiniestros<EnlaceEvidenciaDto> {
+        val respuesta = llamar { api.enlaceEvidencia(siniestroId, evidenciaId) }
+        return if (respuesta is ResultadoSiniestros.Fallo &&
+            (respuesta.error == ErrorSiniestros.Desconocido(404) || respuesta.error == ErrorSiniestros.SiniestroNoEncontrado)
+        ) {
+            ResultadoSiniestros.Fallo(ErrorSiniestros.EvidenciaNoDisponible)
+        } else {
+            respuesta
+        }
+    }
+
+    suspend fun eliminarEvidencia(borradorId: String, evidenciaId: String): ResultadoSiniestros<Unit> =
+        llamar { api.eliminarEvidencia(borradorId, evidenciaId).let { respuesta ->
+            if (respuesta.isSuccessful && respuesta.code() == 204) Response.success(Unit) else respuesta
+        } }
 
     suspend fun agregarFoto(
         borradorId: String,
@@ -99,8 +135,14 @@ class SiniestrosCliente(
         "CLIENTE_NO_ENCONTRADO" -> ErrorSiniestros.ClienteNoEncontrado
         "POLIZA_NO_ENCONTRADA" -> ErrorSiniestros.PolizaNoEncontrada
         "BORRADOR_NO_ENCONTRADO" -> ErrorSiniestros.BorradorNoEncontrado
+        "BORRADOR_MODIFICADO" -> ErrorSiniestros.BorradorModificado
+        "BORRADOR_CONVERTIDO" -> ErrorSiniestros.BorradorConvertido
+        "SINIESTRO_NO_ENCONTRADO" -> ErrorSiniestros.SiniestroNoEncontrado
+        "EVIDENCIA_NO_ENCONTRADA", "EVIDENCIA_NO_DISPONIBLE" -> ErrorSiniestros.EvidenciaNoDisponible
         "POLIZA_NO_VIGENTE" -> ErrorSiniestros.PolizaNoVigente
-        "SOLICITUD_INVALIDA" -> ErrorSiniestros.SolicitudInvalida
+        "SOLICITUD_INVALIDA" -> if ((dto.detalles["campos"] as? JsonArray)?.any {
+            (it as? JsonPrimitive)?.content?.let { campo -> campo == "ubicacion" || campo.startsWith("ubicacion.") } == true
+        } == true) ErrorSiniestros.UbicacionInvalida else ErrorSiniestros.SolicitudInvalida
         "IDEMPOTENCIA_CONFLICTO" -> ErrorSiniestros.IdempotenciaConflicto
         "TIPO_EVIDENCIA_NO_ADMITIDO" -> ErrorSiniestros.TipoEvidenciaNoAdmitido
         "TAMANO_EVIDENCIA_EXCEDIDO" -> ErrorSiniestros.TamanoEvidenciaExcedido

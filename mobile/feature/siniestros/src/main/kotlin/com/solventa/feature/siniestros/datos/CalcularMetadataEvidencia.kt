@@ -21,13 +21,14 @@ internal class CalcularMetadataEvidencia {
         if (temporal.tipo == TipoEvidencia.DESCONOCIDO) {
             return Resultado.Fallo(FalloSiniestros.EvidenciaNoAdmitida)
         }
-        val (mime, maximo, formatos) = when (temporal.tipo) {
-            TipoEvidencia.FOTOGRAFIA -> Triple(MIME_FOTO, limites.tamanoMaximoFotoBytes, limites.formatosFoto)
-            TipoEvidencia.VIDEO -> Triple(MIME_VIDEO, limites.tamanoMaximoVideoBytes, limites.formatosVideo)
+        val (maximo, formatos, prefijo) = when (temporal.tipo) {
+            TipoEvidencia.FOTOGRAFIA -> Triple(limites.tamanoMaximoFotoBytes, limites.formatosFoto, "image/")
+            TipoEvidencia.VIDEO -> Triple(limites.tamanoMaximoVideoBytes, limites.formatosVideo, "video/")
             TipoEvidencia.DESCONOCIDO -> return Resultado.Fallo(FalloSiniestros.EvidenciaNoAdmitida)
         }
+        val mime = temporal.tipoContenido
         val tamano = temporal.archivo.length()
-        if (mime !in formatos) return Resultado.Fallo(FalloSiniestros.EvidenciaNoAdmitida)
+        if (!mime.startsWith(prefijo) || mime !in formatos) return Resultado.Fallo(FalloSiniestros.EvidenciaNoAdmitida)
         if (tamano > maximo) return Resultado.Fallo(FalloSiniestros.TamanoEvidenciaExcedido)
         if (temporal.tipo == TipoEvidencia.VIDEO) {
             val duracion = temporal.duracionSegundos
@@ -54,7 +55,7 @@ internal class CalcularMetadataEvidencia {
         }
         return Resultado.Exito(
             MetadataEvidencia(
-                nombreArchivo = temporal.archivo.name,
+                nombreArchivo = temporal.nombreArchivo ?: temporal.archivo.name,
                 tipo = temporal.tipo,
                 tipoContenido = mime,
                 tamanoBytes = tamano,
@@ -66,8 +67,6 @@ internal class CalcularMetadataEvidencia {
     }
 
     private companion object {
-        const val MIME_FOTO = "image/jpeg"
-        const val MIME_VIDEO = "video/mp4"
         const val SHA_256 = "SHA-256"
         const val BUFFER_SIZE = 8192
     }
@@ -79,6 +78,6 @@ internal data class MetadataEvidencia(
     val tipoContenido: String,
     val tamanoBytes: Long,
     val sha256: String,
-    val capturadaEn: String,
+    val capturadaEn: String?,
     val duracionSegundos: Int?,
 )

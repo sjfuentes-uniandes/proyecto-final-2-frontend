@@ -33,6 +33,19 @@ class CalcularMetadataEvidenciaTest {
     }
 
     @Test
+    fun `conserva nombre MIME PNG y fecha desconocida de archivo importado`() {
+        val temporal = evidencia(archivo("temporal.png", byteArrayOf(1, 2, 3))).copy(
+            tipoContenido = "image/png", nombreArchivo = "seleccion.png", capturadaEn = null,
+        )
+        val resultado = calcular(temporal, limites())
+        assertTrue(resultado is Resultado.Exito)
+        val metadata = (resultado as Resultado.Exito).valor
+        assertEquals("image/png", metadata.tipoContenido)
+        assertEquals("seleccion.png", metadata.nombreArchivo)
+        assertEquals(null, metadata.capturadaEn)
+    }
+
+    @Test
     fun `rechaza foto un byte por encima del limite`() {
         val resultado = calcular(
             evidencia(archivo("foto.jpg", ByteArray(4))),

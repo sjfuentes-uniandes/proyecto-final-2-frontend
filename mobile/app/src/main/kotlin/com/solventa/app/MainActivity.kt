@@ -11,7 +11,6 @@ import com.solventa.core.auth.EstadoSesion
 import com.solventa.feature.notificaciones.ui.PermisoNotificacionesRoute
 import com.solventa.feature.notificaciones.ui.RegistroExplicacionPermiso
 import kotlinx.coroutines.flow.StateFlow
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -89,6 +88,9 @@ class MainActivity : FragmentActivity() {
                 app.repositorioPolizas,
                 app.almacenEvidencias,
                 app.gestorSesion,
+                com.solventa.feature.siniestros.datos.ProveedorUbicacionAndroid(app),
+                com.solventa.feature.siniestros.datos.ImportadorEvidenciasAndroid(app, app.almacenEvidencias),
+                app.almacenPendientes,
             ),
             estadoSesion = app.gestorSesion.estado,
             destinoPendiente = app.destinoPendiente,
@@ -199,7 +201,6 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
         )
     }
     Scaffold(
-        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (mostrarBarra) {
                 NavigationBar {
@@ -240,7 +241,7 @@ private fun NavegacionSolventa(dependencias: DependenciasNavegacion, actividad: 
     NavHost(
         navController = navegacion,
         startDestination = Rutas.LOGIN,
-        modifier = Modifier.padding(bottom = relleno.calculateBottomPadding()),
+        modifier = Modifier.padding(relleno),
     ) {
         composable(Rutas.LOGIN) {
             val viewModel = viewModel<LoginViewModel>(factory = dependencias.fabricaLogin)

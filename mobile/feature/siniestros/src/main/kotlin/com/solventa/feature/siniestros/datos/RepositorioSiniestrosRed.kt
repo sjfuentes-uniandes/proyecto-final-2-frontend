@@ -12,6 +12,14 @@ import com.solventa.core.network.modelo.LimitesSiniestrosDto
 import com.solventa.core.network.modelo.SolicitudBorradorDto
 import com.solventa.core.network.modelo.SolicitudFotoEvidenciaDto
 import com.solventa.core.network.modelo.SolicitudVideoEvidenciaDto
+import com.solventa.core.network.modelo.ActualizacionBorradorDto
+import com.solventa.core.network.modelo.EnvioSiniestroDto
+import com.solventa.feature.siniestros.dominio.EnvioSiniestro
+import com.solventa.feature.siniestros.dominio.SiniestroResumen
+import com.solventa.feature.siniestros.dominio.SiniestroDetalle
+import com.solventa.feature.siniestros.dominio.PaginaSiniestros
+import com.solventa.feature.siniestros.dominio.EvidenciaReporte
+import com.solventa.feature.siniestros.dominio.HitoReporte
 import com.solventa.feature.siniestros.dominio.Borrador
 import com.solventa.feature.siniestros.dominio.BorradorDetalle
 import com.solventa.feature.siniestros.dominio.BorradorResumen
@@ -23,10 +31,21 @@ import com.solventa.feature.siniestros.dominio.LimitesSiniestros
 import com.solventa.feature.siniestros.dominio.RepositorioSiniestros
 import com.solventa.feature.siniestros.dominio.Resultado
 import com.solventa.feature.siniestros.dominio.TipoEvidencia
+import com.solventa.feature.siniestros.dominio.ArchivoEvidencia
+import java.io.File
+import com.solventa.feature.siniestros.dominio.UbicacionCapturada
+import com.solventa.feature.siniestros.dominio.UbicacionReporte
+import com.solventa.feature.siniestros.dominio.PermisoUbicacion
+import com.solventa.feature.siniestros.dominio.EstadoUbicacion
+import com.solventa.feature.siniestros.dominio.ReglasUbicacion
+import com.solventa.core.network.modelo.UbicacionCapturadaDto
+import com.solventa.core.network.modelo.UbicacionReporteDto
+import com.solventa.core.network.modelo.PermisoUbicacionDto
 
 class RepositorioSiniestrosRed(
     private val cliente: SiniestrosCliente,
     private val cargaS3: CargaS3,
+    private val descargaEvidencias: DescargaEvidencias = DescargaEvidencias(),
 ) : RepositorioSiniestros {
     private val calcularMetadata = CalcularMetadataEvidencia()
 
@@ -38,6 +57,62 @@ class RepositorioSiniestrosRed(
 
     override suspend fun detalle(borradorId: String): Resultado<BorradorDetalle> =
         cliente.detalle(borradorId).mapear { it.aDominio() }
+
+    override suspend fun actualizar(
+        borradorId: String,
+        descripcion: String,
+        causa: String,
+        fechaEvento: String,
+    ): Resultado<BorradorDetalle> =
+        cliente.actualizar(borradorId, ActualizacionBorradorDto(descripcion, causa, fechaEvento)).mapear { it.aDominio() }
+
+    override suspend fun enviar(borradorId: String, claveIdempotencia: String): Resultado<EnvioSiniestro> =
+        cliente.enviar(borradorId, claveIdempotencia).mapear { it.aDominio() }
+
+    override suspend fun guardarDatos(borradorId: String, descripcion: String, causa: String?, fechaEvento: String?) =
+        cliente.actualizar(borradorId, ActualizacionBorradorDto(descripcion, causa, fechaEvento)).mapear { it.aDominio() }
+
+    override suspend fun guardarUbicacion(borradorId: String, ubicacion: UbicacionCapturada): Resultado<BorradorDetalle> {
+        if (!ubicacion.esValida()) return Resultado.Fallo(FalloSiniestros.UbicacionInvalida)
+        val dto = UbicacionCapturadaDto(
+            PermisoUbicacionDto.valueOf(ubicacion.permiso.name), ubicacion.lat, ubicacion.lon,
+            ubicacion.precisionM, ubicacion.capturadaEn,
+        )
+        return cliente.actualizar(borradorId, ActualizacionBorradorDto(ubicacion = dto)).mapear { it.aDominio() }
+    }
+
+    override suspend fun eliminarEvidencia(borradorId: String, evidenciaId: String): Resultado<Unit> =
+        cliente.eliminarEvidencia(borradorId, evidenciaId).mapear { Unit }
+
+    override suspend fun historial(cursor: String?): Resultado<PaginaSiniestros> =
+        cliente.historial(cursor).mapear { pagina ->
+            PaginaSiniestros(
+                pagina.items.map { SiniestroResumen(it.siniestroId, it.codigo, it.estado, it.polizaId, it.reportadoEn) },
+                pagina.siguienteCursor,
+            )
+        }
+
+    override suspend fun siniestro(siniestroId: String): Resultado<SiniestroDetalle> =
+        cliente.siniestro(siniestroId).mapear { detalle ->
+            SiniestroDetalle(
+                SiniestroResumen(detalle.siniestroId, detalle.codigo, detalle.estado, detalle.polizaId, detalle.reportadoEn),
+                detalle.descripcion,
+                detalle.causa,
+                detalle.fechaEvento,
+                detalle.evidencias.map { EvidenciaReporte(it.evidenciaId, it.nombreArchivo) },
+                detalle.historial.map { HitoReporte(it.accion, it.estadoNuevo, it.ocurridoEn) },
+                detalle.ubicacion?.aDominio(),
+            )
+        }
+
+    override suspend fun descargarEvidencia(
+        siniestroId: String,
+        evidenciaId: String,
+        directorio: File,
+    ): Resultado<ArchivoEvidencia> =
+        descargaEvidencias.descargar(directorio) {
+            cliente.enlaceEvidencia(siniestroId, evidenciaId).mapear { it }
+        }
 
     override suspend fun crearBorrador(
         polizaId: String,
@@ -203,6 +278,7 @@ private fun BorradorResumenDto.aDominio() = BorradorResumen(
     creadoEn = creadoEn,
     cantidadEvidencias = cantidadEvidencias,
     evidenciasPendientes = evidenciasPendientes,
+    ubicacion = ubicacion?.aDominio(),
 )
 
 private fun BorradorDetalleDto.aDominio() = BorradorDetalle(
@@ -214,7 +290,13 @@ private fun BorradorDetalleDto.aDominio() = BorradorDetalle(
     cantidadEvidencias = cantidadEvidencias,
     evidenciasPendientes = evidenciasPendientes,
     evidencias = evidencias.map { it.aDominio() },
+    causa = causa,
+    fechaEvento = fechaEvento,
+    envio = envio?.aDominio(),
+    ubicacion = ubicacion?.aDominio(),
 )
+
+private fun EnvioSiniestroDto.aDominio() = EnvioSiniestro(borradorId, siniestroId, codigo, estado, reportadoEn)
 
 private fun EvidenciaBorradorDto.aDominio() = Evidencia(
     id = evidenciaId,
@@ -235,6 +317,19 @@ private fun LimitesSiniestrosDto.aDominio() = LimitesSiniestros(
     tamanoMaximoVideoBytes = tamanoMaximoVideoBytes,
     duracionMaximaVideoSegundos = duracionMaximaVideoSegundos,
     urlCargaExpiraSegundos = urlCargaExpiraSegundos,
+    reglasUbicacion = reglasUbicacion(),
+)
+
+private fun LimitesSiniestrosDto.reglasUbicacion(): ReglasUbicacion? {
+    val obligatoria = ubicacionObligatoria ?: return null
+    val opcionales = ubicacionTiposOpcionales ?: return null
+    val precision = ubicacionPrecisionMaxM ?: return null
+    return if (precision.isFinite() && precision > 0) ReglasUbicacion(obligatoria, opcionales, precision) else null
+}
+
+private fun UbicacionReporteDto.aDominio() = UbicacionReporte(
+    UbicacionCapturada(PermisoUbicacion.valueOf(permiso.name), lat, lon, precisionM, capturadaEn),
+    EstadoUbicacion.valueOf(estado.name),
 )
 
 private fun ErrorSiniestros.aDominio(): FalloSiniestros = when (this) {
@@ -244,14 +339,19 @@ private fun ErrorSiniestros.aDominio(): FalloSiniestros = when (this) {
     ErrorSiniestros.PolizaNoAutorizada -> FalloSiniestros.PolizaNoAutorizada
     ErrorSiniestros.PolizaNoEncontrada -> FalloSiniestros.PolizaNoEncontrada
     ErrorSiniestros.BorradorNoEncontrado -> FalloSiniestros.BorradorNoEncontrado
+    ErrorSiniestros.BorradorModificado -> FalloSiniestros.BorradorModificado
+    ErrorSiniestros.BorradorConvertido -> FalloSiniestros.BorradorConvertido
+    ErrorSiniestros.SiniestroNoEncontrado -> FalloSiniestros.SiniestroNoEncontrado
+    ErrorSiniestros.EvidenciaNoDisponible -> FalloSiniestros.EvidenciaNoDisponible
     ErrorSiniestros.PolizaNoVigente -> FalloSiniestros.PolizaNoVigente
     ErrorSiniestros.SolicitudInvalida -> FalloSiniestros.SolicitudInvalida
+    ErrorSiniestros.UbicacionInvalida -> FalloSiniestros.UbicacionInvalida
     ErrorSiniestros.IdempotenciaConflicto -> FalloSiniestros.IdempotenciaConflicto
     ErrorSiniestros.TipoEvidenciaNoAdmitido -> FalloSiniestros.TipoEvidenciaNoAdmitido
     ErrorSiniestros.TamanoEvidenciaExcedido -> FalloSiniestros.TamanoEvidenciaExcedido
     ErrorSiniestros.DuracionVideoExcedida -> FalloSiniestros.DuracionVideoExcedida
     ErrorSiniestros.LimiteEvidenciasAlcanzado -> FalloSiniestros.LimiteEvidenciasAlcanzado
-    ErrorSiniestros.EvidenciaNoCargada -> FalloSiniestros.CargaS3Fallida
+    ErrorSiniestros.EvidenciaNoCargada -> FalloSiniestros.EvidenciaNoCargada
     ErrorSiniestros.EvidenciaYaConfirmada -> FalloSiniestros.RespuestaInvalida
     ErrorSiniestros.IntegridadEvidenciaInvalida -> FalloSiniestros.IntegridadEvidenciaInvalida
     ErrorSiniestros.ServicioNoDisponible -> FalloSiniestros.ServicioNoDisponible

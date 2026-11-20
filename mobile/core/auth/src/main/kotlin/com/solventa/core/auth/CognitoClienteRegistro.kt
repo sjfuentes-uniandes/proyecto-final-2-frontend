@@ -1,6 +1,7 @@
 package com.solventa.core.auth
 
 import android.content.Context
+import com.amazonaws.ClientConfiguration
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails
@@ -19,13 +20,17 @@ class CognitoClienteRegistro(
     context: Context,
     configuracion: ConfiguracionCognito,
 ) : ClienteRegistro {
-    private val userPool = CognitoUserPool(
-        context.applicationContext,
-        configuracion.poolId,
-        configuracion.clientId,
-        null,
-        Regions.fromName(configuracion.region),
-    )
+    private val contexto = context.applicationContext
+    private val poolId = configuracion.poolId
+    private val clientId = configuracion.clientId
+    private val region = Regions.fromName(configuracion.region)
+    private val userPool = crearPool(ClientConfiguration())
+    private val userPoolAlta by lazy {
+        crearPool(ClientConfiguration().withSocketTimeout(TIMEOUT_LECTURA_ALTA_MS))
+    }
+
+    private fun crearPool(configuracion: ClientConfiguration) =
+        CognitoUserPool(contexto, poolId, clientId, null, configuracion, region)
 
     override suspend fun registrar(
         correo: String,
@@ -33,7 +38,7 @@ class CognitoClienteRegistro(
         tokenRegistro: String,
     ): ResultadoRegistroCuenta = suspendCancellableCoroutine { continuacion ->
         val atributos = CognitoUserAttributes().apply { addAttribute("email", correo) }
-        userPool.signUpInBackground(
+        userPoolAlta.signUpInBackground(
             correo,
             contrasena,
             atributos,
@@ -88,4 +93,8 @@ class CognitoClienteRegistro(
                 },
             )
         }
+
+    private companion object {
+        const val TIMEOUT_LECTURA_ALTA_MS = 30_000
+    }
 }

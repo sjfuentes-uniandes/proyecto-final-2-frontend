@@ -14,8 +14,13 @@ sealed interface ErrorSiniestros {
     data object ClienteNoEncontrado : ErrorSiniestros
     data object PolizaNoEncontrada : ErrorSiniestros
     data object BorradorNoEncontrado : ErrorSiniestros
+    data object BorradorModificado : ErrorSiniestros
+    data object BorradorConvertido : ErrorSiniestros
+    data object SiniestroNoEncontrado : ErrorSiniestros
+    data object EvidenciaNoDisponible : ErrorSiniestros
     data object PolizaNoVigente : ErrorSiniestros
     data object SolicitudInvalida : ErrorSiniestros
+    data object UbicacionInvalida : ErrorSiniestros
     data object IdempotenciaConflicto : ErrorSiniestros
     data object TipoEvidenciaNoAdmitido : ErrorSiniestros
     data object TamanoEvidenciaExcedido : ErrorSiniestros

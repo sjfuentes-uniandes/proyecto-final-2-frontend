@@ -1,5 +1,7 @@
 package com.solventa.core.network.modelo
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -11,6 +13,9 @@ data class LimitesSiniestrosDto(
     val tamanoMaximoVideoBytes: Long,
     val duracionMaximaVideoSegundos: Int,
     val urlCargaExpiraSegundos: Int,
+    val ubicacionObligatoria: Boolean? = null,
+    val ubicacionTiposOpcionales: List<String>? = null,
+    val ubicacionPrecisionMaxM: Double? = null,
 )
 
 @Serializable
@@ -25,6 +30,7 @@ data class BorradorResumenDto(
     val creadoEn: String,
     val cantidadEvidencias: Int,
     val evidenciasPendientes: Int,
+    val ubicacion: UbicacionReporteDto? = null,
 )
 
 @Serializable
@@ -44,6 +50,109 @@ data class BorradorDetalleDto(
     val cantidadEvidencias: Int,
     val evidenciasPendientes: Int,
     val evidencias: List<EvidenciaBorradorDto>,
+    val causa: String? = null,
+    val fechaEvento: String? = null,
+    val envio: EnvioSiniestroDto? = null,
+    val ubicacion: UbicacionReporteDto? = null,
+)
+
+@Serializable
+data class ActualizacionBorradorDto(
+    val descripcion: String? = null,
+    val causa: String? = null,
+    val fechaEvento: String? = null,
+    val ubicacion: UbicacionCapturadaDto? = null,
+)
+
+@Serializable
+enum class PermisoUbicacionDto { PRECISO, APROXIMADO, DENEGADO, DENEGADO_PERMANENTEMENTE, NO_SOLICITADO }
+
+@Serializable
+enum class EstadoUbicacionDto { DISPONIBLE, NO_CONFIABLE, NO_DISPONIBLE }
+
+@Serializable
+data class UbicacionCapturadaDto(
+    val permiso: PermisoUbicacionDto,
+    val lat: Double? = null,
+    val lon: Double? = null,
+    val precisionM: Double? = null,
+    val capturadaEn: String? = null,
+) {
+    override fun toString() = "UbicacionCapturadaDto(permiso=$permiso)"
+}
+
+@Serializable
+data class UbicacionReporteDto(
+    val permiso: PermisoUbicacionDto,
+    val estado: EstadoUbicacionDto,
+    val lat: Double? = null,
+    val lon: Double? = null,
+    val precisionM: Double? = null,
+    val capturadaEn: String? = null,
+) {
+    override fun toString() = "UbicacionReporteDto(permiso=$permiso, estado=$estado)"
+}
+
+@Serializable
+data class EnvioSiniestroDto(
+    val borradorId: String,
+    val siniestroId: String,
+    val codigo: String,
+    val estado: String,
+    val reportadoEn: String,
+)
+
+@Serializable
+data class SiniestroResumenDto(
+    val siniestroId: String,
+    val codigo: String,
+    val estado: String,
+    val polizaId: String,
+    val reportadoEn: String,
+)
+
+@Serializable
+data class ListadoSiniestrosDto(val items: List<SiniestroResumenDto>, val siguienteCursor: String?)
+
+@Serializable
+data class SiniestroDetalleDto(
+    val siniestroId: String,
+    val codigo: String,
+    val estado: String,
+    val polizaId: String,
+    val reportadoEn: String,
+    val descripcion: String?,
+    val causa: String,
+    val fechaEvento: String,
+    val evidencias: List<EvidenciaReporteDto>,
+    val historial: List<HitoReporteDto>,
+    val ubicacion: UbicacionReporteDto? = null,
+)
+
+@Serializable
+data class EnlaceEvidenciaDto(
+    val url: String,
+    val expiraEn: String,
+    val nombreArchivo: String,
+    val tipoContenido: String,
+)
+
+@Serializable
+data class EvidenciaReporteDto(
+    val evidenciaId: String,
+    val nombreArchivo: String,
+    val tipo: String,
+    val tipoContenido: String?,
+    val tamanoBytes: Long?,
+    val capturadaEn: String?,
+)
+
+@Serializable
+data class HitoReporteDto(
+    val accion: String,
+    val estadoAnterior: String?,
+    val estadoNuevo: String?,
+    val ocurridoEn: String,
 )
 
 @Serializable
@@ -66,9 +175,11 @@ data class SolicitudBorradorDto(
     val descripcion: String,
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class SolicitudFotoEvidenciaDto(
     val nombreArchivo: String,
+    @EncodeDefault
     val tipo: String = "FOTOGRAFIA",
     val tipoContenido: String,
     val tamanoBytes: Long,
@@ -76,9 +187,11 @@ data class SolicitudFotoEvidenciaDto(
     val capturadaEn: String? = null,
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class SolicitudVideoEvidenciaDto(
     val nombreArchivo: String,
+    @EncodeDefault
     val tipo: String = "VIDEO",
     val tipoContenido: String,
     val tamanoBytes: Long,

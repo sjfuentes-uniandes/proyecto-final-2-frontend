@@ -2,44 +2,14 @@ package com.solventa.feature.siniestros.ui
 
 import android.Manifest
 import android.content.Intent
+import android.content.ActivityNotFoundException
+import android.app.Activity
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,29 +19,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.core.app.ActivityCompat
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.solventa.feature.billetera.dominio.PolizaResumen
-import com.solventa.feature.siniestros.EtiquetasSiniestros
+import androidx.core.content.FileProvider
+import java.io.File
+import java.io.IOException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.solventa.feature.siniestros.EventoSiniestros
 import com.solventa.feature.siniestros.R
-import com.solventa.feature.siniestros.SiniestrosUiState
 import com.solventa.feature.siniestros.SiniestrosViewModel
-import com.solventa.feature.siniestros.dominio.BorradorDetalle
-import com.solventa.feature.siniestros.dominio.BorradorResumen
-import com.solventa.feature.siniestros.dominio.EvidenciaTemporal
 import com.solventa.feature.siniestros.dominio.FalloSiniestros
 import com.solventa.feature.siniestros.dominio.LimitesSiniestros
-import com.solventa.feature.siniestros.dominio.TipoEvidencia
+import com.solventa.feature.siniestros.dominio.PermisoUbicacion
 
 @Composable
 fun SiniestrosRoute(
@@ -83,7 +53,56 @@ fun SiniestrosRoute(
     var borradorSeleccionado by rememberSaveable { mutableStateOf<String?>(null) }
     var descartarVisible by rememberSaveable { mutableStateOf(false) }
     var permisoDenegado by rememberSaveable { mutableStateOf(false) }
+    var adjuntandoAlBorrador by rememberSaveable { mutableStateOf(false) }
+    var siniestroSeleccionado by rememberSaveable { mutableStateOf<String?>(null) }
+    var explicarUbicacion by rememberSaveable { mutableStateOf(false) }
     val contexto = LocalContext.current
+    val ciclo = LocalLifecycleOwner.current
+    DisposableEffect(ciclo, viewModel) {
+        val observador = LifecycleEventObserver { _, evento ->
+            if (evento == Lifecycle.Event.ON_RESUME) viewModel.comprobarPermisoUbicacion()
+            if (evento == Lifecycle.Event.ON_STOP) viewModel.cancelarCapturaUbicacion()
+        }
+        ciclo.lifecycle.addObserver(observador)
+        onDispose {
+            ciclo.lifecycle.removeObserver(observador)
+            viewModel.cancelarCapturaUbicacion()
+        }
+    }
+    val permisoUbicacion = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val actividad = contexto.actividadUbicacion()
+        val denegado = viewModel.permisoUbicacionActual() !in listOf(PermisoUbicacion.PRECISO, PermisoUbicacion.APROXIMADO)
+        val permanente = denegado && actividad != null &&
+            !ActivityCompat.shouldShowRequestPermissionRationale(actividad, Manifest.permission.ACCESS_COARSE_LOCATION)
+        viewModel.respuestaPermisoUbicacion(permanente)
+    }
+    val tareas = rememberCoroutineScope()
+    val guardarEvidencia = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { resultado ->
+        val archivo = viewModel.uiState.value.archivoPorGuardar
+        val destino = resultado.data?.data
+        if (resultado.resultCode == Activity.RESULT_OK && destino != null && archivo != null) {
+            tareas.launch {
+                val guardado = withContext(Dispatchers.IO) {
+                    try {
+                        val salida = contexto.contentResolver.openOutputStream(destino)
+                            ?: return@withContext false
+                        salida.use { salidaArchivo ->
+                            archivo.archivo.inputStream().use { entrada -> entrada.copyTo(salidaArchivo) }
+                        }
+                        true
+                    } catch (_: IOException) {
+                        false
+                    } catch (_: SecurityException) {
+                        false
+                    }
+                }
+                if (!guardado) viewModel.notificarFalloAcceso(FalloSiniestros.GuardadoFallido)
+                viewModel.finalizarGuardadoEvidencia(guardado)
+            }
+        } else {
+            viewModel.finalizarGuardadoEvidencia()
+        }
+    }
 
     val permisoCamara = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
         permisoDenegado = !concedido
@@ -91,23 +110,76 @@ fun SiniestrosRoute(
         else pantalla = PantallaSiniestros.PERMISO_DENEGADO
     }
 
+    val selectorArchivo = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null && pantalla == PantallaSiniestros.FORMULARIO) viewModel.adjuntarArchivo(uri.toString())
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.eventos.collect { evento ->
             when (evento) {
                 EventoSiniestros.IrALogin -> onIrALogin()
+                EventoSiniestros.SolicitarUbicacion -> { explicarUbicacion = true }
+                EventoSiniestros.AbrirPendienteLocal -> {
+                    adjuntandoAlBorrador = false
+                    pantalla = PantallaSiniestros.FORMULARIO
+                }
+                is EventoSiniestros.EvidenciaLista -> {
+                    if (pantalla != PantallaSiniestros.REPORTE || siniestroSeleccionado != evento.siniestroId) {
+                        if (evento.guardar) viewModel.finalizarGuardadoEvidencia()
+                        return@collect
+                    }
+                    try {
+                        if (evento.guardar) {
+                            guardarEvidencia.launch(
+                                Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                    .addCategory(Intent.CATEGORY_OPENABLE)
+                                    .setType(evento.archivo.tipoContenido)
+                                    .putExtra(Intent.EXTRA_TITLE, evento.archivo.nombreArchivo),
+                            )
+                        } else {
+                            val uri = FileProvider.getUriForFile(
+                                contexto, "${contexto.packageName}.evidencias", evento.archivo.archivo,
+                            )
+                            contexto.startActivity(
+                                Intent(Intent.ACTION_VIEW).setDataAndType(uri, evento.archivo.tipoContenido)
+                                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                            )
+                        }
+                    } catch (_: ActivityNotFoundException) {
+                        viewModel.notificarFalloAcceso(
+                            if (evento.guardar) FalloSiniestros.GuardadoFallido else FalloSiniestros.VisorNoDisponible,
+                        )
+                        if (evento.guardar) viewModel.finalizarGuardadoEvidencia()
+                    } catch (_: SecurityException) {
+                        viewModel.notificarFalloAcceso(FalloSiniestros.NoAutorizado)
+                        if (evento.guardar) viewModel.finalizarGuardadoEvidencia()
+                    } catch (_: IllegalArgumentException) {
+                        viewModel.notificarFalloAcceso(FalloSiniestros.EvidenciaNoDisponible)
+                        if (evento.guardar) viewModel.finalizarGuardadoEvidencia()
+                    }
+                }
                 is EventoSiniestros.AbrirDetalle -> {
                     borradorSeleccionado = evento.borradorId
+                    adjuntandoAlBorrador = false
                     pantalla = PantallaSiniestros.DETALLE
                     viewModel.consultarDetalle(evento.borradorId)
+                }
+                is EventoSiniestros.ReporteEnviado -> {
+                    siniestroSeleccionado = evento.siniestroId
+                    adjuntandoAlBorrador = false
+                    pantalla = PantallaSiniestros.REPORTE
+                    viewModel.consultarSiniestro(evento.siniestroId)
                 }
             }
         }
     }
 
     BackHandler(enabled = pantalla != PantallaSiniestros.LISTA && pantalla != PantallaSiniestros.CAMARA) {
+        if (estado.enviando || estado.importandoEvidencia) return@BackHandler
         when (pantalla) {
             PantallaSiniestros.FORMULARIO -> descartarVisible = true
-            PantallaSiniestros.DETALLE -> {
+            PantallaSiniestros.DETALLE, PantallaSiniestros.REPORTE -> {
+                viewModel.cancelarAccesoEvidencia()
                 pantalla = PantallaSiniestros.LISTA
                 viewModel.refrescarLista()
             }
@@ -121,13 +193,22 @@ fun SiniestrosRoute(
             alReintentar = viewModel::reintentarCarga,
             alReportar = {
                 viewModel.iniciarNuevoReporte()
+                adjuntandoAlBorrador = false
                 pantalla = PantallaSiniestros.FORMULARIO
             },
             alAbrir = { id ->
                 borradorSeleccionado = id
+                adjuntandoAlBorrador = false
                 pantalla = PantallaSiniestros.DETALLE
                 viewModel.consultarDetalle(id)
             },
+            alAbrirLocal = viewModel::abrirPendienteLocal,
+            alAbrirReporte = { id ->
+                siniestroSeleccionado = id
+                pantalla = PantallaSiniestros.REPORTE
+                viewModel.consultarSiniestro(id)
+            },
+            alCargarMas = { viewModel.cargarHistorial(mas = true) },
         )
         PantallaSiniestros.FORMULARIO -> SiniestroFormularioScreen(
             estado = estado,
@@ -138,8 +219,35 @@ fun SiniestrosRoute(
                 permisoDenegado = false
                 pantalla = PantallaSiniestros.EXPLICACION_PERMISO
             },
+            alAdjuntarArchivo = {
+                if (viewModel.prepararSeleccionArchivo()) {
+                    try {
+                        selectorArchivo.launch(arrayOf("*/*"))
+                    } catch (_: ActivityNotFoundException) {
+                        viewModel.falloSelectorArchivo()
+                    } catch (_: SecurityException) {
+                        viewModel.falloSelectorArchivo()
+                    }
+                }
+            },
             alEliminarEvidencia = viewModel::eliminarCaptura,
             alReportar = viewModel::reportar,
+            alSeleccionarCausa = viewModel::seleccionarCausa,
+            alCambiarFecha = viewModel::cambiarFechaEvento,
+            alReintentarCoberturas = viewModel::cargarCoberturas,
+            alEliminarRegistrada = viewModel::eliminarEvidenciaRegistrada,
+            alReintentarPolizas = viewModel::reintentarCarga,
+            alUbicacion = viewModel::iniciarUbicacion,
+            alGuardarUbicacion = viewModel::reintentarGuardarUbicacion,
+            alGuardarBorrador = viewModel::guardarBorrador,
+            alVolverAPendientes = {
+                viewModel.cancelarFormulario()
+                adjuntandoAlBorrador = false
+                pantalla = PantallaSiniestros.LISTA
+            },
+            alAjustesUbicacion = {
+                contexto.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${contexto.packageName}")))
+            },
         )
         PantallaSiniestros.EXPLICACION_PERMISO -> ExplicacionPermisoScreen(
             alContinuar = {
@@ -183,9 +291,53 @@ fun SiniestrosRoute(
             alReintentar = {
                 borradorSeleccionado?.let(viewModel::consultarDetalle)
             },
+            alAdjuntarEvidencia = {
+                val id = borradorSeleccionado
+                if (id != null && viewModel.prepararAdjuntarEvidencia(id)) {
+                    adjuntandoAlBorrador = true
+                    pantalla = PantallaSiniestros.FORMULARIO
+                }
+            },
             alVolver = {
                 pantalla = PantallaSiniestros.LISTA
                 viewModel.refrescarLista()
+            },
+        )
+        PantallaSiniestros.REPORTE -> ReporteDetalleScreen(
+            detalle = estado.reporte,
+            estado = estado,
+            alReintentar = { siniestroSeleccionado?.let(viewModel::consultarSiniestro) },
+            alAccederEvidencia = { evidenciaId, guardar ->
+                viewModel.accederEvidencia(evidenciaId, File(contexto.cacheDir, "evidencias_descargadas"), guardar)
+            },
+            alVolver = {
+                viewModel.cancelarAccesoEvidencia()
+                pantalla = PantallaSiniestros.LISTA
+                viewModel.refrescarLista()
+            },
+        )
+    }
+
+    if (explicarUbicacion) {
+        val permanente = viewModel.permisoUbicacionActual() == PermisoUbicacion.DENEGADO_PERMANENTEMENTE
+        AlertDialog(
+            onDismissRequest = { explicarUbicacion = false },
+            title = { Text(stringResource(R.string.ubicacion_explicacion_titulo)) },
+            text = { Text(stringResource(R.string.ubicacion_explicacion)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    explicarUbicacion = false
+                    when (viewModel.permisoUbicacionActual()) {
+                        PermisoUbicacion.PRECISO, PermisoUbicacion.APROXIMADO -> viewModel.capturarUbicacion()
+                        PermisoUbicacion.DENEGADO_PERMANENTEMENTE -> contexto.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${contexto.packageName}")),
+                        )
+                        else -> permisoUbicacion.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                    }
+                }) { Text(stringResource(if (permanente) R.string.ubicacion_abrir_ajustes else R.string.ubicacion_continuar)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { explicarUbicacion = false }) { Text(stringResource(R.string.siniestros_cancelar)) }
             },
         )
     }
@@ -198,8 +350,18 @@ fun SiniestrosRoute(
             confirmButton = {
                 TextButton(onClick = {
                     descartarVisible = false
-                    viewModel.cancelarFormulario()
-                    pantalla = PantallaSiniestros.LISTA
+                    tareas.launch {
+                        if (viewModel.descartarPendienteLocal()) {
+                            if (adjuntandoAlBorrador) {
+                                viewModel.cancelarAdjuntarEvidencia()
+                                adjuntandoAlBorrador = false
+                                pantalla = PantallaSiniestros.DETALLE
+                            } else {
+                                viewModel.cancelarFormulario()
+                                pantalla = PantallaSiniestros.LISTA
+                            }
+                        }
+                    }
                 }) { Text(stringResource(R.string.siniestros_confirmar_descartar)) }
             },
             dismissButton = {
@@ -208,421 +370,6 @@ fun SiniestrosRoute(
                 }
             },
         )
-    }
-}
-
-@Composable
-private fun SiniestrosListaScreen(
-    estado: SiniestrosUiState,
-    alReintentar: () -> Unit,
-    alReportar: () -> Unit,
-    alAbrir: (String) -> Unit,
-) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text(
-            stringResource(R.string.siniestros_lista_titulo),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            stringResource(R.string.siniestros_lista_subtitulo),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
-        )
-        when {
-            estado.cargando -> Text(stringResource(R.string.siniestros_cargando))
-            estado.errorCarga != null && estado.borradores.isEmpty() -> Column(
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(stringResource(R.string.siniestros_error_carga), color = MaterialTheme.colorScheme.error)
-                Button(onClick = alReintentar, modifier = Modifier.padding(top = 12.dp)) {
-                    Text(stringResource(R.string.siniestros_reintentar))
-                }
-            }
-            estado.borradores.isEmpty() -> Box(
-                Modifier.weight(1f).fillMaxWidth(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    stringResource(R.string.siniestros_lista_vacia),
-                    modifier = Modifier.testTag(EtiquetasSiniestros.LISTA_VACIA),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            else -> LazyColumn(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(estado.borradores, key = BorradorResumen::id) { borrador ->
-                    TarjetaBorrador(borrador, alAbrir = { alAbrir(borrador.id) })
-                }
-            }
-        }
-        Button(
-            onClick = alReportar,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-                .padding(top = 12.dp).testTag(EtiquetasSiniestros.REPORTAR),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Text(stringResource(R.string.siniestros_reportar), fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun TarjetaBorrador(borrador: BorradorResumen, alAbrir: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = alAbrir)
-            .testTag(EtiquetasSiniestros.borrador(borrador.id)),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                stringResource(R.string.siniestros_estado_abierto).uppercase(),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(borrador.descripcion, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(
-                stringResource(
-                    R.string.siniestros_evidencias_resumen,
-                    borrador.cantidadEvidencias,
-                    borrador.evidenciasPendientes,
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                stringResource(R.string.siniestros_ver_detalle),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelLarge,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SiniestroFormularioScreen(
-    estado: SiniestrosUiState,
-    alVolver: () -> Unit,
-    alSeleccionarPoliza: (String) -> Unit,
-    alCambiarDescripcion: (String) -> Unit,
-    alAgregarEvidencia: () -> Unit,
-    alEliminarEvidencia: (String) -> Unit,
-    alReportar: () -> Unit,
-) {
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = alVolver, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.siniestros_volver))
-            }
-            Text(
-                stringResource(R.string.siniestros_nuevo_titulo),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-        SeleccionPoliza(
-            polizas = estado.polizasElegibles,
-            seleccionada = estado.polizaSeleccionada,
-            habilitada = !estado.descripcionBloqueada,
-            alSeleccionar = alSeleccionarPoliza,
-        )
-        if (estado.polizasElegibles.isEmpty() && !estado.cargando) {
-            Text(stringResource(R.string.siniestros_sin_polizas), color = MaterialTheme.colorScheme.error)
-        }
-        OutlinedTextField(
-            value = estado.descripcion,
-            onValueChange = alCambiarDescripcion,
-            enabled = !estado.descripcionBloqueada,
-            label = { Text(stringResource(R.string.siniestros_descripcion_titulo)) },
-            placeholder = { Text(stringResource(R.string.siniestros_descripcion_hint)) },
-            supportingText = {
-                Text(stringResource(R.string.siniestros_descripcion_caracteres, estado.descripcion.length))
-            },
-            modifier = Modifier.fillMaxWidth().testTag(EtiquetasSiniestros.DESCRIPCION),
-            minLines = 3,
-            maxLines = 5,
-        )
-        Card {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.siniestros_anexar), fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = alAgregarEvidencia,
-                        enabled = estado.limites != null && estado.evidencias.size < (estado.limites?.maxEvidencias ?: 0),
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                    ) {
-                        Icon(Icons.Filled.CameraAlt, contentDescription = null)
-                        Text(stringResource(R.string.siniestros_tomar_foto))
-                    }
-                    OutlinedButton(
-                        onClick = alAgregarEvidencia,
-                        enabled = estado.limites != null && estado.evidencias.size < (estado.limites?.maxEvidencias ?: 0),
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                    ) {
-                        Icon(Icons.Filled.Videocam, contentDescription = null)
-                        Text(stringResource(R.string.siniestros_grabar_video))
-                    }
-                }
-                if (estado.evidencias.isNotEmpty()) {
-                    Text(stringResource(R.string.siniestros_capturas_titulo), fontWeight = FontWeight.SemiBold)
-                    estado.evidencias.forEach { evidencia ->
-                        EvidenciaTemporalRow(evidencia, alEliminar = { alEliminarEvidencia(evidencia.id) })
-                    }
-                }
-            }
-        }
-        OutlinedButton(
-            onClick = {},
-            enabled = false,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) {
-            Icon(Icons.Filled.LocationOn, contentDescription = null)
-            Text(stringResource(R.string.siniestros_ubicacion))
-        }
-        estado.falloFormulario?.let { ErrorSiniestros(it, estado.limites) }
-        Button(
-            onClick = alReportar,
-            enabled = !estado.enviando && estado.polizaSeleccionada != null && estado.limites != null,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-        ) {
-            Text(
-                stringResource(
-                    if (estado.borradorActualId == null) R.string.siniestros_reportar_ahora
-                    else R.string.siniestros_reintentar_carga,
-                ),
-                fontWeight = FontWeight.Bold,
-            )
-        }
-        OutlinedButton(
-            onClick = alVolver,
-            enabled = !estado.enviando,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-        ) {
-            Text(stringResource(R.string.siniestros_descartar), color = MaterialTheme.colorScheme.error)
-        }
-    }
-}
-
-@Composable
-private fun SeleccionPoliza(
-    polizas: List<PolizaResumen>,
-    seleccionada: String?,
-    habilitada: Boolean,
-    alSeleccionar: (String) -> Unit,
-) {
-    var menuAbierto by rememberSaveable { mutableStateOf(false) }
-    val poliza = polizas.firstOrNull { it.polizaId == seleccionada }
-    Box {
-        OutlinedButton(
-            onClick = { menuAbierto = true },
-            enabled = habilitada && polizas.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.siniestros_seguro_asociado), style = MaterialTheme.typography.labelMedium)
-                Text(poliza?.let { "${it.numero} · ${it.producto}" } ?: stringResource(R.string.siniestros_seleccionar_seguro))
-            }
-        }
-        DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
-            polizas.forEach { opcion ->
-                DropdownMenuItem(
-                    text = { Text("${opcion.numero} · ${opcion.producto}") },
-                    onClick = {
-                        menuAbierto = false
-                        alSeleccionar(opcion.polizaId)
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun EvidenciaTemporalRow(evidencia: EvidenciaTemporal, alEliminar: () -> Unit) {
-    val descripcionEliminar = stringResource(R.string.siniestros_captura_eliminar)
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(
-            if (evidencia.tipo == TipoEvidencia.VIDEO) Icons.Filled.Videocam else Icons.Filled.CameraAlt,
-            contentDescription = null,
-        )
-        Column(Modifier.weight(1f)) {
-            Text(
-                stringResource(
-                    if (evidencia.tipo == TipoEvidencia.VIDEO) R.string.siniestros_archivo_video
-                    else R.string.siniestros_archivo_foto,
-                ),
-                fontWeight = FontWeight.Medium,
-            )
-            Text(
-                stringResource(
-                    R.string.siniestros_tamano_archivo,
-                    evidencia.archivo.name,
-                    formatBytes(evidencia.archivo.length()),
-                ),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-        Text(
-            stringResource(R.string.siniestros_captura_pendiente),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        TextButton(
-            onClick = alEliminar,
-            modifier = Modifier.semantics {
-                contentDescription = descripcionEliminar
-            },
-        ) {
-            Icon(Icons.Filled.DeleteOutline, contentDescription = null)
-        }
-    }
-}
-
-@Composable
-private fun ExplicacionPermisoScreen(alContinuar: () -> Unit, alCancelar: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(Icons.Filled.CameraAlt, contentDescription = null, modifier = Modifier.size(48.dp))
-        Text(
-            stringResource(R.string.siniestros_permiso_titulo),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(stringResource(R.string.siniestros_permiso_mensaje), style = MaterialTheme.typography.bodyLarge)
-        Button(onClick = alContinuar, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-            Text(stringResource(R.string.siniestros_permiso_continuar))
-        }
-        TextButton(onClick = alCancelar) { Text(stringResource(R.string.siniestros_cancelar)) }
-    }
-}
-
-@Composable
-internal fun PermisoDenegadoScreen(alAbrirAjustes: () -> Unit, alVolver: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-    ) {
-        Text(
-            stringResource(R.string.siniestros_permiso_denegado_titulo),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(stringResource(R.string.siniestros_permiso_denegado_mensaje))
-        Button(onClick = alAbrirAjustes, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-            Text(stringResource(R.string.siniestros_abrir_ajustes))
-        }
-        TextButton(onClick = alVolver) { Text(stringResource(R.string.siniestros_volver)) }
-    }
-}
-
-@Composable
-private fun SiniestroDetalleScreen(
-    detalle: BorradorDetalle?,
-    cargando: Boolean,
-    fallo: FalloSiniestros?,
-    limites: LimitesSiniestros?,
-    alReintentar: () -> Unit,
-    alVolver: () -> Unit,
-) {
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = alVolver, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.siniestros_volver))
-            }
-            Text(
-                stringResource(R.string.siniestros_detalle_titulo),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-        when {
-            cargando -> Text(stringResource(R.string.siniestros_cargando_detalle))
-            detalle == null -> {
-                Text(
-                    stringResource(R.string.siniestros_error_detalle),
-                    color = MaterialTheme.colorScheme.error,
-                )
-                fallo?.let { ErrorSiniestros(it, limites) }
-                Button(onClick = alReintentar) { Text(stringResource(R.string.siniestros_reintentar)) }
-            }
-            else -> {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            stringResource(R.string.siniestros_detalle_estado),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                        Text(
-                            stringResource(R.string.siniestros_estado_abierto),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(detalle.descripcion, style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            stringResource(
-                                R.string.siniestros_evidencias_resumen,
-                                detalle.cantidadEvidencias,
-                                detalle.evidenciasPendientes,
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(stringResource(R.string.siniestros_detalle_evidencias), fontWeight = FontWeight.Bold)
-                        detalle.evidencias.forEach { evidencia ->
-                            Row(
-                                Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(evidencia.nombreArchivo, modifier = Modifier.weight(1f))
-                                Text(
-                                    stringResource(
-                                        if (evidencia.estadoCarga.name == "CARGADA") {
-                                            R.string.siniestros_estado_carga_completada
-                                        } else {
-                                            R.string.siniestros_estado_carga_pendiente
-                                        },
-                                    ),
-                                )
-                            }
-                        }
-                    }
-                }
-                OutlinedButton(
-                    onClick = {},
-                    enabled = false,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                ) {
-                    Text(stringResource(R.string.siniestros_contacto))
-                }
-                Button(
-                    onClick = {},
-                    enabled = false,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                ) {
-                    Text(stringResource(R.string.siniestros_asistencia))
-                }
-            }
-        }
     }
 }
 
@@ -637,8 +384,16 @@ internal fun ErrorSiniestros(fallo: FalloSiniestros, limites: LimitesSiniestros?
             stringResource(R.string.siniestros_error_poliza)
         FalloSiniestros.DescripcionObligatoria -> stringResource(R.string.siniestros_error_descripcion)
         FalloSiniestros.DescripcionDemasiadoLarga -> stringResource(R.string.siniestros_error_descripcion_larga)
+        FalloSiniestros.CausaObligatoria -> stringResource(R.string.siniestros_error_causa)
+        FalloSiniestros.FechaEventoInvalida -> stringResource(R.string.siniestros_error_fecha)
+        FalloSiniestros.EvidenciaObligatoria -> stringResource(R.string.siniestros_error_evidencia_obligatoria)
+        FalloSiniestros.EvidenciaNoCargada -> stringResource(R.string.siniestros_error_evidencia_pendiente)
+        FalloSiniestros.BorradorModificado -> stringResource(R.string.siniestros_error_modificado)
+        FalloSiniestros.BorradorConvertido -> stringResource(R.string.siniestros_error_convertido)
+        FalloSiniestros.SolicitudInvalida -> stringResource(R.string.siniestros_error_datos)
         FalloSiniestros.TipoEvidenciaNoAdmitido, FalloSiniestros.EvidenciaNoAdmitida ->
             stringResource(R.string.siniestros_error_tipo)
+        FalloSiniestros.DuracionVideoNoDisponible -> stringResource(R.string.siniestros_error_duracion_no_disponible)
         FalloSiniestros.TamanoEvidenciaExcedido -> stringResource(
             R.string.siniestros_error_tamano,
             formatBytes(limites?.tamanoMaximoFotoBytes ?: 0L),
@@ -653,23 +408,29 @@ internal fun ErrorSiniestros(fallo: FalloSiniestros, limites: LimitesSiniestros?
             limites?.maxEvidencias ?: 0,
         )
         FalloSiniestros.ArchivoNoDisponible -> stringResource(R.string.siniestros_error_captura)
+        FalloSiniestros.EvidenciaNoDisponible -> stringResource(R.string.siniestros_error_evidencia_no_disponible)
+        FalloSiniestros.DescargaFallida -> stringResource(R.string.siniestros_error_descarga)
+        FalloSiniestros.VisorNoDisponible -> stringResource(R.string.siniestros_error_visor)
+        FalloSiniestros.GuardadoFallido -> stringResource(R.string.siniestros_error_guardado)
+        FalloSiniestros.PendienteLocalNoDisponible -> stringResource(R.string.siniestros_error_pendiente_local)
+        FalloSiniestros.UbicacionInvalida -> stringResource(R.string.ubicacion_error_validacion)
         FalloSiniestros.CargaS3Fallida ->
             stringResource(R.string.siniestros_error_subida)
         FalloSiniestros.IntegridadEvidenciaInvalida -> stringResource(R.string.siniestros_error_integridad)
         FalloSiniestros.IdempotenciaConflicto -> stringResource(R.string.siniestros_error_idempotencia)
         FalloSiniestros.BorradorNoEncontrado,
-        FalloSiniestros.SolicitudInvalida,
+        FalloSiniestros.SiniestroNoEncontrado,
         FalloSiniestros.ServicioNoDisponible,
         FalloSiniestros.RespuestaInvalida,
         -> stringResource(R.string.siniestros_error_generico)
     }
-    Text(mensaje, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+    AvisoSiniestro(mensaje)
 }
 
-private fun formatBytes(bytes: Long): String = when {
-    bytes >= BYTES_POR_MIB -> "${bytes / BYTES_POR_MIB} MiB"
-    bytes >= BYTES_POR_KIB -> "${bytes / BYTES_POR_KIB} KiB"
-    else -> "$bytes B"
+private tailrec fun Context.actividadUbicacion(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.actividadUbicacion()
+    else -> null
 }
 
 private enum class PantallaSiniestros {
@@ -679,7 +440,5 @@ private enum class PantallaSiniestros {
     PERMISO_DENEGADO,
     CAMARA,
     DETALLE,
+    REPORTE,
 }
-
-private const val BYTES_POR_KIB = 1024L
-private const val BYTES_POR_MIB = 1024L * 1024L

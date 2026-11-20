@@ -10,7 +10,7 @@ class AlmacenEvidenciasPrivado(contexto: Context) : AlmacenEvidencias {
     }
 
     override fun crearArchivo(extension: String): File {
-        require(extension == "jpg" || extension == "mp4")
+        require(extension == "jpg" || extension == "png" || extension == "mp4")
         return File.createTempFile("captura-", ".$extension", directorio)
     }
 

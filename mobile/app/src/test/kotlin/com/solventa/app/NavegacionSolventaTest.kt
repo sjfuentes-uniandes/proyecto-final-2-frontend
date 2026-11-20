@@ -96,6 +96,7 @@ import com.solventa.feature.billetera.dominio.Resultado as ResultadoPolizas
 import com.solventa.feature.siniestros.SiniestrosViewModelFactory
 import com.solventa.feature.siniestros.dominio.AlmacenEvidencias
 import com.solventa.feature.siniestros.dominio.LimitesSiniestros
+import com.solventa.feature.siniestros.dominio.PaginaSiniestros
 import com.solventa.feature.siniestros.dominio.RepositorioSiniestros
 import com.solventa.feature.siniestros.dominio.Resultado as ResultadoSiniestros
 import com.solventa.feature.siniestros.SiniestrosViewModel
@@ -152,6 +153,7 @@ class NavegacionSolventaTest {
             LimitesSiniestros(10, listOf("image/jpeg"), listOf("video/mp4"), 10_485_760, 52_428_800, 60, 300),
         )
         coEvery { listar() } returns ResultadoSiniestros.Exito(emptyList())
+        coEvery { historial(any()) } returns ResultadoSiniestros.Exito(PaginaSiniestros(emptyList(), null))
     }
     private val almacenEvidencias = object : AlmacenEvidencias {
         override fun crearArchivo(extension: String) = java.io.File.createTempFile("test-", ".$extension", contexto.cacheDir)
@@ -191,7 +193,12 @@ class NavegacionSolventaTest {
             fabricaBilletera = contando(BilleteraViewModelFactory(polizas, gestorSesion)),
             fabricaDetalle = { id -> contando(DetallePolizaViewModelFactory(id, polizas, gestorSesion)) },
             fabricaSiniestros = contando(
-                SiniestrosViewModelFactory(siniestros, polizas, almacenEvidencias, gestorSesion),
+                SiniestrosViewModelFactory(
+                    siniestros, polizas, almacenEvidencias, gestorSesion,
+                    almacenPendientes = mockk<com.solventa.feature.siniestros.dominio.AlmacenPendientes> {
+                        coEvery { listar() } returns ResultadoSiniestros.Exito(emptyList())
+                    },
+                ),
             ),
             estadoSesion = gestorSesion.estado,
             destinoPendiente = destino,
@@ -255,6 +262,18 @@ class NavegacionSolventaTest {
         compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).assertIsDisplayed()
         compose.onAllNodes(hasText(texto(RLogin.string.login_boton_ingresar))).assertCountEquals(0)
         assertEquals(1, creados[LoginViewModel::class.java]?.size)
+    }
+
+    @Test
+    fun `cerrar sesion es visible abre confirmacion y cancelar conserva la billetera`() {
+        montar()
+        ingresar()
+
+        compose.onNodeWithTag(EtiquetasBilletera.CERRAR_SESION).assertIsDisplayed().performClick()
+        compose.onNodeWithText(texto(R.string.cerrar_sesion_mensaje)).assertIsDisplayed()
+        compose.onNodeWithText(texto(R.string.cerrar_sesion_cancelar)).performClick()
+        compose.onNodeWithTag(EtiquetasBilletera.CERRAR_SESION).assertIsDisplayed()
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
     }
 
     @Test

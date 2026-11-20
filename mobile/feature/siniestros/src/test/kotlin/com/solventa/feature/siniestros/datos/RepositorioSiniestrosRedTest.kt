@@ -14,6 +14,14 @@ import com.solventa.core.network.modelo.EvidenciaDto
 import com.solventa.core.network.modelo.LimitesSiniestrosDto
 import com.solventa.core.network.modelo.ListadoBorradoresDto
 import com.solventa.core.network.modelo.SolicitudFotoEvidenciaDto
+import com.solventa.core.network.modelo.EstadoUbicacionDto
+import com.solventa.core.network.modelo.PermisoUbicacionDto
+import com.solventa.core.network.modelo.SiniestroDetalleDto
+import com.solventa.core.network.modelo.UbicacionReporteDto
+import com.solventa.feature.siniestros.dominio.EstadoUbicacion
+import com.solventa.feature.siniestros.dominio.PermisoUbicacion
+import com.solventa.feature.siniestros.dominio.ReglasUbicacion
+import com.solventa.feature.siniestros.dominio.UbicacionCapturada
 import com.solventa.feature.siniestros.dominio.EstadoCarga
 import com.solventa.feature.siniestros.dominio.BorradorDetalle
 import com.solventa.feature.siniestros.dominio.EvidenciaTemporal
@@ -80,6 +88,27 @@ class RepositorioSiniestrosRedTest {
             )
         }
         coVerify(exactly = 1) { cliente.confirmar("borrador", "evidencia") }
+    }
+
+    @Test
+    fun `registra y carga PNG importado con nombre original y sin fecha inventada`() = runBlocking {
+        val archivo = archivo("abc")
+        val importada = temporal(archivo).copy(nombreArchivo = "seleccion.png", tipoContenido = "image/png", capturadaEn = null)
+        coEvery { cliente.agregarFoto("borrador", any()) } returns ResultadoSiniestros.Exito(
+            evidenciaDto().copy(nombreArchivo = "seleccion.png", tipoContenido = "image/png", capturadaEn = null),
+        )
+        coEvery { cargaS3.subir(archivo, "image/png", carga) } returns ResultadoCargaS3.Exito
+        coEvery { cliente.confirmar("borrador", "evidencia") } returns ResultadoSiniestros.Exito(
+            EvidenciaConfirmadaDto("evidencia", "CARGADA", "fecha"),
+        )
+
+        assertIs<Resultado.Exito<*>>(repositorio.agregarEvidencia("borrador", importada, limites))
+        coVerify {
+            cliente.agregarFoto("borrador", match {
+                it.nombreArchivo == "seleccion.png" && it.tipoContenido == "image/png" && it.capturadaEn == null
+            })
+        }
+        coVerify { cargaS3.subir(archivo, "image/png", carga) }
     }
 
     @Test
@@ -197,12 +226,13 @@ class RepositorioSiniestrosRedTest {
             ErrorSiniestros.BorradorNoEncontrado to FalloSiniestros.BorradorNoEncontrado,
             ErrorSiniestros.PolizaNoVigente to FalloSiniestros.PolizaNoVigente,
             ErrorSiniestros.SolicitudInvalida to FalloSiniestros.SolicitudInvalida,
+            ErrorSiniestros.UbicacionInvalida to FalloSiniestros.UbicacionInvalida,
             ErrorSiniestros.IdempotenciaConflicto to FalloSiniestros.IdempotenciaConflicto,
             ErrorSiniestros.TipoEvidenciaNoAdmitido to FalloSiniestros.TipoEvidenciaNoAdmitido,
             ErrorSiniestros.TamanoEvidenciaExcedido to FalloSiniestros.TamanoEvidenciaExcedido,
             ErrorSiniestros.DuracionVideoExcedida to FalloSiniestros.DuracionVideoExcedida,
             ErrorSiniestros.LimiteEvidenciasAlcanzado to FalloSiniestros.LimiteEvidenciasAlcanzado,
-            ErrorSiniestros.EvidenciaNoCargada to FalloSiniestros.CargaS3Fallida,
+            ErrorSiniestros.EvidenciaNoCargada to FalloSiniestros.EvidenciaNoCargada,
             ErrorSiniestros.EvidenciaYaConfirmada to FalloSiniestros.RespuestaInvalida,
             ErrorSiniestros.IntegridadEvidenciaInvalida to FalloSiniestros.IntegridadEvidenciaInvalida,
             ErrorSiniestros.ServicioNoDisponible to FalloSiniestros.ServicioNoDisponible,
@@ -214,6 +244,57 @@ class RepositorioSiniestrosRedTest {
 
             assertEquals(Resultado.Fallo(falloEsperado), repositorio.detalle("borrador"))
         }
+    }
+
+    @Test
+    fun `restaura ubicacion de listado borrador PATCH y caso definitivo conservando null anterior`() = runBlocking {
+        val ubicacion = UbicacionReporteDto(
+            PermisoUbicacionDto.APROXIMADO, EstadoUbicacionDto.NO_CONFIABLE,
+            4.6, -74.0, 100.01, "2026-11-18T20:00:00Z",
+        )
+        val dto = detalle().copy(ubicacion = ubicacion)
+        coEvery { cliente.detalle("borrador") } returns ResultadoSiniestros.Exito(dto)
+        coEvery { cliente.actualizar("borrador", any()) } returns ResultadoSiniestros.Exito(dto)
+        coEvery { cliente.listar() } returns ResultadoSiniestros.Exito(
+            ListadoBorradoresDto(listOf(
+                BorradorResumenDto("borrador", "poliza", "Choque", "ABIERTO", "fecha", 0, 0, ubicacion),
+                BorradorResumenDto("anterior", "poliza", "Anterior", "ABIERTO", "fecha", 0, 0),
+            )),
+        )
+        coEvery { cliente.siniestro("reporte") } returns ResultadoSiniestros.Exito(
+            SiniestroDetalleDto("reporte", "radicado", "REPORTADO", "poliza", "fecha", "Choque", "DANOS", "fecha", emptyList(), emptyList(), ubicacion),
+        )
+        val lectura = UbicacionCapturada(PermisoUbicacion.APROXIMADO, 4.6, -74.0, 100.01, "2026-11-18T20:00:00Z")
+        val guardada = assertIs<Resultado.Exito<BorradorDetalle>>(repositorio.guardarUbicacion("borrador", lectura)).valor.ubicacion
+        assertEquals(lectura, guardada?.lectura)
+        assertEquals(EstadoUbicacion.NO_CONFIABLE, guardada?.estado)
+        assertEquals(guardada, assertIs<Resultado.Exito<BorradorDetalle>>(repositorio.detalle("borrador")).valor.ubicacion)
+        val listado = assertIs<Resultado.Exito<List<com.solventa.feature.siniestros.dominio.BorradorResumen>>>(repositorio.listar()).valor
+        assertEquals(guardada, listado.first().ubicacion)
+        assertEquals(null, listado.last().ubicacion)
+        assertEquals(guardada, assertIs<Resultado.Exito<com.solventa.feature.siniestros.dominio.SiniestroDetalle>>(repositorio.siniestro("reporte")).valor.ubicacion)
+        coVerify { cliente.actualizar("borrador", match {
+            it.descripcion == null && it.causa == null && it.fechaEvento == null &&
+                it.ubicacion?.permiso == PermisoUbicacionDto.APROXIMADO && it.ubicacion?.precisionM == 100.01
+        }) }
+        assertEquals(Resultado.Fallo(FalloSiniestros.UbicacionInvalida), repositorio.guardarUbicacion("borrador", lectura.copy(lat = null)))
+        coVerify(exactly = 1) { cliente.actualizar(any(), any()) }
+    }
+
+    @Test
+    fun `reglas ausentes incompletas o invalidas no se convierten en ubicacion opcional`() = runBlocking {
+        val dto = LimitesSiniestrosDto(10, listOf("image/jpeg"), listOf("video/mp4"), 10, 20, 60, 300)
+        val completas = dto.copy(ubicacionObligatoria = true, ubicacionTiposOpcionales = listOf("DANOS"), ubicacionPrecisionMaxM = 25.0)
+        for (invalida in listOf(
+            dto, completas.copy(ubicacionObligatoria = null), completas.copy(ubicacionTiposOpcionales = null),
+            completas.copy(ubicacionPrecisionMaxM = null), completas.copy(ubicacionPrecisionMaxM = 0.0),
+            completas.copy(ubicacionPrecisionMaxM = Double.NaN), completas.copy(ubicacionPrecisionMaxM = Double.POSITIVE_INFINITY),
+        )) {
+            coEvery { cliente.limites() } returns ResultadoSiniestros.Exito(invalida)
+            assertEquals(null, assertIs<Resultado.Exito<LimitesSiniestros>>(repositorio.limites()).valor.reglasUbicacion)
+        }
+        coEvery { cliente.limites() } returns ResultadoSiniestros.Exito(completas)
+        assertEquals(ReglasUbicacion(true, listOf("DANOS"), 25.0), assertIs<Resultado.Exito<LimitesSiniestros>>(repositorio.limites()).valor.reglasUbicacion)
     }
 
     @Test
@@ -262,7 +343,7 @@ class RepositorioSiniestrosRedTest {
     @Test
     fun `registra video con duracion y confirma la carga`() = runBlocking {
         val archivo = Files.write(directorio.toPath().resolve("evidencia.mp4"), "video-content".toByteArray()).toFile()
-        val evidenciaVideo = temporal(archivo).copy(tipo = TipoEvidencia.VIDEO, duracionSegundos = 60)
+        val evidenciaVideo = temporal(archivo).copy(tipo = TipoEvidencia.VIDEO, tipoContenido = "video/mp4", duracionSegundos = 60)
         val cargaVideo = evidenciaDto().copy(
             nombreArchivo = archivo.name,
             tipo = "VIDEO",
