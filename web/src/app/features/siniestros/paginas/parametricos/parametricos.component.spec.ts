@@ -102,7 +102,7 @@ describe('ParametricosComponent (H09, HU-W22)', () => {
     const filas = Array.from(html().querySelectorAll('.filas > div')).map((f) => [limpio(f.querySelector('dt')), limpio(f.querySelector('dd'))]);
     expect(filas).toEqual([
       ['Entrega', 'Al menos una vez'],
-      ['Efecto de negocio', 'Exactamente uno'],
+      ['Efecto por póliza', 'Único'],
       ['Reintentos por mensaje', 'Hasta 5, luego a la cola de descarte'],
       ['Orden', 'No garantizado entre eventos'],
     ]);
