@@ -22,8 +22,8 @@ describe('Rutas de Operación (HU-W08: tablero)', () => {
     expect(hijas()[0]).toEqual({ path: '', pathMatch: 'full', redirectTo: 'trazas' });
   });
 
-  it('conserva trazas y alertas', () => {
-    expect(hijas().map((r) => r.path)).toEqual(['', 'tablero', 'trazas', 'alertas']);
+  it('conserva trazas y alertas, y agrega continuidad y conciliación (HU-W29)', () => {
+    expect(hijas().map((r) => r.path)).toEqual(['', 'tablero', 'trazas', 'alertas', 'continuidad', 'continuidad/conciliacion']);
   });
 
   describe('acceso con el portal completo', () => {

@@ -34,7 +34,7 @@ describe('OperacionLayoutComponent (HU-W08: Tablero es una ruta interna)', () =>
     expect(componente.items.slice(1)).toEqual([
       { etiqueta: 'Trazas', icono: '🔍', ruta: 'trazas' },
       { etiqueta: 'Alertas', icono: '🔔', ruta: 'alertas' },
-      { etiqueta: 'Continuidad', icono: '🛡' },
+      { etiqueta: 'Continuidad', icono: '🛡', ruta: 'continuidad' }, // HU-W29
     ]);
   });
 });

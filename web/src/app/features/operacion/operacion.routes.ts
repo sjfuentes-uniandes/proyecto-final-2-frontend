@@ -25,6 +25,17 @@ export const routes: Routes = [
         title: 'Alertas · Operación · Solventa',
         loadComponent: () => import('./alertas/alertas.component').then((m) => m.AlertasComponent),
       },
+      // HU-W29: I04 e I05. /operacion/tablero queda para el panel I01 de HU-W08.
+      {
+        path: 'continuidad',
+        title: 'Continuidad · Operación · Solventa',
+        loadComponent: () => import('./continuidad/continuidad.component').then((m) => m.ContinuidadComponent),
+      },
+      {
+        path: 'continuidad/conciliacion',
+        title: 'Conciliación · Operación · Solventa',
+        loadComponent: () => import('./continuidad/conciliacion.component').then((m) => m.ConciliacionComponent),
+      },
     ],
   },
 ];

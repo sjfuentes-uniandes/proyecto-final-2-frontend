@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 
 import { ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 
-/** Menú de Operación. Tablero es la página de HU-W08 (enlaza CloudWatch dentro); Continuidad llega en otra historia. */
+/** Menú de Operación. Tablero es la página de HU-W08 (enlaza CloudWatch dentro); Continuidad, I04 e I05 de HU-W29. */
 @Component({
   selector: 'app-operacion-layout',
   imports: [SeccionLayoutComponent],
@@ -14,6 +14,6 @@ export class OperacionLayoutComponent {
     { etiqueta: 'Tablero', icono: '📈', ruta: 'tablero' },
     { etiqueta: 'Trazas', icono: '🔍', ruta: 'trazas' },
     { etiqueta: 'Alertas', icono: '🔔', ruta: 'alertas' },
-    { etiqueta: 'Continuidad', icono: '🛡' },
+    { etiqueta: 'Continuidad', icono: '🛡', ruta: 'continuidad' },
   ];
 }
