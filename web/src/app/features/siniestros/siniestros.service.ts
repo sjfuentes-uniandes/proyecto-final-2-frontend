@@ -13,6 +13,7 @@ import {
   ResumenSiniestroVista,
 } from './siniestros.modelo';
 import { PagoSiniestroVista } from './siniestros.pago.modelo';
+import { OrigenesRecientes, ResumenParametricos } from './siniestros.parametricos.modelo';
 
 /**
  * HU-W19: siniestros del analista en bff-web (que los reenvía a siniestros). Sin lógica de
@@ -80,5 +81,21 @@ export class SiniestrosService {
   decidir(siniestroId: string, idempotencyKey: string, solicitud: SolicitudDecision): Observable<ResultadoDecision> {
     const headers = new HttpHeaders({ 'Idempotency-Key': idempotencyKey });
     return this.http.post<ResultadoDecision>(`${this.base}/${encodeURIComponent(siniestroId)}/decision`, solicitud, { headers });
+  }
+
+  /**
+   * H09 (HU-W22): el seguimiento del procesamiento de un origen de eventos. Sin `eventoOrigen`, el
+   * de la evaluación más reciente. Una fuente secundaria que falla llega en null; solo la falta de
+   * `pagos-parametricos` es un 503.
+   */
+  resumenParametricos(eventoOrigen?: string): Observable<ResumenParametricos> {
+    const params = eventoOrigen ? new HttpParams().set('eventoOrigen', eventoOrigen) : new HttpParams();
+    return this.http.get<ResumenParametricos>(`${this.base}/parametricos/resumen`, { params });
+  }
+
+  /** Los `eventoOrigen` recientes, para el selector de H09. */
+  origenesParametricos(limite = 10): Observable<OrigenesRecientes> {
+    const params = new HttpParams().set('limite', String(limite));
+    return this.http.get<OrigenesRecientes>(`${this.base}/parametricos/eventos-origen`, { params });
   }
 }

@@ -323,6 +323,8 @@ export function textoCausa(t: TextosSiniestros, causa: string): string {
     ROBO: t.causaRobo,
     PERDIDA_EQUIPAJE: t.causaPerdidaEquipaje,
     INCAPACIDAD_TOTAL: t.causaIncapacidadTotal,
+    LLUVIA_ACUMULADA: t.causaLluviaAcumulada,
+    RETRASO_VUELO: t.causaRetrasoVuelo,
   };
   return Object.hasOwn(nombres, causa) ? nombres[causa] : causa;
 }
@@ -361,6 +363,8 @@ export function textoAccion(t: TextosSiniestros, accion: string): string {
       return t.accionSoporteSolicitado;
     case 'PLAZO_SOPORTE_VENCIDO':
       return t.accionPlazoSoporteVencido;
+    case 'CREADO_AUTOMATICAMENTE':
+      return t.accionCreadoAutomaticamente;
     case 'PAGO_CONFIRMADO':
       return t.accionPagoConfirmado;
     case 'PAGO_RECHAZADO':
@@ -380,6 +384,8 @@ export function textoActor(t: TextosSiniestros, nombre: string | null, rol: stri
   switch (rol) {
     case 'SISTEMA':
       return t.actorSistema;
+    case 'SISTEMA_PARAMETRICO':
+      return t.actorSistemaParametrico;
     case 'CLIENTE':
       return t.actorCliente;
     case 'ANALISTA_SINIESTROS':

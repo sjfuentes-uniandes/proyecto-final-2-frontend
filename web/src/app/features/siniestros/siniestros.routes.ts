@@ -31,6 +31,13 @@ export const routes: Routes = [
           import('./paginas/bandeja-siniestros/bandeja-siniestros.component').then((m) => m.BandejaSiniestrosComponent),
       },
       {
+        // H09: el seguimiento de los siniestros paramétricos (HU-W22). Va antes de `:siniestroId` para que
+        // `parametricos` no se lea como un identificador de siniestro.
+        path: 'parametricos',
+        title: 'Siniestros paramétricos · Solventa',
+        loadComponent: () => import('./paginas/parametricos/parametricos.component').then((m) => m.ParametricosComponent),
+      },
+      {
         // Un siniestro: su detalle (H03 y H04), las páginas de decisión (H05 y H07) y su pago (H08). El
         // detalle se pide una vez y lo comparten las que lo usan.
         path: ':siniestroId',

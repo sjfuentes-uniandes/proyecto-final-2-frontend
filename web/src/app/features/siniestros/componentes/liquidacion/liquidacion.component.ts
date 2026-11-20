@@ -52,7 +52,8 @@ export class LiquidacionComponent {
     const locale = this.textos.locale();
     const monto = (valor: string | null): string => (valor === null ? '' : formatearMonto(locale, valor, liquidacion.moneda));
     return {
-      reclamado: monto(liquidacion.valorReclamado),
+      // Un siniestro paramétrico no trae reclamo del cliente (HU-W22): esa fila no se muestra.
+      reclamado: liquidacion.valorReclamado === null ? null : monto(liquidacion.valorReclamado),
       deducible: monto(liquidacion.deducible),
       indemnizar: monto(liquidacion.valorIndemnizar),
       referencia: liquidacion.referenciaPago,

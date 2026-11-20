@@ -1,0 +1,9 @@
+/* Evento y regla aplicada (H03): pares etiqueta y valor con una línea entre filas. */
+:host { display: block; }
+.card { padding: 18px; }
+.sub { margin: -8px 0 10px; font-size: 13px; color: var(--sv-texto-secundario); }
+.filas { display: flex; flex-direction: column; margin: 0 0 14px; }
+.filas > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13.5px; }
+.filas > div:last-child { border-bottom: 0; }
+dt { color: var(--sv-texto-secundario); }
+dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }

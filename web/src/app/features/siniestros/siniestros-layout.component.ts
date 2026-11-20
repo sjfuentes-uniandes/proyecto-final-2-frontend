@@ -6,7 +6,7 @@ import { TextosSiniestrosService } from './siniestros.i18n';
 
 /**
  * Menú lateral de los siniestros del analista (mockups H01 a H04): Mi bandeja, Sin asignar y
- * Paramétricos (llega con W22). «Pólizas» abre la consulta de pólizas, que es solo del grupo
+ * Paramétricos (H09, HU-W22). «Pólizas» abre la consulta de pólizas, que es solo del grupo
  * asesores: quien no lo tiene la ve pendiente (un enlace lo llevaría a «sin acceso»).
  */
 @Component({
@@ -28,7 +28,7 @@ export class SiniestrosLayoutComponent {
         items: [
           { etiqueta: t.menuMiBandeja, icono: '✦', ruta: 'bandeja' },
           { etiqueta: t.menuSinAsignar, icono: '⚠', ruta: 'sin-asignar' },
-          { etiqueta: t.menuParametricos, icono: '⚡', pendiente: t.proximamente },
+          { etiqueta: t.menuParametricos, icono: '⚡', ruta: 'parametricos' },
         ],
       },
       {

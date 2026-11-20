@@ -4,6 +4,7 @@
  */
 import { CatalogosDecision, ResultadoDecision } from './siniestros.decision.modelo';
 import { IndemnizacionVista, PagoSiniestroVista } from './siniestros.pago.modelo';
+import { EventoParametrico, OrigenesRecientes, ResumenParametricos } from './siniestros.parametricos.modelo';
 import {
   BandejaSiniestros,
   DetalleSiniestro,
@@ -15,6 +16,7 @@ import {
 
 export const SINIESTRO_EVA01 = '5e000000-0000-4000-8000-000004000000';
 export const SINIESTRO_AUS01 = '5e000000-0000-4000-8000-000006000000';
+export const SINIESTRO_PAR01 = '5e000000-0000-4000-8000-000009000000';
 export const EVIDENCIA_FOTO_1 = 'e0000000-0000-4000-8000-000004000001';
 export const ANALISTA_QA = 'a0a0a0a0-0000-4000-8000-000000000001';
 
@@ -282,6 +284,133 @@ export const DETALLE_EVIDENCIA_ALTERADA: DetalleSiniestro = {
 
 /** Sin clientes ni consulta: el encabezado sale sin nombre ni póliza (CF-S3-09). */
 export const DETALLE_SIN_COMPOSICION: DetalleSiniestro = { ...DETALLE_COMPLETO, clienteNombre: null, polizaVista: null };
+
+/** El evento de lluvia de la semilla de QA (EVT-2026-0913) y la regla que activó el siniestro (HU-W22). */
+export const EVENTO_LLUVIA: EventoParametrico = {
+  eventoId: '9e000000-0000-4000-8000-000000000001',
+  fuente: 'IDEAM-SIM',
+  tipoEvento: 'LLUVIA_ACUMULADA',
+  valorObservado: '123.500',
+  umbral: '120',
+  unidad: 'mm',
+  zona: 'ZONA-NORTE',
+  observadoEn: '2026-11-05T14:00:00Z',
+  eventoOrigen: 'EVT-2026-0913',
+  regla: 'VALOR_IGUAL_O_SUPERIOR_AL_UMBRAL',
+  versionRegla: 'v1',
+};
+
+/**
+ * Un siniestro paramétrico (HU-W22): nace aprobado, sin analista ni reclamo del cliente, con la
+ * liquidación igual al valor de la cobertura y el pago pendiente hasta que `dinero` responde.
+ */
+export const DETALLE_PARAMETRICO: DetalleSiniestro = {
+  ...DETALLE_COMPLETO,
+  id: SINIESTRO_PAR01,
+  codigo: '88-2026-0604',
+  polizaNumero: '500-2026-000318',
+  ramo: 'Clima',
+  origen: 'PARAMETRICO',
+  estado: 'APROBADO',
+  analistaId: null,
+  causa: 'LLUVIA_ACUMULADA',
+  fechaEvento: '2026-11-05T14:00:00Z',
+  ubicacionDeclarada: { descripcion: 'Zona ZONA-NORTE', lat: null, lon: null },
+  poliza: {
+    ...DETALLE_COMPLETO.poliza,
+    numero: '500-2026-000318',
+    ramo: 'Clima',
+    amparos: [{ codigo: 'LLUVIA_ACUMULADA', nombre: 'LLUVIA_ACUMULADA', sumaAsegurada: '1400000.00' }],
+    carenciaDias: 0,
+    plazoAvisoDias: 365,
+    beneficiario: { beneficiarioRef: 'ben-par-00000000-0000-4000-8000-000000000001', cuentaMascarada: '****0000' },
+  },
+  verificacionCobertura: DETALLE_COMPLETO.verificacionCobertura.map((v) =>
+    v.codigo === 'SOPORTES' ? { ...v, resultado: 'CUMPLE' as const, detalle: { presentes: '0', requeridos: '0' } } : v,
+  ),
+  coherencia: { fechaDeclarada: '2026-11-05T14:00:00Z', primeraCaptura: null, diferenciaMin: null, ubicacionCoincide: null, archivosAlterados: 0, resultado: 'NO_EVALUABLE' },
+  evidencias: [],
+  soportesPendientes: [],
+  tramite: DETALLE_COMPLETO.tramite.map((p) =>
+    p.paso === 'PAGO_INDEMNIZACION'
+      ? { ...p, estado: 'ACTUAL' as const }
+      : { ...p, estado: 'COMPLETADO' as const, ocurridoEn: '2026-11-05T14:00:05Z', actorNombre: null },
+  ),
+  historial: [
+    {
+      id: '00000000-0000-4000-8000-0000000000b1',
+      accion: 'CREADO_AUTOMATICAMENTE',
+      estadoAnterior: null,
+      estadoNuevo: 'APROBADO',
+      actorId: null,
+      actorRol: 'SISTEMA_PARAMETRICO',
+      actorNombre: null,
+      justificacion: null,
+      ocurridoEn: '2026-11-05T14:00:05Z',
+    },
+  ],
+  liquidacion: {
+    moneda: 'COP',
+    valorReclamado: null,
+    deducible: '0.00',
+    valorIndemnizar: '1400000.00',
+    referenciaPago: 'IND-88-2026-0604-01',
+    aprobadaEn: '2026-11-05T14:00:05Z',
+  },
+  evento: EVENTO_LLUVIA,
+  pago: { estado: 'PENDIENTE', referencia: 'IND-88-2026-0604-01', transaccionId: null, motivo: null, intentos: 0, duplicadosDescartados: 0 },
+  valorReclamado: null,
+  referenciaPagoPrevista: 'IND-88-2026-0604-01',
+  plazoSoporteVenceEn: null,
+};
+
+/** H09: la avalancha de EVT-2026-0913 en curso, con la cola y los consumidores que informa CloudWatch. */
+export const RESUMEN_PARAMETRICOS: ResumenParametricos = {
+  eventoOrigen: 'EVT-2026-0913',
+  desde: '2026-11-05T14:00:00Z',
+  recibidos: 612480,
+  procesados: 611904,
+  activados: 18204,
+  duplicados: 576,
+  enDlq: 3,
+  ritmoPorMinuto: Array.from({ length: 15 }, (_, i) => ({
+    minuto: new Date(Date.UTC(2026, 10, 5, 14, i)).toISOString().replace('.000Z', 'Z'),
+    procesados: (i + 1) * 100,
+  })),
+  cola: { profundidad: 576, consumidoresActivos: 24, consumidoresMaximos: 30 },
+  p95VentaConsultaMs: null,
+  ultimosPagos: [
+    {
+      siniestroId: SINIESTRO_PAR01,
+      siniestroCodigo: '88-2026-0604',
+      polizaId: 'a0000000-0000-4000-8000-000009000000',
+      polizaNumero: '500-2026-000318',
+      disparador: { tipoEvento: 'LLUVIA_ACUMULADA', valorObservado: '123.500', umbral: '120', unidad: 'mm' },
+      valor: '1400000.00',
+      moneda: 'COP',
+      estadoActivacion: 'SINIESTRO_CREADO',
+      estadoPago: 'CONFIRMADO',
+    },
+    {
+      siniestroId: '5e000000-0000-4000-8000-000009000001',
+      siniestroCodigo: '88-2026-0602',
+      polizaId: 'a0000000-0000-4000-8000-000009000001',
+      polizaNumero: '310-2026-007731',
+      disparador: { tipoEvento: 'RETRASO_VUELO', valorObservado: '260', umbral: '240', unidad: 'min' },
+      valor: '620000.00',
+      moneda: 'COP',
+      estadoActivacion: 'SINIESTRO_CREADO',
+      estadoPago: 'PENDIENTE',
+    },
+  ],
+};
+
+export const ORIGENES_RECIENTES: OrigenesRecientes = {
+  items: [
+    { eventoOrigen: 'EVT-2026-0913', desde: '2026-11-05T14:00:00Z', hasta: '2026-11-05T14:14:00Z', eventos: 612480 },
+    { eventoOrigen: 'EVT-2026-0912', desde: '2026-11-04T09:00:00Z', hasta: '2026-11-04T09:30:00Z', eventos: 1200 },
+  ],
+};
 
 export const ENLACE_FOTO: EnlaceEvidencia = {
   url: 'https://almacen.local/foto.png',
