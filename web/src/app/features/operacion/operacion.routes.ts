@@ -11,6 +11,11 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'trazas' },
       {
+        path: 'tablero',
+        title: 'Tablero · Operación · Solventa',
+        loadComponent: () => import('./tablero/tablero.component').then((m) => m.TableroComponent),
+      },
+      {
         path: 'trazas',
         title: 'Trazas · Operación · Solventa',
         loadComponent: () => import('./trazas/trazas.component').then((m) => m.TrazasComponent),
