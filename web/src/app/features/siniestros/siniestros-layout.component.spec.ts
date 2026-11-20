@@ -30,7 +30,7 @@ describe('SiniestrosLayoutComponent (H01 a H04)', () => {
     return { fixture, html: fixture.nativeElement as HTMLElement };
   };
 
-  it('para un analista: Siniestros con Mi bandeja y Sin asignar; Paramétricos y Pólizas, próximamente', async () => {
+  it('para un analista: Siniestros con Mi bandeja, Sin asignar y Paramétricos (H09); Pólizas, próximamente', async () => {
     await iniciarSesion({ name: 'Luis Mora', 'cognito:groups': ['analistas-siniestros'] });
     const { html } = crear();
     expect(Array.from(html.querySelectorAll('h5')).map((h) => h.textContent)).toEqual(['Siniestros', 'Consulta']);
@@ -38,12 +38,10 @@ describe('SiniestrosLayoutComponent (H01 a H04)', () => {
     expect(enlaces.map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
       ['✦Mi bandeja', '/bandeja'],
       ['⚠Sin asignar', '/sin-asignar'],
+      ['⚡Paramétricos', '/parametricos'],
     ]);
     const pendientes = Array.from(html.querySelectorAll('.side__item--off')).map((p) => [p.textContent?.trim(), p.getAttribute('title')]);
-    expect(pendientes).toEqual([
-      ['⚡Paramétricos', 'Disponible en una próxima versión'],
-      ['📄Pólizas', 'Disponible en una próxima versión'],
-    ]);
+    expect(pendientes).toEqual([['📄Pólizas', 'Disponible en una próxima versión']]);
     expect(await violacionesA11y(html)).toEqual([]);
   });
 
@@ -52,7 +50,7 @@ describe('SiniestrosLayoutComponent (H01 a H04)', () => {
     const { html } = crear();
     const polizas = html.querySelector<HTMLAnchorElement>('a[href="/consulta/polizas"]');
     expect(polizas?.textContent?.trim()).toBe('📄Pólizas');
-    expect(Array.from(html.querySelectorAll('.side__item--off')).map((p) => p.textContent?.trim())).toEqual(['⚡Paramétricos']);
+    expect(html.querySelectorAll('.side__item--off').length).toBe(0);
   });
 
   it('cambia de idioma sin recargar', async () => {
@@ -62,6 +60,6 @@ describe('SiniestrosLayoutComponent (H01 a H04)', () => {
     fixture.detectChanges();
     expect(Array.from(html.querySelectorAll('h5')).map((h) => h.textContent)).toEqual(['Claims', 'Inquiries']);
     expect(html.querySelector('aside')?.getAttribute('aria-label')).toBe('Claims');
-    expect(Array.from(html.querySelectorAll('a.side__item')).map((a) => a.textContent?.trim())).toEqual(['✦My queue', '⚠Unassigned']);
+    expect(Array.from(html.querySelectorAll('a.side__item')).map((a) => a.textContent?.trim())).toEqual(['✦My queue', '⚠Unassigned', '⚡Parametric']);
   });
 });

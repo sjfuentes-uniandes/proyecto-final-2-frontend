@@ -8,6 +8,8 @@ import {
   BANDEJA_MIA,
   DETALLE_COMPLETO,
   ENLACE_FOTO,
+  ORIGENES_RECIENTES,
+  RESUMEN_PARAMETRICOS,
   PAGO_CONFIRMADO,
   EVIDENCIA_FOTO_1,
   RESUMEN_BANDEJA,
@@ -84,6 +86,29 @@ describe('SiniestrosService (HU-W19)', () => {
     pedido.flush(PAGO_CONFIRMADO);
     servicio.pago('a/b').subscribe();
     http.expectOne(`${URL_SINIESTROS()}/a%2Fb/pago`).flush(PAGO_CONFIRMADO);
+  });
+
+  it('pide el resumen de H09 con GET; con eventoOrigen lo envía como parámetro y sin él no manda ninguno (HU-W22)', () => {
+    servicio.resumenParametricos().subscribe((r) => expect(r).toEqual(RESUMEN_PARAMETRICOS));
+    const sinOrigen = http.expectOne(`${URL_SINIESTROS()}/parametricos/resumen`);
+    expect(sinOrigen.request.method).toBe('GET');
+    expect(sinOrigen.request.params.keys()).toEqual([]);
+    sinOrigen.flush(RESUMEN_PARAMETRICOS);
+    servicio.resumenParametricos('EVT-2026-0913').subscribe();
+    const conOrigen = http.expectOne((p) => p.url === `${URL_SINIESTROS()}/parametricos/resumen`);
+    expect(conOrigen.request.params.get('eventoOrigen')).toBe('EVT-2026-0913');
+    conOrigen.flush(RESUMEN_PARAMETRICOS);
+  });
+
+  it('pide los orígenes recientes con el límite (10 por omisión) para el selector de H09 (HU-W22)', () => {
+    servicio.origenesParametricos().subscribe((o) => expect(o).toEqual(ORIGENES_RECIENTES));
+    const porOmision = http.expectOne((p) => p.url === `${URL_SINIESTROS()}/parametricos/eventos-origen`);
+    expect(porOmision.request.params.get('limite')).toBe('10');
+    porOmision.flush(ORIGENES_RECIENTES);
+    servicio.origenesParametricos(3).subscribe();
+    const tres = http.expectOne((p) => p.url === `${URL_SINIESTROS()}/parametricos/eventos-origen`);
+    expect(tres.request.params.get('limite')).toBe('3');
+    tres.flush(ORIGENES_RECIENTES);
   });
 
   it('pide el enlace de una evidencia con POST y sin cuerpo (la URL no se guarda aquí)', () => {

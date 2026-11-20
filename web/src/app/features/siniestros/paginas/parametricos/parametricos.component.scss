@@ -1,0 +1,60 @@
+/* Siniestros paramétricos (H09): indicadores, ritmo, cola, pagos y garantías. Los globales están en styles.scss. */
+.indicadores { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { padding: 18px; }
+.acciones { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.acciones a.btn { text-decoration: none; }
+.btn--bloque { display: flex; align-items: center; justify-content: center; min-height: 40px; text-align: center; text-decoration: none; }
+
+/* Indicadores: las mismas tarjetas de H08 (etiqueta, número y detalle), con el número en azul oscuro. */
+.indicador { padding: 18px 16px 16px; border: 1px solid var(--sv-borde); border-radius: var(--sv-radio-tarjeta); background: var(--sv-blanco); }
+.etiqueta { margin: 0 0 6px; font-size: 11.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; color: var(--sv-texto-secundario); }
+.valor { margin: 0 0 4px; font-size: 26px; font-weight: 700; color: var(--sv-azul-oscuro); }
+/* Contraste WCAG AA del texto sobre blanco: verde y naranja más oscuros que los tokens. */
+.valor--ok { color: #00663f; }
+.valor--alerta { color: #7a4a00; }
+.valor--neutro { color: var(--sv-texto-secundario); font-size: 20px; }
+.detalle { margin: 0; font-size: 12px; color: var(--sv-texto-secundario); }
+
+/* El aviso del proceso automático lleva el violeta del mockup, con el contraste de texto de WCAG AA. */
+.nota--proceso { border-left-color: #6a3fa0; background: #f1ebf8; color: #4b2a7b; }
+
+.selector { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--sv-texto-secundario); }
+
+/* Ritmo: una barra por minuto; la altura es proporcional al máximo de la ventana. */
+.barras { display: flex; align-items: flex-end; gap: 4px; height: 72px; margin: 0 0 16px; padding: 0; list-style: none; }
+.barra { position: relative; display: flex; align-items: flex-end; flex: 1; height: 100%; }
+.barra__relleno { display: block; width: 100%; min-height: 3px; border-radius: 2px 2px 0 0; background: var(--sv-azul-medio); }
+
+.cola { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 14px; }
+.cola__fila { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 6px; font-size: 13.5px; color: var(--sv-texto-secundario); }
+.cola__fila strong { color: var(--sv-texto); }
+.meter { height: 6px; border-radius: 3px; background: var(--sv-borde); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--sv-azul-medio); }
+
+.tabla { overflow-x: auto; }
+.codigo { padding: 16px 14px; border-bottom: 1px solid var(--sv-borde); background: none; font-size: 13px; letter-spacing: 0; text-transform: none; }
+.codigo a { font-weight: 600; color: var(--sv-azul); }
+.mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:last-child .codigo { border-bottom: 0; }
+
+.filas { display: flex; flex-direction: column; margin: 0; }
+.filas > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13.5px; }
+.filas > div:last-child { border-bottom: 0; }
+dt { color: var(--sv-texto-secundario); }
+dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+
+@media (max-width: 1200px) {
+  .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cola { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .indicadores { grid-template-columns: minmax(0, 1fr); }
+}

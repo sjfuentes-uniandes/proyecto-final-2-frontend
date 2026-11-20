@@ -26,7 +26,9 @@
         <p class="aviso aviso--alerta" role="status">{{ plazo }}</p>
       }
       <app-liquidacion [detalle]="d" [formulario]="formulario" [editable]="puedeDecidir()" />
-      <!-- Hueco del bloque del evento paramétrico: lo llena W22. -->
+      @if (d.evento; as evento) {
+        <app-evento-regla [evento]="evento" />
+      }
     </div>
     <div class="columna">
       <app-linea-tiempo-tramite [pasos]="d.tramite" [origen]="d.origen" [enlacePago]="enlacePago()" />
