@@ -133,6 +133,11 @@ internal fun RegistroScreen(
                         tipoTeclado = KeyboardType.Email,
                         mensajeError = if (uiState.mostrarErrorCorreo) stringResource(R.string.onboarding_correo_invalido) else null,
                     )
+                    Text(
+                        text = stringResource(R.string.onboarding_correo_ayuda),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colores.textoPrimario,
+                    )
                     Spacer(Modifier.height(12.dp))
                     CampoEtiquetado(
                         etiqueta = stringResource(R.string.onboarding_etiqueta_contrasena),

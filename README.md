@@ -55,6 +55,8 @@ make desplegar ENV=int         # compila, genera config.json desde SSM, sube a S
 
 Android (Kotlin + Jetpack Compose), multi-módulo:
 
+La navegación móvil respeta los márgenes de las barras del sistema para mantener los controles, incluido Cerrar sesión, fuera de la barra de estado y del área de navegación de Android.
+
 | Módulo | Qué hace |
 | --- | --- |
 | `core:network` | Cliente del BFF móvil (Retrofit/OkHttp): `GET /v1/sesion` y `POST /v1/identidad/verificaciones`, con el mapeo de errores del contrato `bff-movil.yaml`. |
@@ -80,6 +82,36 @@ Android (Kotlin + Jetpack Compose), multi-módulo:
 3. El ingreso biométrico necesita un dispositivo/emulador con huella o rostro registrado en el sistema operativo y una sesión guardada (un ingreso previo con usuario/contraseña); si no hay ninguno, la app lo detecta y solo ofrece usuario/contraseña.
 4. Tras el desbloqueo biométrico o el ingreso con credenciales, la app confirma la sesión contra `bff-movil` (`GET /v1/sesion`); sin el backend corriendo en local, verá el mensaje "No fue posible confirmar su sesión".
 
+### Reporte de siniestros (HU-M01)
+
+El selector de un nuevo reporte muestra solo pólizas del titular con `estado = ACTIVA` y `vigente = true` cuya vigencia incluye la fecha actual en Colombia (ambos extremos incluidos), tanto en el listado como en el detalle de la póliza. Si no se puede confirmar el detalle, la póliza no se ofrece y se permite reintentar la consulta. Android vuelve a comprobar la fecha antes de crear el borrador; el backend valida la elegibilidad y la titularidad. Desde el detalle de un borrador abierto también se pueden agregar evidencias al mismo reporte, hasta el límite publicado por el servicio.
+
+El detalle de un siniestro enviado muestra el número de la póliza asociada en «Información del reporte», separado del radicado. Si no se puede consultar la póliza, el resto del detalle sigue disponible y se puede reintentar con el botón de actualizar.
+
+Las evidencias del caso definitivo tienen acciones **Ver** y **Descargar**. Cada uso solicita `POST /v1/siniestros/{siniestroId}/evidencias/{evidenciaId}/enlace` sin cuerpo ni `clienteId`, descarga el archivo con un cliente HTTP independiente (sin token del BFF) y conserva nombre/MIME. **Ver** concede acceso temporal mediante `FileProvider` al visor instalado; **Descargar** permite elegir destino con el selector de archivos de Android, sin permisos generales de almacenamiento. Los enlaces no se guardan ni se registran; una firma vencida se renueva como máximo una vez. Requiere desplegar el endpoint en `int` para validar contra AWS.
+
+El reporte requiere una descripción obligatoria (no vacía ni compuesta solo por espacios), seleccionar el **código** de una cobertura de la póliza, indicar la fecha y hora real del evento con zona horaria y adjuntar al menos una evidencia. Android guarda descripción, causa y fecha mediante `PATCH` antes de enviar; todas las evidencias deben quedar confirmadas. Al abrir un reporte nuevo, la fecha y hora se precargan con las del sistema, incluido el desplazamiento horario, y se pueden corregir. No se reemplazan por la hora del envío ni se sobrescribe la fecha guardada de un borrador.
+
+Además de la cámara, **Adjuntar archivo** abre el selector de Android sin permisos generales de almacenamiento. Permite seleccionar cualquier tipo para informar el rechazo, pero solo incorpora JPEG, PNG y MP4 habilitados por los límites del backend. La copia privada se limita durante la lectura; se valida el contenido y la duración real del video. Se conserva el nombre sin usarlo como ruta y no se inventa una fecha de captura. Al superar la cantidad, tamaño o duración permitidos se informa el límite y no se agrega el archivo.
+
+Si el botón de envío está deshabilitado, el formulario indica los requisitos que faltan. Cancelar la explicación de ubicación no constituye un rechazo del permiso ni bloquea el envío cuando la ubicación es opcional; sin una lectura registrada, el reporte conserva `ubicacion: null`.
+
+La app llama a `POST /v1/siniestros/borradores/{borradorId}/envio` sin cuerpo, con una UUID estable derivada de la operación y el ID del borrador. Así, al reabrir el mismo borrador se conserva la clave de envío, incluso después de reiniciar la app. Antes de reintentar consulta si ya está `CONVERTIDO` y recupera `envio`; solo una confirmación del servidor muestra el radicado. La pantalla separa **Pendientes** de **Enviados**, pagina el historial definitivo y consulta el estado actual del siniestro. Los borradores abiertos pueden corregirse y sus evidencias pendientes quitarse para volver a capturarlas sin crear otro reporte.
+
+Al solicitar guardar o enviar, la app conserva primero una versión local cifrada del formulario y sus evidencias con una clave de Android Keystore, vinculada al titular y excluida de las copias de seguridad. Si falla la conexión, queda disponible en **Pendientes** después de volver a conectarse e iniciar sesión; el usuario debe abrirla y reintentar manualmente, no se envía en segundo plano. Los cambios posteriores a esa versión no se guardan automáticamente. La captura y la carga utilizan archivos temporales en la caché privada de la aplicación; la copia persistente del pendiente está cifrada. La desinstalación o el borrado de datos elimina los pendientes locales.
+
+#### Ubicación autorizada del reporte (M1.1)
+
+La sección **Ubicación del reporte** explica el uso antes de solicitar los permisos de primer plano. Usa Google Play Services Location para obtener coordenadas WGS84, precisión horizontal y fecha real de la lectura; la fecha del evento no cambia. No modifica fotos, videos, EXIF ni checksums, no solicita ubicación en segundo plano y cancela la captura al salir de primer plano. No registra coordenadas en logs.
+
+Las reglas provienen de `GET /v1/siniestros/limites`: `ubicacionObligatoria`, excepciones por **código de causa** en `ubicacionTiposOpcionales` y umbral inclusivo `ubicacionPrecisionMaxM`. No hay un umbral operativo fijo en Android. Sin reglas válidas se muestra error/reintento y no se permite enviar. Un permiso aproximado se evalúa por la precisión real, no se rechaza automáticamente.
+
+La lectura se guarda con `PATCH /v1/siniestros/borradores/{borradorId}` en el mismo borrador, sin `clienteId` ni `estado` en la solicitud. Solo la respuesta confirma el guardado y su estado: disponible, no confiable o no disponible. El formulario y los detalles muestran latitud y longitud cuando están registradas, con hasta siete decimales para visualización; los valores guardados no se modifican. Ante rechazo, revocación o ausencia de lectura se envía únicamente el permiso, reemplazando las coordenadas anteriores. Los datos antiguos con `ubicacion: null` se presentan sin ubicación registrada. Un fallo de PATCH conserva la lectura pendiente en memoria y ofrece reintento; al guardar o enviar también se incluye en la versión local cifrada. No se simula un guardado exitoso en el servidor.
+
+**Guardar borrador y evidencias** conserva el trabajo aunque falte ubicación confiable. El envío exige una ubicación confirmada y dentro del umbral cuando la causa la requiere, además de las validaciones del reporte. Un `422` de ubicación se muestra en esta sección y permite corregir y enviar el mismo borrador con la misma clave, sin repetir evidencias confirmadas. El rechazo permanente ofrece una acción explícita a los ajustes de Android.
+
+Las pruebas locales usan lecturas sintéticas, Robolectric y MockWebServer (herramienta HTTP ya usada por el proyecto). La validación integral R4 requiere desplegar los cambios compatibles de `bff-movil` y `siniestros` en `int`; después deben verificarse envío/recuperación y lectura en exterior e interior en un dispositivo físico. La comprobación manual con TalkBack y la fidelidad respecto de los mockups de ubicación también quedan pendientes; la prueba con fuente al 200 % no sustituye esas verificaciones.
+
 ### Verificación de identidad contra el backend local (HU-M06)
 
 Con el docker compose del repo back arriba (`bff-movil` en el puerto 8081), el flujo es: login → **Registrarme** → **Registrar mi biometría** → permiso de cámara → reto de vida → resultado. Solo en builds `debug`, `local.properties` permite ajustar dos valores; sin ellos la app usa por defecto `persona-de-prueba-1` y `selfie-sintetica-aprobada`, y funciona contra el backend local sin configurar nada:
@@ -91,7 +123,11 @@ Mientras se muestra la verificación la pantalla está protegida con `FLAG_SECUR
 
 ### Creación de la cuenta (HU-M06)
 
+El backend busca al cliente dado de alta por el asesor por **tipo y número de documento**, sin exigir que el correo coincida con el informado por el asesor. La app solicita un correo válido y accesible para crear y confirmar la cuenta. Desde el primer intento de verificación, el registro y su token quedan ligados a ese correo: para reintentar un registro ya iniciado debe mantenerse el mismo correo.
+
 Tras verificar la identidad, **Registrarme** hace SignUp en Cognito con el `tokenRegistro` en `ClientMetadata` (el Lambda pre sign-up lo valida contra el correo), pide el código enviado al correo, inicia sesión y vincula la cuenta con `POST /v1/registro/vinculacion`. Si el token falta, venció o es de otro correo, la app pide repetir la captura; si el correo ya tiene cuenta, lleva al ingreso. La contraseña solo se conserva en memoria hasta terminar.
+
+Solo `SignUp` usa un tiempo de espera de lectura de 30 s. La conexión, la confirmación, el reenvío y el ingreso conservan los tiempos predeterminados del SDK. Este ajuste no modifica el límite del Lambda pre sign-up.
 
 Con `subLocal` (debug contra el backend local) no hay Cognito: la app valida el token con `POST /v1/registro/validaciones` (simula el pre sign-up) y vincula con el `sub` local. Contra AWS hace falta `cognitoPoolId`/`cognitoClientId` y que el pool tenga configurado el Lambda pre sign-up.
 
