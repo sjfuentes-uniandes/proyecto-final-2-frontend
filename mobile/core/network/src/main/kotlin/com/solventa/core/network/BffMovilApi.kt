@@ -15,6 +15,7 @@ import com.solventa.core.network.modelo.DispositivoDto
 import com.solventa.core.network.modelo.SolicitudRegistroDispositivoDto
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PATCH
 import retrofit2.http.Path
 import retrofit2.http.Query
 import com.solventa.core.network.modelo.RegistroVerificacionDto
@@ -25,6 +26,21 @@ import com.solventa.core.network.modelo.VerificacionIdentidadDto
 import com.solventa.core.network.modelo.VerificacionIdentidadSolicitud
 import com.solventa.core.network.modelo.VinculacionDto
 import com.solventa.core.network.modelo.VinculacionSolicitud
+import com.solventa.core.network.modelo.BorradorDetalleDto
+import com.solventa.core.network.modelo.BorradorDto
+import com.solventa.core.network.modelo.CargaRenovadaDto
+import com.solventa.core.network.modelo.EvidenciaConfirmadaDto
+import com.solventa.core.network.modelo.EvidenciaDto
+import com.solventa.core.network.modelo.LimitesSiniestrosDto
+import com.solventa.core.network.modelo.ListadoBorradoresDto
+import com.solventa.core.network.modelo.SolicitudBorradorDto
+import com.solventa.core.network.modelo.SolicitudFotoEvidenciaDto
+import com.solventa.core.network.modelo.SolicitudVideoEvidenciaDto
+import com.solventa.core.network.modelo.ActualizacionBorradorDto
+import com.solventa.core.network.modelo.EnvioSiniestroDto
+import com.solventa.core.network.modelo.ListadoSiniestrosDto
+import com.solventa.core.network.modelo.SiniestroDetalleDto
+import com.solventa.core.network.modelo.EnlaceEvidenciaDto
 
 /** Rutas de bff-movil usadas por la app (contrato: contracts/openapi/bff-movil.yaml). */
 interface BffMovilApi {
@@ -89,4 +105,73 @@ interface BffMovilApi {
         @Query("proposito") proposito: String,
         @Query("idioma") idioma: String,
     ): Response<TextoVigenteDto>
+
+    @GET("v1/siniestros/limites")
+    suspend fun limitesSiniestros(): Response<LimitesSiniestrosDto>
+
+    @GET("v1/siniestros/borradores")
+    suspend fun listarBorradores(): Response<ListadoBorradoresDto>
+
+    @GET("v1/siniestros/borradores/{borradorId}")
+    suspend fun borrador(@Path("borradorId") borradorId: String): Response<BorradorDetalleDto>
+
+    @POST("v1/siniestros/borradores")
+    suspend fun crearBorrador(
+        @Header("Idempotency-Key") claveIdempotencia: String,
+        @Body solicitud: SolicitudBorradorDto,
+    ): Response<BorradorDto>
+
+    @PATCH("v1/siniestros/borradores/{borradorId}")
+    suspend fun actualizarBorrador(
+        @Path("borradorId") borradorId: String,
+        @Body solicitud: ActualizacionBorradorDto,
+    ): Response<BorradorDetalleDto>
+
+    @POST("v1/siniestros/borradores/{borradorId}/envio")
+    suspend fun enviarBorrador(
+        @Path("borradorId") borradorId: String,
+        @Header("Idempotency-Key") claveIdempotencia: String,
+    ): Response<EnvioSiniestroDto>
+
+    @GET("v1/siniestros")
+    suspend fun listarSiniestros(@Query("cursor") cursor: String?): Response<ListadoSiniestrosDto>
+
+    @GET("v1/siniestros/{siniestroId}")
+    suspend fun siniestro(@Path("siniestroId") siniestroId: String): Response<SiniestroDetalleDto>
+
+    @POST("v1/siniestros/{siniestroId}/evidencias/{evidenciaId}/enlace")
+    suspend fun enlaceEvidencia(
+        @Path("siniestroId") siniestroId: String,
+        @Path("evidenciaId") evidenciaId: String,
+    ): Response<EnlaceEvidenciaDto>
+
+    @DELETE("v1/siniestros/borradores/{borradorId}/evidencias/{evidenciaId}")
+    suspend fun eliminarEvidencia(
+        @Path("borradorId") borradorId: String,
+        @Path("evidenciaId") evidenciaId: String,
+    ): Response<Unit>
+
+    @POST("v1/siniestros/borradores/{borradorId}/evidencias")
+    suspend fun agregarFoto(
+        @Path("borradorId") borradorId: String,
+        @Body solicitud: SolicitudFotoEvidenciaDto,
+    ): Response<EvidenciaDto>
+
+    @POST("v1/siniestros/borradores/{borradorId}/evidencias")
+    suspend fun agregarVideo(
+        @Path("borradorId") borradorId: String,
+        @Body solicitud: SolicitudVideoEvidenciaDto,
+    ): Response<EvidenciaDto>
+
+    @POST("v1/siniestros/borradores/{borradorId}/evidencias/{evidenciaId}/confirmacion")
+    suspend fun confirmarEvidencia(
+        @Path("borradorId") borradorId: String,
+        @Path("evidenciaId") evidenciaId: String,
+    ): Response<EvidenciaConfirmadaDto>
+
+    @POST("v1/siniestros/borradores/{borradorId}/evidencias/{evidenciaId}/carga")
+    suspend fun renovarCarga(
+        @Path("borradorId") borradorId: String,
+        @Path("evidenciaId") evidenciaId: String,
+    ): Response<CargaRenovadaDto>
 }
