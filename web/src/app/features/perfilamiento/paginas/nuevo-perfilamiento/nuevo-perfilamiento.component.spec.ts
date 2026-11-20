@@ -173,9 +173,12 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
       expect(opciones.find((o) => o.selected)?.textContent?.trim()).toBe('180 meses');
     });
 
-    it('el producto es Vida hipotecario en Colombia y no se puede cambiar', () => {
+    it('el producto es Vida hipotecario por omisión (se puede elegir el paramétrico, HU-W24) en Colombia, que es fijo', () => {
+      const ramo = html().querySelector<HTMLSelectElement>('select[formControlName=productoId]')!;
+      expect(ramo.selectedOptions[0].textContent?.trim()).toBe('Vida hipotecario');
+      expect(Array.from(ramo.options).map((o) => o.textContent?.trim())).toEqual(['Vida hipotecario', 'Paramétrico · lluvia']);
       const fijos = Array.from(html().querySelectorAll<HTMLSelectElement>('select[disabled]'));
-      expect(fijos.map((s) => s.selectedOptions[0].textContent?.trim())).toEqual(['Vida hipotecario', 'Colombia']);
+      expect(fijos.map((s) => s.selectedOptions[0].textContent?.trim())).toEqual(['Colombia']);
     });
 
     it('al verificar sin datos marca los errores, no llama a la API y lleva el foco al primer campo inválido', fakeAsync(() => {
@@ -464,7 +467,7 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
       montar('en-US');
       expect(html().querySelector('h2')?.textContent).toBe('New quote');
       expect(html().querySelector('button[type=submit]')?.textContent?.trim()).toBe('Continue to profiling');
-      expect(html().querySelector('select[disabled] option')?.textContent?.trim()).toBe('Mortgage life');
+      expect(html().querySelector('select[formControlName=productoId] option')?.textContent?.trim()).toBe('Mortgage life');
     });
   });
 });

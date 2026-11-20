@@ -43,6 +43,7 @@ const POR_CODIGO: Record<string, ClaveError> = {
   REGLAS_NO_VIGENTES: 'errorReglasNoVigentes',
   DATOS_FUERA_DE_RANGO: 'errorDatosFueraDeRango',
   COBERTURA_NO_DISPONIBLE: 'errorCoberturaNoDisponible',
+  ZONA_REQUERIDA: 'errorZonaRequerida',
   PERFIL_NO_CORRESPONDE: 'errorPerfilNoCorresponde',
   PERFIL_NO_ENCONTRADO: 'errorPerfilNoEncontrado',
   COTIZACION_NO_ENCONTRADA: 'errorCotizacionNoEncontrada',

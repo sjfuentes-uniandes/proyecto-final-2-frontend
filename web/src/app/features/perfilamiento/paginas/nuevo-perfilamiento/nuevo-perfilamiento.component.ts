@@ -3,7 +3,7 @@ import { Component, DestroyRef, ElementRef, OnInit, computed, inject, signal, vi
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, catchError, of, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, map, of, startWith, switchMap, throwError } from 'rxjs';
 
 import { BorradorCotizacionService } from '../../../cotizacion/borrador-cotizacion.service';
 import { CoberturasProductoComponent } from '../../../cotizacion/componentes/coberturas-producto/coberturas-producto.component';
@@ -19,7 +19,7 @@ import { ClienteDto, EstadoIdentidad, TIPOS_DOCUMENTO } from '../../../identidad
 import { PerfilCargandoComponent } from '../../componentes/perfil-cargando/perfil-cargando.component';
 import { ErrorPerfilamiento, errorPerfilamiento, esFallaTransitoria } from '../../perfilamiento.errores';
 import { TextosPerfilamientoService } from '../../perfilamiento.i18n';
-import { PRODUCTO_VIDA_HIPOTECARIO } from '../../perfilamiento.modelo';
+import { PRODUCTO_CLIMA_LLUVIA, PRODUCTO_VIDA_HIPOTECARIO } from '../../perfilamiento.modelo';
 import { PerfilamientoService } from '../../perfilamiento.service';
 
 const PATRON_DOCUMENTO = /^[A-Za-z0-9]{3,20}$/;
@@ -32,7 +32,26 @@ const PLAZO_POR_DEFECTO = 180;
 /** HU-W03: meta p95 de la operación `cotizacion` (latency_targets en int), para el panel de presupuesto. */
 export const PRESUPUESTO_COTIZACION_MS = 250;
 
-type Campo = 'tipoDocumento' | 'numeroDocumento' | 'nombreCompleto' | 'fechaNacimiento' | 'sumaAsegurada' | 'plazoCreditoMeses';
+type Campo = 'tipoDocumento' | 'numeroDocumento' | 'nombreCompleto' | 'fechaNacimiento' | 'sumaAsegurada' | 'plazoCreditoMeses' | 'zona';
+
+/** HU-W24: los productos que vende el portal; las condiciones del elegido dicen si es paramétrico. */
+export const PRODUCTOS = [
+  { id: PRODUCTO_VIDA_HIPOTECARIO, nombre: 'ramoVidaHipotecario' },
+  { id: PRODUCTO_CLIMA_LLUVIA, nombre: 'ramoClimaLluvia' },
+] as const;
+/** HU-W24: la zona del riesgo (municipio DANE o código de vuelo), como la valida cotizacion. */
+const PATRON_ZONA = /^[A-Z0-9]{2,16}$/;
+
+/** La zona se escribe sin espacios y en mayúsculas. */
+export function normalizarZona(valor: string): string {
+  return valor.replace(/\s/g, '').toUpperCase();
+}
+
+/** Vacía es válida (la exige `Validators.required` solo en un producto paramétrico). */
+function zonaValida(control: AbstractControl<string>): ValidationErrors | null {
+  const valor = normalizarZona(control.value ?? '');
+  return !valor || PATRON_ZONA.test(valor) ? null : { zona: true };
+}
 /** Los campos que identifican al cliente: si cambian, la verificación anterior ya no aplica. */
 const CAMPOS_IDENTIDAD = ['tipoDocumento', 'numeroDocumento', 'nombreCompleto', 'fechaNacimiento', 'correo'] as const;
 
@@ -108,8 +127,7 @@ export class NuevoPerfilamientoComponent implements OnInit {
 
   readonly plazos = PLAZOS;
   readonly presupuestoCotizacionMs = PRESUPUESTO_COTIZACION_MS;
-  /** Mockup "Revisa los datos": 11 campos = ramo, versión, país, canal y coberturas (fijos) + los 6 del cliente. */
-  readonly revisados = CAMPOS_PRODUCTO + CAMPOS.length;
+  readonly productos = PRODUCTOS;
   readonly tiposDocumento = TIPOS_DOCUMENTO;
   readonly nombreMaximo = NOMBRE_MAXIMO;
   readonly hoy = hoyIso();
@@ -122,6 +140,8 @@ export class NuevoPerfilamientoComponent implements OnInit {
     correo: ['', correoValido],
     sumaAsegurada: ['', [Validators.required, sumaEnRango]],
     plazoCreditoMeses: [PLAZO_POR_DEFECTO, Validators.required],
+    productoId: [PRODUCTO_VIDA_HIPOTECARIO as string],
+    zona: ['', zonaValida],
   });
 
   readonly enviando = signal(false);
@@ -144,6 +164,10 @@ export class NuevoPerfilamientoComponent implements OnInit {
   readonly cotizando = signal(false);
   private claveCotizacion: string | null = null;
   private readonly valores = toSignal(this.formulario.valueChanges);
+  /** HU-W24: la regla del producto paramétrico elegido; con ella se pide la zona y solo se cotiza sin perfil. */
+  readonly parametrico = computed(() => this.condiciones()?.parametrico ?? null);
+  /** Mockup "Revisa los datos": 11 campos = ramo, versión, país, canal y coberturas (fijos) + los 6 del cliente; +1 la zona. */
+  readonly revisados = computed(() => CAMPOS_PRODUCTO + CAMPOS.length + (this.parametrico() ? 1 : 0));
   /** Límites de las reglas vigentes que incumplen los datos (cotizacion vuelve a validarlos). */
   readonly limites = computed<MotivoLimite[]>(() => {
     this.valores();
@@ -159,25 +183,36 @@ export class NuevoPerfilamientoComponent implements OnInit {
   readonly camposConError = computed(() => {
     this.valores();
     const fuera = new Set<string>(this.limites().map((m) => m.campo));
-    return CAMPOS.filter((campo) => this.formulario.controls[campo].invalid || fuera.has(campo)).length;
+    const conError = CAMPOS.filter((campo) => this.formulario.controls[campo].invalid || fuera.has(campo)).length;
+    return conError + (this.parametrico() && this.formulario.controls.zona.invalid ? 1 : 0);
   });
 
   private readonly alerta = viewChild<ElementRef<HTMLElement>>('alerta');
   private readonly formularioHtml = viewChild<ElementRef<HTMLFormElement>>('formularioHtml');
 
   ngOnInit(): void {
-    this.cotizaciones
-      .condiciones(PRODUCTO_VIDA_HIPOTECARIO)
-      .pipe(takeUntilDestroyed(this.destruir))
-      .subscribe({
-        next: (condiciones) => {
-          this.condiciones.set(condiciones);
-          this.cargandoCondiciones.set(false);
-        },
-        error: () => {
-          this.falloCondiciones.set(true);
-          this.cargandoCondiciones.set(false);
-        },
+    // HU-W24: las condiciones siguen al producto elegido; la última elección gana.
+    const producto = this.formulario.controls.productoId;
+    producto.valueChanges
+      .pipe(
+        startWith(producto.value),
+        switchMap((productoId) => {
+          this.cargandoCondiciones.set(true);
+          this.falloCondiciones.set(false);
+          this.condiciones.set(null);
+          this.coberturasOpcionales.set([]);
+          return this.cotizaciones.condiciones(productoId).pipe(
+            map((condiciones): CondicionesProducto | null => condiciones),
+            catchError(() => of(null)),
+          );
+        }),
+        takeUntilDestroyed(this.destruir),
+      )
+      .subscribe((condiciones) => {
+        this.condiciones.set(condiciones);
+        this.falloCondiciones.set(condiciones === null);
+        this.cargandoCondiciones.set(false);
+        this.exigirZona(!!condiciones?.parametrico);
       });
     this.formulario.valueChanges.pipe(takeUntilDestroyed(this.destruir)).subscribe(() => (this.claveCotizacion = null));
     // Datos distintos = otra solicitud: la clave anterior ya no aplica (evita IDEMPOTENCIA_CONFLICTO).
@@ -190,13 +225,37 @@ export class NuevoPerfilamientoComponent implements OnInit {
     }
   }
 
+  /** HU-W24: la zona es obligatoria solo en un producto paramétrico; en los demás no se envía. */
+  private exigirZona(exigir: boolean): void {
+    const zona = this.formulario.controls.zona;
+    zona.setValidators(exigir ? [Validators.required, zonaValida] : zonaValida);
+    if (!exigir) {
+      zona.reset('', { emitEvent: false });
+    }
+    zona.updateValueAndValidity({ emitEvent: false });
+  }
+
+  normalizarZona(): void {
+    const zona = this.formulario.controls.zona;
+    zona.setValue(normalizarZona(zona.value));
+  }
+
+  /** "Paga $1.400.000 cuando el evento llega a 120 mm en la zona…" (null si el producto no es paramétrico). */
+  textoRegla(): string | null {
+    const regla = this.parametrico();
+    return regla
+      ? this.textosCotizacion.t().reglaParametrica(`${regla.umbral} ${regla.unidad}`, this.textos.moneda(Number(regla.valorPago)))
+      : null;
+  }
+
   estadoIdentidad(): EstadoIdentidad | null {
     return this.identidad()?.estado ?? null;
   }
 
-  /** Solo con la identidad verificada se puede perfilar (el backend lo vuelve a exigir). */
+  /** Solo con la identidad verificada se puede perfilar (el backend lo vuelve a exigir). Un producto
+   * paramétrico no tiene modelo de riesgo: se cotiza sin perfil (HU-W24). */
   puedeContinuar(): boolean {
-    return this.estadoIdentidad() === 'VERIFICADO' && this.clienteId() !== null;
+    return this.estadoIdentidad() === 'VERIFICADO' && this.clienteId() !== null && !this.parametrico();
   }
 
   invalido(campo: Campo): boolean {
@@ -348,7 +407,7 @@ export class NuevoPerfilamientoComponent implements OnInit {
     if (!this.puedeContinuar() || !clienteId) {
       return;
     }
-    const { fechaNacimiento, sumaAsegurada, plazoCreditoMeses } = this.formulario.getRawValue();
+    const { fechaNacimiento, sumaAsegurada, plazoCreditoMeses, productoId } = this.formulario.getRawValue();
     const datosAsegurado = { fechaNacimiento, plazoCreditoMeses: Number(plazoCreditoMeses), sumaAsegurada: Number(digitos(sumaAsegurada)) };
     this.clave ??= crypto.randomUUID();
     this.enviando.set(true);
@@ -357,7 +416,7 @@ export class NuevoPerfilamientoComponent implements OnInit {
       .crear(
         {
           clienteId,
-          productoId: PRODUCTO_VIDA_HIPOTECARIO,
+          productoId,
           datosDeclarados: datosAsegurado,
         },
         this.clave,
@@ -368,7 +427,7 @@ export class NuevoPerfilamientoComponent implements OnInit {
           // HU-W03: el perfil podrá calcular la prima con estos mismos datos (solo en memoria).
           this.borradores.guardar(perfil.id, {
             clienteId,
-            productoId: PRODUCTO_VIDA_HIPOTECARIO,
+            productoId,
             datosAsegurado,
             coberturasOpcionales: this.coberturasOpcionales(),
           });
@@ -394,7 +453,8 @@ export class NuevoPerfilamientoComponent implements OnInit {
       return;
     }
     const clienteId = this.clienteId()!;
-    const { fechaNacimiento, sumaAsegurada, plazoCreditoMeses } = this.formulario.getRawValue();
+    const { fechaNacimiento, sumaAsegurada, plazoCreditoMeses, productoId, zona } = this.formulario.getRawValue();
+    const zonaRiesgo = this.parametrico() ? normalizarZona(zona) : '';
     this.claveCotizacion ??= crypto.randomUUID();
     this.cotizando.set(true);
     this.error.set(null);
@@ -402,8 +462,13 @@ export class NuevoPerfilamientoComponent implements OnInit {
       .cotizar(
         {
           clienteId,
-          productoId: PRODUCTO_VIDA_HIPOTECARIO,
-          datosAsegurado: { fechaNacimiento, plazoCreditoMeses: Number(plazoCreditoMeses), sumaAsegurada: Number(digitos(sumaAsegurada)) },
+          productoId,
+          datosAsegurado: {
+            fechaNacimiento,
+            plazoCreditoMeses: Number(plazoCreditoMeses),
+            sumaAsegurada: Number(digitos(sumaAsegurada)),
+            ...(zonaRiesgo ? { zona: zonaRiesgo } : {}),
+          },
           coberturasOpcionales: this.coberturasOpcionales(),
         },
         this.claveCotizacion,

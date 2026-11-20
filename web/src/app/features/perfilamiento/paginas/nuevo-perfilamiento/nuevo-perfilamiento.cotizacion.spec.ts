@@ -6,7 +6,14 @@ import { Router, provideRouter } from '@angular/router';
 import { ConfigService } from '../../../../core/config/app-config';
 import { violacionesA11y } from '../../../../testing';
 import { BorradorCotizacionService } from '../../../cotizacion/borrador-cotizacion.service';
-import { CONDICIONES, COTIZACION_C01, URL_CONDICIONES, URL_COTIZACIONES } from '../../../cotizacion/cotizacion.testing';
+import {
+  CONDICIONES,
+  CONDICIONES_CLIMA,
+  COTIZACION_C01,
+  URL_CONDICIONES,
+  URL_CONDICIONES_CLIMA,
+  URL_COTIZACIONES,
+} from '../../../cotizacion/cotizacion.testing';
 import { NuevoPerfilamientoComponent } from './nuevo-perfilamiento.component';
 
 const URL_PERFILES = 'https://api/web/v1/perfiles';
@@ -205,6 +212,96 @@ describe('NuevoPerfilamientoComponent · HU-W03 (mockups "Nueva cotización" y "
     fixture.detectChanges();
     expect(c().validacionMostrada()).toBeTrue();
   }));
+
+  describe('HU-W24 · producto paramétrico', () => {
+    function elegirClima(): void {
+      const ramo = html().querySelector<HTMLSelectElement>('select[formControlName=productoId]')!;
+      ramo.value = 'clima-lluvia';
+      ramo.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      http.expectOne(URL_CONDICIONES_CLIMA).flush(CONDICIONES_CLIMA);
+      fixture.detectChanges();
+    }
+    const zona = () => html().querySelector<HTMLInputElement>('input[formControlName=zona]');
+
+    it('Vida hipotecario no pide la zona', () => {
+      montar();
+      expect(zona()).toBeNull();
+      expect(html().querySelector('#regla-parametrica')).toBeNull();
+    });
+
+    it('al elegir el paramétrico pide la zona, muestra la regla y solo deja cotizar sin perfil', async () => {
+      montar();
+      elegirClima();
+      expect(zona()).not.toBeNull();
+      expect(html().querySelector('#regla-parametrica')?.textContent?.replace(/\s/g, ' ')).toContain(
+        'Paga $ 1.400.000 cuando el evento llega a 120 mm en la zona',
+      );
+      expect(html().querySelectorAll('app-coberturas-producto li').length).toBe(1);
+      registrarC01();
+      expect(c().puedeContinuar()).toBeFalse();
+      expect(html().querySelector<HTMLButtonElement>('button[type=submit]')!.disabled).toBeTrue();
+      expect(html().querySelector('#ayuda-parametrico')?.textContent).toContain('se cotizan sin perfil');
+      expect(await violacionesA11y(html())).toEqual([]);
+    });
+
+    it('sin zona no cotiza y la marca; con zona la envía normalizada', () => {
+      montar();
+      elegirClima();
+      registrarC01();
+      boton('Cotizar sin perfilar').click();
+      fixture.detectChanges();
+      http.expectNone(URL_COTIZACIONES);
+      expect(c().camposConError()).toBe(1);
+      expect(html().querySelector('#error-zona')?.textContent).toContain('de 2 a 16');
+      expect(html().querySelectorAll('app-resumen-validacion dd')[0].textContent?.trim()).toBe('12');
+      zona()!.value = ' 11001 ';
+      zona()!.dispatchEvent(new Event('input'));
+      zona()!.dispatchEvent(new Event('blur'));
+      c().validacionMostrada.set(false);
+      fixture.detectChanges();
+      const solicitud = cotizar();
+      expect(solicitud.request.body).toEqual({
+        clienteId: CLIENTE_ID,
+        productoId: 'clima-lluvia',
+        datosAsegurado: { fechaNacimiento: '1990-04-18', plazoCreditoMeses: 180, sumaAsegurada: 180000000, zona: '11001' },
+        coberturasOpcionales: [],
+      });
+      solicitud.flush(COTIZACION_C01);
+    });
+
+    it('ZONA_REQUERIDA del servicio se explica y abre la validación', fakeAsync(() => {
+      montar();
+      elegirClima();
+      registrarC01();
+      c().formulario.patchValue({ zona: '11001' });
+      cotizar().flush(
+        { codigo: 'ZONA_REQUERIDA', detalles: { campos: ['datosAsegurado.zona'] } },
+        { status: 422, statusText: 'x' },
+      );
+      flush();
+      fixture.detectChanges();
+      expect(html().querySelector('[role=alert]')?.textContent).toContain('necesita la zona del riesgo');
+      expect(c().validacionMostrada()).toBeTrue();
+    }));
+
+    it('al volver a Vida hipotecario la zona se borra y no se envía', () => {
+      montar();
+      elegirClima();
+      c().formulario.patchValue({ zona: '11001' });
+      const ramo = html().querySelector<HTMLSelectElement>('select[formControlName=productoId]')!;
+      ramo.value = 'vida-hipotecario';
+      ramo.dispatchEvent(new Event('change'));
+      http.expectOne(URL_CONDICIONES).flush(CONDICIONES);
+      fixture.detectChanges();
+      expect(zona()).toBeNull();
+      expect(c().formulario.controls.zona.value).toBe('');
+      registrarC01();
+      const solicitud = cotizar();
+      expect(solicitud.request.body.datosAsegurado.zona).toBeUndefined();
+      solicitud.flush(COTIZACION_C01);
+    });
+  });
 
   it('tras una falla transitoria reintenta con la misma Idempotency-Key', () => {
     montar();

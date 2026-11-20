@@ -25,6 +25,8 @@ export type CausaConsentimiento = 'REVOCADO' | 'VENCIDO' | 'SIN_CONSENTIMIENTO' 
 
 /** Único producto en S1 (DT-09). */
 export const PRODUCTO_VIDA_HIPOTECARIO = 'vida-hipotecario';
+/** HU-W24: el producto paramétrico de lluvia (HU-W21); hoy vive en la semilla QA del catálogo. */
+export const PRODUCTO_CLIMA_LLUVIA = 'clima-lluvia';
 
 export interface DatosDeclarados {
   /** Fecha ISO (AAAA-MM-DD). */
