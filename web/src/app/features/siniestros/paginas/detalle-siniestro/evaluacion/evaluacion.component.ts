@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { EventoReglaComponent } from '../../../componentes/evento-regla/evento-regla.component';
 import { LiquidacionComponent } from '../../../componentes/liquidacion/liquidacion.component';
 import { crearFormularioLiquidacion } from '../../../componentes/liquidacion/liquidacion.formulario';
 import { LineaTiempoTramiteComponent } from '../../../componentes/linea-tiempo-tramite/linea-tiempo-tramite.component';
@@ -13,12 +14,19 @@ import { DetalleSiniestroEstado } from '../detalle-siniestro.estado';
 /**
  * Pestaña «Evaluación» (H03): la verificación de cobertura, el aviso de los soportes que faltan, la
  * liquidación, el estado del trámite y, si el caso está EN_EVALUACION y es del usuario, el panel de
- * decisión (HU-W20). El bloque paramétrico (W22) irá en el hueco marcado en la plantilla. El
- * formulario de la liquidación vive aquí: lo comparten la tarjeta y el panel que lo valida.
+ * decisión (HU-W20). En un siniestro paramétrico (HU-W22) agrega el bloque «Evento y regla aplicada»
+ * tras la liquidación. El formulario de la liquidación vive aquí: lo comparten la tarjeta y el panel que lo valida.
  */
 @Component({
   selector: 'app-pestana-evaluacion',
-  imports: [RouterLink, TablaVerificacionesComponent, LineaTiempoTramiteComponent, LiquidacionComponent, PanelDecisionComponent],
+  imports: [
+    RouterLink,
+    TablaVerificacionesComponent,
+    LineaTiempoTramiteComponent,
+    LiquidacionComponent,
+    PanelDecisionComponent,
+    EventoReglaComponent,
+  ],
   templateUrl: './evaluacion.component.html',
   styleUrls: ['../../../siniestros.scss', './evaluacion.component.scss'],
 })

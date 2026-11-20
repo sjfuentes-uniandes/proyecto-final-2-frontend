@@ -15,6 +15,7 @@ import {
   DETALLE_COMPLETO,
   DETALLE_EVIDENCIA_ALTERADA,
   DETALLE_EVIDENCIA_AUSENTE,
+  DETALLE_PARAMETRICO,
   DETALLE_SIN_COMPOSICION,
   RESULTADO_APROBACION,
   SINIESTRO_EVA01,
@@ -566,6 +567,50 @@ describe('Detalle del siniestro (H03, H04, Cobertura e Historial, HU-W19)', () =
       TestBed.inject(IdiomaService).cambiar('en-US');
       harness.detectChanges();
       expect(await violacionesA11y(html())).toEqual([]);
+    });
+  });
+
+  describe('Siniestro paramétrico (HU-W22)', () => {
+    it('la evaluación agrega «Evento y regla aplicada» tras la liquidación, sin panel de decisión ni fila de reclamo', async () => {
+      await abrir('evaluacion', DETALLE_PARAMETRICO);
+      expect(texto('h2')).toBe('Siniestro 88-2026-0604 Aprobado');
+      expect(texto('app-evento-regla h3')).toBe('Evento y regla aplicada');
+      const orden = Array.from(html().querySelectorAll('app-liquidacion, app-evento-regla')).map((e) => e.tagName.toLowerCase());
+      expect(orden).toEqual(['app-liquidacion', 'app-evento-regla']);
+      expect(html().querySelector('app-panel-decision')).toBeNull();
+      const liquidacion = Array.from(html().querySelectorAll('app-liquidacion dl > div')).map((d) => d.querySelector('dt')?.textContent);
+      expect(liquidacion).toEqual(['Deducible aplicable', 'A indemnizar', 'Referencia de pago']);
+      expect(texto('app-liquidacion .resumen__total')).toMatch(/^\$\s?1\.400\.000$/);
+    });
+
+    it('el trámite completa los pasos automáticos y deja el pago como paso actual', async () => {
+      await abrir('evaluacion', DETALLE_PARAMETRICO);
+      const pasos = Array.from(html().querySelectorAll('app-linea-tiempo-tramite li')).map((li) => [li.querySelector('.rotulo')?.textContent?.trim(), li.getAttribute('aria-current')]);
+      expect(pasos[0][0]).toContain('Detectado por un evento paramétrico');
+      expect(pasos.at(-1)).toEqual([jasmine.stringContaining('Pago de la indemnización') as unknown as string, 'step']);
+    });
+
+    it('el historial dice «Creado automáticamente» por el proceso automático', async () => {
+      await abrir('historial', DETALLE_PARAMETRICO);
+      const filas = Array.from(html().querySelectorAll('tbody tr')).map(celdas);
+      expect(filas.map((f) => f.slice(1))).toEqual([['Creado automáticamente por un evento paramétrico', 'Aprobado', 'Proceso automático']]);
+    });
+
+    it('en los demás orígenes el bloque no aparece', async () => {
+      await abrir('evaluacion', DETALLE_COMPLETO);
+      expect(html().querySelector('app-evento-regla')).toBeNull();
+    });
+
+    it('el bloque cambia de idioma y cumple axe-core en es-CO, en-US y pseudo', async () => {
+      await abrir('evaluacion', DETALLE_PARAMETRICO);
+      for (const idioma of ['es-CO', 'en-US', 'pseudo'] as const) {
+        TestBed.inject(IdiomaService).cambiar(idioma);
+        harness.detectChanges();
+        expect(await violacionesA11y(html())).withContext(idioma).toEqual([]);
+      }
+      TestBed.inject(IdiomaService).cambiar('en-US');
+      harness.detectChanges();
+      expect(texto('app-evento-regla h3')).toBe('Event and rule applied');
     });
   });
 });

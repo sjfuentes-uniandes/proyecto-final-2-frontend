@@ -7,14 +7,19 @@ import {
   DETALLE_COMPLETO,
   ENLACE_FOTO,
   EVIDENCIA_FOTO_1,
+  DETALLE_PARAMETRICO,
+  ORIGENES_RECIENTES,
   PAGO_CONFIRMADO,
   PAGO_PENDIENTE,
   PAGO_RECHAZADO,
   RESULTADO_APROBACION,
+  RESUMEN_PARAMETRICOS,
   SINIESTRO_EVA01,
+  SINIESTRO_PAR01,
 } from '../src/app/features/siniestros/siniestros.testing';
 import { CatalogosDecision, ResultadoDecision, SolicitudDecision } from '../src/app/features/siniestros/siniestros.decision.modelo';
 import { BandejaSiniestros, DetalleSiniestro, EnlaceEvidencia } from '../src/app/features/siniestros/siniestros.modelo';
+import { OrigenesRecientes, ResumenParametricos } from '../src/app/features/siniestros/siniestros.parametricos.modelo';
 import { PagoSiniestroVista } from '../src/app/features/siniestros/siniestros.pago.modelo';
 import { ACEPTA_JSON, nuevoPacto } from './pacto';
 
@@ -46,6 +51,15 @@ const { boolean, decimal, eachLike, equal, integer, like, regex, uuid } = Matche
  * (`transaccionId` y `confirmadaEn` en el rechazo, `motivo` en la confirmación). El historial pacta solo
  * lo que toda entrada trae (`id`, `accion` y `ocurridoEn`): `actorNombre` y los estados son null en las
  * entradas del sistema y Pact no expresa «null o texto»; el portal los trata como opcionales.
+ *
+ * HU-W22 amplía el pacto con GET …/parametricos/resumen (H09, con su `eventoOrigen`) y su 403 y 503,
+ * GET …/parametricos/eventos-origen (el selector de H09) y el detalle de un siniestro paramétrico (el
+ * bloque `evento`, la liquidación sin reclamo y el historial `CREADO_AUTOMATICAMENTE`). Como en W23,
+ * cada variante es su propia interacción y en cada una el campo que no aplica va en null: el siniestro
+ * paramétrico no tiene analista, reclamo, captura de evidencia ni soportes; el resumen pacta
+ * `p95VentaConsultaMs` en null (CF-S3-10: hoy ninguna fuente lo da) y las fuentes secundarias con valor.
+ * El estado de pago de una fila usa el estado `CONFIRMADO`; el portal trata `null` («Estado no
+ * disponible») como una fuente que no respondió.
  */
 const pacto = nuevoPacto();
 
@@ -647,5 +661,230 @@ test('un usuario sin el grupo analistas-siniestros no ve el pago: 403 ROL_NO_AUT
       const respuesta = await fetch(`${servidor.url}${RUTA_PAGO}`, { headers: ACEPTA_JSON });
       expect(respuesta.status).toBe(403);
       expect((await respuesta.json()).codigo).toBe('ROL_NO_AUTORIZADO');
+    });
+});
+
+// --- HU-W22: siniestros paramétricos (H09 y el bloque del evento de H03) -----------------------------
+
+const RUTA_RESUMEN_PARAMETRICOS = '/v1/siniestros/parametricos/resumen';
+const RUTA_ORIGENES = '/v1/siniestros/parametricos/eventos-origen';
+const RUTA_DETALLE_PARAMETRICO = `/v1/siniestros/${SINIESTRO_PAR01}`;
+const EVENTO_ORIGEN = /^[A-Za-z0-9._:-]{1,64}$/;
+const MEDICION = /^[0-9]+(\.[0-9]{1,3})?$/;
+const ESTADOS_PAGO = ['SIN_PAGO', 'PENDIENTE', 'CONFIRMADO', 'RECHAZADO'];
+
+function resumenParametricos(r: ResumenParametricos) {
+  const pago = r.ultimosPagos[0];
+  return {
+    eventoOrigen: regex(EVENTO_ORIGEN, r.eventoOrigen as string),
+    desde: instante(r.desde as string),
+    recibidos: integer(r.recibidos),
+    procesados: integer(r.procesados),
+    activados: integer(r.activados),
+    duplicados: integer(r.duplicados),
+    enDlq: integer(r.enDlq as number),
+    ritmoPorMinuto: eachLike({ minuto: instante(r.ritmoPorMinuto[0].minuto), procesados: integer(r.ritmoPorMinuto[0].procesados) }),
+    cola: {
+      profundidad: integer(r.cola.profundidad as number),
+      consumidoresActivos: integer(r.cola.consumidoresActivos as number),
+      consumidoresMaximos: integer(r.cola.consumidoresMaximos as number),
+    },
+    // Ninguna fuente lo da todavía (CF-S3-10): el portal oculta el aviso del p95.
+    p95VentaConsultaMs: equal(null),
+    ultimosPagos: eachLike({
+      siniestroId: uuid(pago.siniestroId),
+      siniestroCodigo: regex(CODIGO_SINIESTRO, pago.siniestroCodigo),
+      polizaId: uuid(pago.polizaId),
+      polizaNumero: regex(NUMERO_POLIZA, pago.polizaNumero as string),
+      disparador: {
+        tipoEvento: enumerado(['LLUVIA_ACUMULADA', 'RETRASO_VUELO'], pago.disparador.tipoEvento),
+        valorObservado: regex(MEDICION, pago.disparador.valorObservado),
+        umbral: regex(MEDICION, pago.disparador.umbral),
+        unidad: like(pago.disparador.unidad),
+      },
+      valor: regex(/^[0-9]+(\.[0-9]{1,2})?$/, pago.valor),
+      moneda: regex(/^[A-Z]{3}$/, pago.moneda),
+      estadoActivacion: regex(/^[A-Z_]{3,32}$/, pago.estadoActivacion),
+      estadoPago: enumerado(ESTADOS_PAGO, pago.estadoPago as string),
+    }),
+  };
+}
+
+function origenesRecientes(o: OrigenesRecientes) {
+  const origen = o.items[0];
+  return {
+    items: eachLike({
+      eventoOrigen: regex(EVENTO_ORIGEN, origen.eventoOrigen),
+      desde: instante(origen.desde),
+      hasta: instante(origen.hasta),
+      eventos: integer(origen.eventos),
+    }),
+  };
+}
+
+/** El detalle de un siniestro paramétrico: sin analista, reclamo, capturas ni soportes (cada uno en null o vacío). */
+function detalleParametrico(d: DetalleSiniestro) {
+  const evento = d.evento!;
+  const l = d.liquidacion!;
+  const entrada = d.historial[0];
+  // Lo que el siniestro paramétrico no tiene (evidencias, soportes, capturas) lo reemplaza más abajo: aquí
+  // solo se arma la parte común (póliza, verificación de cobertura y vista de la póliza).
+  const comun = {
+    ...DETALLE_COMPLETO,
+    ...d,
+    ubicacionDeclarada: DETALLE_COMPLETO.ubicacionDeclarada,
+    coherencia: DETALLE_COMPLETO.coherencia,
+    evidencias: DETALLE_COMPLETO.evidencias,
+    soportesPendientes: DETALLE_COMPLETO.soportesPendientes,
+    tramite: DETALLE_COMPLETO.tramite,
+    historial: DETALLE_COMPLETO.historial,
+  };
+  return {
+    ...detalle(comun),
+    analistaId: equal(null),
+    ubicacionDeclarada: { descripcion: like(d.ubicacionDeclarada.descripcion as string), lat: equal(null), lon: equal(null) },
+    coherencia: {
+      fechaDeclarada: instante(d.coherencia.fechaDeclarada),
+      primeraCaptura: equal(null),
+      diferenciaMin: equal(null),
+      ubicacionCoincide: equal(null),
+      archivosAlterados: integer(0),
+      resultado: equal('NO_EVALUABLE'),
+    },
+    evidencias: equal([]),
+    soportesPendientes: equal([]),
+    tramite: eachLike({
+      paso: enumerado(['RECIBIDO', 'EVIDENCIAS_VALIDADAS', 'EN_EVALUACION', 'DECISION', 'PAGO_INDEMNIZACION'], d.tramite[0].paso),
+      estado: enumerado(['COMPLETADO', 'ACTUAL', 'PENDIENTE'], d.tramite[0].estado),
+      ocurridoEn: instante(d.tramite[0].ocurridoEn as string),
+      // El proceso automático no es una persona.
+      actorNombre: equal(null),
+    }),
+    historial: eachLike({
+      id: uuid(entrada.id),
+      accion: equal('CREADO_AUTOMATICAMENTE'),
+      estadoAnterior: equal(null),
+      estadoNuevo: equal('APROBADO'),
+      actorId: equal(null),
+      actorRol: equal('SISTEMA_PARAMETRICO'),
+      actorNombre: equal(null),
+      justificacion: equal(null),
+      ocurridoEn: instante(entrada.ocurridoEn),
+    }),
+    liquidacion: {
+      moneda: regex(MONEDA, l.moneda),
+      valorReclamado: equal(null),
+      deducible: regex(MONTO, l.deducible as string),
+      valorIndemnizar: regex(MONTO, l.valorIndemnizar as string),
+      referenciaPago: regex(REFERENCIA_PAGO, l.referenciaPago as string),
+      aprobadaEn: instante(l.aprobadaEn as string),
+    },
+    evento: {
+      eventoId: uuid(evento.eventoId),
+      fuente: like(evento.fuente),
+      tipoEvento: enumerado(['LLUVIA_ACUMULADA', 'RETRASO_VUELO'], evento.tipoEvento),
+      valorObservado: regex(MONTO, evento.valorObservado),
+      umbral: regex(MONTO, evento.umbral),
+      unidad: like(evento.unidad),
+      zona: like(evento.zona),
+      observadoEn: instante(evento.observadoEn),
+      eventoOrigen: regex(EVENTO_ORIGEN, evento.eventoOrigen),
+      regla: equal('VALOR_IGUAL_O_SUPERIOR_AL_UMBRAL'),
+      versionRegla: like(evento.versionRegla),
+    },
+    // Sin resultado de dinero todavía: el pago es PENDIENTE y sin transacción ni motivo.
+    pago: {
+      estado: equal('PENDIENTE'),
+      referencia: regex(REFERENCIA_PAGO, d.pago!.referencia as string),
+      transaccionId: equal(null),
+      motivo: equal(null),
+      intentos: integer(0),
+      duplicadosDescartados: integer(0),
+    },
+    valorReclamado: equal(null),
+  };
+}
+
+test('el analista abre el seguimiento de los siniestros paramétricos de un evento', async () => {
+  await pacto
+    .addInteraction()
+    .given('hay eventos paramétricos procesados con pagos activados', { eventoOrigen: 'EVT-2026-0913' })
+    .uponReceiving('la consulta del resumen de siniestros paramétricos de un evento de origen')
+    .withRequest('GET', RUTA_RESUMEN_PARAMETRICOS, (pedido) => pedido.headers(ACEPTA_JSON).query({ eventoOrigen: 'EVT-2026-0913' }))
+    .willRespondWith(200, (respuesta) => respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(resumenParametricos(RESUMEN_PARAMETRICOS)))
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${RUTA_RESUMEN_PARAMETRICOS}?eventoOrigen=EVT-2026-0913`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(200);
+      const cuerpo = (await respuesta.json()) as ResumenParametricos;
+      expect(cuerpo.eventoOrigen).toMatch(EVENTO_ORIGEN);
+      expect(cuerpo.recibidos).toBeGreaterThanOrEqual(cuerpo.procesados);
+      expect(cuerpo.cola.profundidad).not.toBeNull();
+      expect(cuerpo.p95VentaConsultaMs).toBeNull();
+      expect(cuerpo.ultimosPagos[0].estadoPago).toMatch(/^(SIN_PAGO|PENDIENTE|CONFIRMADO|RECHAZADO)$/);
+    });
+});
+
+test('el analista elige el evento de origen entre los recientes', async () => {
+  await pacto
+    .addInteraction()
+    .given('existen eventos paramétricos recientes')
+    .uponReceiving('la consulta de los eventos de origen recientes')
+    .withRequest('GET', RUTA_ORIGENES, (pedido) => pedido.headers(ACEPTA_JSON).query({ limite: '10' }))
+    .willRespondWith(200, (respuesta) => respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(origenesRecientes(ORIGENES_RECIENTES)))
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${RUTA_ORIGENES}?limite=10`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(200);
+      const cuerpo = (await respuesta.json()) as OrigenesRecientes;
+      expect(cuerpo.items.length).toBeGreaterThan(0);
+      expect(cuerpo.items[0].eventoOrigen).toMatch(EVENTO_ORIGEN);
+    });
+});
+
+test('un usuario sin el grupo analistas-siniestros no ve el seguimiento paramétrico: 403 ROL_NO_AUTORIZADO', async () => {
+  await pacto
+    .addInteraction()
+    .given('el usuario no pertenece al grupo analistas-siniestros')
+    .uponReceiving('la consulta del resumen de siniestros paramétricos sin el grupo')
+    .withRequest('GET', RUTA_RESUMEN_PARAMETRICOS, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(403, (respuesta) => respuesta.jsonBody(error('ROL_NO_AUTORIZADO')))
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${RUTA_RESUMEN_PARAMETRICOS}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(403);
+      expect((await respuesta.json()).codigo).toBe('ROL_NO_AUTORIZADO');
+    });
+});
+
+test('si pagos-parametricos no responde el seguimiento es 503 SERVICIO_NO_DISPONIBLE', async () => {
+  await pacto
+    .addInteraction()
+    .given('pagos-parametricos no responde')
+    .uponReceiving('la consulta del resumen de siniestros paramétricos sin pagos-parametricos')
+    .withRequest('GET', RUTA_RESUMEN_PARAMETRICOS, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(503, (respuesta) => respuesta.jsonBody(error('SERVICIO_NO_DISPONIBLE')))
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${RUTA_RESUMEN_PARAMETRICOS}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(503);
+      expect((await respuesta.json()).codigo).toBe('SERVICIO_NO_DISPONIBLE');
+    });
+});
+
+test('el analista abre el detalle de un siniestro paramétrico con el evento y la regla aplicada', async () => {
+  await pacto
+    .addInteraction()
+    .given('existe el siniestro paramétrico aprobado con el pago pendiente', { siniestroId: SINIESTRO_PAR01 })
+    .uponReceiving('la consulta del detalle de un siniestro paramétrico')
+    .withRequest('GET', RUTA_DETALLE_PARAMETRICO, (pedido) => pedido.headers(ACEPTA_JSON))
+    .willRespondWith(200, (respuesta) => respuesta.headers({ 'Content-Type': 'application/json' }).jsonBody(detalleParametrico(DETALLE_PARAMETRICO)))
+    .executeTest(async (servidor) => {
+      const respuesta = await fetch(`${servidor.url}${RUTA_DETALLE_PARAMETRICO}`, { headers: ACEPTA_JSON });
+      expect(respuesta.status).toBe(200);
+      const cuerpo = (await respuesta.json()) as DetalleSiniestro;
+      expect(cuerpo.origen).toBe('PARAMETRICO');
+      expect(cuerpo.estado).toBe('APROBADO');
+      expect(cuerpo.analistaId).toBeNull();
+      expect(cuerpo.evento?.regla).toBe('VALOR_IGUAL_O_SUPERIOR_AL_UMBRAL');
+      expect(cuerpo.liquidacion?.valorReclamado).toBeNull();
+      expect(cuerpo.evidencias).toEqual([]);
+      expect(cuerpo.historial[0].accion).toBe('CREADO_AUTOMATICAMENTE');
     });
 });

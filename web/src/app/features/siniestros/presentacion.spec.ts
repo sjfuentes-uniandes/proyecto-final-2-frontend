@@ -24,6 +24,8 @@ import {
   rotuloPaso,
   sumaAseguradaDelAmparo,
   textoAccion,
+  textoActor,
+  textoCausa,
   textoCanal,
   textoCausal,
   textoErrorMonto,
@@ -389,6 +391,15 @@ describe('Presentación de los siniestros: fechas, trámite y verificación (H01
       expect(textoAccion(es, 'RECHAZADO')).toBe('Rechazado');
       expect(textoAccion(es, 'SOPORTE_SOLICITADO')).toBe('Soporte solicitado');
       expect(textoAccion(en, 'PLAZO_SOPORTE_VENCIDO')).toBe('Document deadline expired');
+    });
+
+    it('traduce lo del siniestro paramétrico (HU-W22): la acción, el actor y las causas', () => {
+      expect(textoAccion(es, 'CREADO_AUTOMATICAMENTE')).toBe('Creado automáticamente por un evento paramétrico');
+      expect(textoAccion(en, 'CREADO_AUTOMATICAMENTE')).toBe('Created automatically by a parametric event');
+      expect(textoActor(es, null, 'SISTEMA_PARAMETRICO')).toBe('Proceso automático');
+      expect(textoActor(en, null, 'SISTEMA_PARAMETRICO')).toBe('Automatic process');
+      expect(textoCausa(es, 'LLUVIA_ACUMULADA')).toBe('Lluvia acumulada');
+      expect(textoCausa(en, 'RETRASO_VUELO')).toBe('Flight delay');
     });
 
     it('ultimosDigitos deja los cuatro últimos de la cuenta enmascarada', () => {

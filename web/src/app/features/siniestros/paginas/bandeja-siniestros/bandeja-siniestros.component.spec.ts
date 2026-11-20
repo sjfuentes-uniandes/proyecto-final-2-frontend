@@ -337,7 +337,7 @@ describe('BandejaSiniestrosComponent (H01 y H02, HU-W19)', () => {
       expect(params.has('estado')).toBeFalse();
     });
 
-    it('sin casos muestra el estado vacío con «Ir a mi bandeja» y «Ver siniestros paramétricos» deshabilitado', async () => {
+    it('sin casos muestra el estado vacío con «Ir a mi bandeja» y «Ver siniestros paramétricos» (H09)', async () => {
       await abrir('/siniestros/sin-asignar', COLA_VACIA);
       expect(texto('header .sub')).toBe('Ningún siniestro esperando asignación');
       expect(texto('.vacio h3')).toBe('No hay casos sin asignar');
@@ -348,8 +348,7 @@ describe('BandejaSiniestrosComponent (H01 y H02, HU-W19)', () => {
       expect(irAMiBandeja.textContent?.trim()).toBe('Ir a mi bandeja · 5 casos');
       expect(irAMiBandeja.getAttribute('href')).toBe('/siniestros/bandeja');
       expect(parametricos.textContent?.trim()).toBe('Ver siniestros paramétricos');
-      expect((parametricos as HTMLButtonElement).disabled).toBeTrue();
-      expect(parametricos.getAttribute('title')).toBe('Disponible en una próxima versión');
+      expect(parametricos.getAttribute('href')).toBe('/siniestros/parametricos');
     });
 
     it('con un filtro y sin resultados no dice que la cola esté vacía', async () => {
