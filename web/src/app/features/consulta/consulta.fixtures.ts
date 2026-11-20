@@ -76,6 +76,9 @@ export function estadoPoliza(estado: EstadoVigencia, cambios: Partial<EstadoPoli
       { codigo: 'MUERTE', nombre: 'Muerte por cualquier causa', obligatoria: true },
       { codigo: 'INCAPACIDAD', nombre: 'Incapacidad total y permanente', obligatoria: false },
     ],
+    titularNombre: null,
+    tipoDocumento: null,
+    documentoEnmascarado: null,
     ...cambios,
   };
 }

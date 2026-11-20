@@ -11,6 +11,11 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'trazas' },
       {
+        path: 'tablero',
+        title: 'Tablero · Operación · Solventa',
+        loadComponent: () => import('./tablero/tablero.component').then((m) => m.TableroComponent),
+      },
+      {
         path: 'trazas',
         title: 'Trazas · Operación · Solventa',
         loadComponent: () => import('./trazas/trazas.component').then((m) => m.TrazasComponent),
@@ -19,6 +24,17 @@ export const routes: Routes = [
         path: 'alertas',
         title: 'Alertas · Operación · Solventa',
         loadComponent: () => import('./alertas/alertas.component').then((m) => m.AlertasComponent),
+      },
+      // HU-W29: I04 e I05. /operacion/tablero queda para el panel I01 de HU-W08.
+      {
+        path: 'continuidad',
+        title: 'Continuidad · Operación · Solventa',
+        loadComponent: () => import('./continuidad/continuidad.component').then((m) => m.ContinuidadComponent),
+      },
+      {
+        path: 'continuidad/conciliacion',
+        title: 'Conciliación · Operación · Solventa',
+        loadComponent: () => import('./continuidad/conciliacion.component').then((m) => m.ConciliacionComponent),
       },
     ],
   },

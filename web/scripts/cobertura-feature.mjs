@@ -15,6 +15,10 @@ const GRUPOS = [
   { nombre: 'contratacion', partes: ['/features/contratacion/'] },
   /** HU-W18: consulta del estado de las pólizas. */
   { nombre: 'consulta', partes: ['/features/consulta/'] },
+  /** HU-W19: siniestros del analista (bandeja, detalle y visor de evidencias). */
+  { nombre: 'siniestros', partes: ['/features/siniestros/'] },
+  /** HU-W08: Operación › Tablero (panel de capacidad). */
+  { nombre: 'operacion-tablero', partes: ['/features/operacion/tablero/'] },
 ];
 /** Apoyo de las pruebas, no código de la feature. */
 const EXCLUIDAS = [/\.testing\.ts$/, /\.spec\.ts$/];

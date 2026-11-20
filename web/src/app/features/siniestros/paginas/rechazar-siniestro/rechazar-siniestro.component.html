@@ -1,0 +1,185 @@
+@let t = textos.t();
+@let d = estado.detalle();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › <a routerLink="/siniestros/bandeja">{{ t.migaSiniestros }}</a>
+  @if (d) {
+    › <a routerLink="../evaluacion">{{ d.codigo }}</a> › <strong>{{ t.migaRechazar }}</strong>
+  }
+</nav>
+<header>
+  <h2>{{ t.tituloRechazar }}</h2>
+  @if (d) {
+    <p class="sub">{{ t.subRechazar(d.codigo, d.clienteNombre ?? t.clienteNoDisponible, d.poliza.ramo) }}</p>
+  }
+</header>
+
+@if (estado.error(); as error) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <p>
+      {{ error.mensaje }}
+      @if (error.correlationId) {
+        <span class="seguimiento">{{ t.codigoSeguimiento(error.correlationId) }}</span>
+      }
+    </p>
+  </div>
+  <div class="acciones">
+    <button class="btn btn--secundario" type="button" (click)="estado.reintentar()">{{ t.reintentar }}</button>
+    <a class="btn btn--secundario" routerLink="/siniestros/bandeja">{{ t.volverBandeja }}</a>
+  </div>
+} @else if (d) {
+  @if (!estado.puedeDecidir()) {
+    <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ t.decisionNoDisponible }}</span></p>
+    <div class="acciones">
+      <a class="btn btn--secundario" routerLink="../evaluacion">{{ t.volverEvaluacion }}</a>
+    </div>
+  } @else {
+    <p class="alerta alerta--error" role="note"><span aria-hidden="true">⚠</span><span>{{ t.rechazoAviso }}</span></p>
+    @if (errorCatalogos(); as e) {
+      <div class="alerta alerta--error" role="alert">
+        <span aria-hidden="true">⚠</span>
+        <p>
+          {{ e.mensaje }}
+          @if (e.correlationId) {
+            <span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+          }
+        </p>
+      </div>
+      <div class="acciones">
+        <button class="btn btn--secundario" type="button" (click)="reintentarCatalogos()">{{ t.reintentar }}</button>
+      </div>
+    }
+    @if (envio.error(); as e) {
+      <div class="alerta alerta--error" role="alert">
+        <span aria-hidden="true">⚠</span>
+        <p>
+          <strong>{{ t.decisionError }}.</strong> {{ e.mensaje }}
+          @if (e.correlationId) {
+            <span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+          }
+        </p>
+      </div>
+    }
+    <form [formGroup]="formulario" novalidate (ngSubmit)="confirmar()">
+      <div class="cols">
+        <div class="columna">
+          <section class="card" [attr.aria-labelledby]="idBase + '-causa'">
+            <h3 [id]="idBase + '-causa'">{{ t.rechazoCausaTitulo }}</h3>
+            <div class="fld">
+              <label [for]="idBase + '-causal'">{{ t.rechazoCausal }}</label>
+              <select
+                [id]="idBase + '-causal'"
+                class="inp"
+                formControlName="causal"
+                aria-required="true"
+                [attr.aria-invalid]="errorCausal() ? 'true' : null"
+                [attr.aria-describedby]="errorCausal() ? idError('causal') : null"
+              >
+                <option value="">{{ t.rechazoCausalElige }}</option>
+                @for (causal of causales(); track causal.causal) {
+                  <option [value]="causal.causal">{{ causal.texto }}</option>
+                }
+              </select>
+              @if (errorCausal(); as e) {
+                <span class="fld__error" [id]="idError('causal')">{{ e }}</span>
+              }
+            </div>
+            @if (vigencia(); as v) {
+              <div class="par">
+                <div class="fld">
+                  <label [for]="idBase + '-evento'">{{ t.rechazoFechaEvento }}</label>
+                  <input [id]="idBase + '-evento'" class="inp" type="text" readonly [value]="v.evento" />
+                </div>
+                <div class="fld">
+                  <label [for]="idBase + '-fin'">{{ t.rechazoFinVigencia }}</label>
+                  <input
+                    [id]="idBase + '-fin'"
+                    class="inp"
+                    [class.inp--alerta]="v.diasVencida > 0"
+                    type="text"
+                    readonly
+                    [value]="v.fin"
+                    [attr.aria-describedby]="v.diasVencida > 0 ? idError('vencida') : null"
+                  />
+                  @if (v.diasVencida > 0) {
+                    <span class="vencida" [id]="idError('vencida')"><span aria-hidden="true">⚠</span> {{ t.rechazoPolizaVencida(v.diasVencida) }}</span>
+                  }
+                </div>
+              </div>
+            }
+            <div class="fld">
+              <label [for]="idBase + '-explicacion'">
+                {{ t.rechazoExplicacion }} · <span class="obligatoria">{{ t.liqObligatoria }}</span>
+              </label>
+              <textarea
+                [id]="idBase + '-explicacion'"
+                class="inp inp--texto"
+                rows="4"
+                formControlName="explicacion"
+                [attr.maxlength]="maxTexto"
+                aria-required="true"
+                [attr.aria-invalid]="errorExplicacion() ? 'true' : null"
+                [attr.aria-describedby]="errorExplicacion() ? idError('explicacion') : null"
+              ></textarea>
+              @if (errorExplicacion(); as e) {
+                <span class="fld__error" [id]="idError('explicacion')">{{ e }}</span>
+              }
+            </div>
+            <div class="fld">
+              <label [for]="idBase + '-razon'">
+                {{ t.liqJustificacion }} · <span class="obligatoria">{{ t.liqObligatoria }}</span>
+              </label>
+              <textarea
+                [id]="idBase + '-razon'"
+                class="inp inp--texto"
+                rows="3"
+                formControlName="justificacion"
+                [attr.maxlength]="maxTexto"
+                aria-required="true"
+                [attr.aria-invalid]="errorJustificacion() ? 'true' : null"
+                [attr.aria-describedby]="errorJustificacion() ? idError('justificacion') : null"
+              ></textarea>
+              @if (errorJustificacion(); as e) {
+                <span class="fld__error" [id]="idError('justificacion')">{{ e }}</span>
+              }
+            </div>
+          </section>
+          <app-tabla-verificaciones [verificaciones]="d.verificacionCobertura" [amparos]="d.poliza.amparos" [titulo]="t.rechazoVerificaciones" />
+        </div>
+
+        <div class="columna">
+          <section class="card" [attr.aria-labelledby]="idBase + '-derechos'">
+            <h3 [id]="idBase + '-derechos'">{{ t.rechazoDerechosTitulo }}</h3>
+            <dl class="efecto">
+              <div>
+                <dt>{{ t.rechazoPlazoReclamar }}</dt>
+                <dd>{{ t.rechazoPlazoReclamarValor }}</dd>
+              </div>
+              <div>
+                <dt>{{ t.rechazoCanalReclamacion }}</dt>
+                <dd>{{ t.rechazoCanalReclamacionValor }}</dd>
+              </div>
+              <div>
+                <dt>{{ t.rechazoInstancia }}</dt>
+                <dd>{{ t.rechazoInstanciaValor }}</dd>
+              </div>
+              <div>
+                <dt>{{ t.rechazoEvidencia }}</dt>
+                <dd>{{ t.rechazoEvidenciaValor }}</dd>
+              </div>
+            </dl>
+          </section>
+          <div class="acciones-pagina">
+            <button class="btn btn--bloque btn--rechazar" type="submit" [disabled]="formulario.invalid || envio.enviando()" [attr.aria-busy]="envio.enviando() ? 'true' : null">
+              {{ envio.enviando() ? t.aprobEnviando : t.rechazoConfirmar }}
+            </button>
+            <a class="btn btn--bloque btn--texto" routerLink="../evaluacion">{{ t.volverEvaluacion }}</a>
+          </div>
+          <p class="nota">{{ t.rechazoNota }}</p>
+        </div>
+      </div>
+    </form>
+  }
+} @else if (estado.cargando()) {
+  <p class="sub" role="status">{{ t.cargandoDetalle }}</p>
+}

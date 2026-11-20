@@ -1,0 +1,41 @@
+@use '../../../contraste';
+
+:host { display: block; }
+.titulo { margin: 0 0 4px; font-size: 18px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 12px; }
+.columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { padding: 18px; min-width: 0; }
+a.btn { text-decoration: none; }
+.archivo { font-weight: 400; text-align: left; text-transform: none; letter-spacing: 0; background: none; color: var(--sv-texto); font-size: 13px; }
+table.data th, table.data td { overflow-wrap: anywhere; }
+td.mono { white-space: normal; }
+/* «Fotografía» y «Ver» no se parten (H04): el resto de columnas sí cede ancho. */
+table.data td.sin-corte { overflow-wrap: normal; white-space: nowrap; }
+.ver { padding: 4px 6px; border: 0; background: none; font: inherit; font-weight: 700; color: var(--sv-azul); cursor: pointer; }
+.ver:focus-visible, .miniatura:focus-visible { outline: 2px solid var(--sv-azul-medio); outline-offset: 2px; }
+
+.previa { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
+.miniatura {
+  display: grid; place-items: center; width: 100%; min-height: 120px; padding: 8px; box-sizing: border-box; border: 0;
+  border-radius: var(--sv-radio); background: #d6d9e0; font: inherit; font-size: 13px; color: #1f2937; cursor: pointer; overflow-wrap: anywhere; text-align: center;
+}
+.miniatura--video { background: #1b1d22; color: #f3f4f6; }
+
+.con-insignia { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.kv { margin: 0; }
+.kv > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13px; }
+.kv > div:last-child { border-bottom: 0; }
+.kv dt { color: var(--sv-texto-secundario); }
+.kv dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.kv dd.exito { color: #00663f; }
+.kv dd.peligro { color: var(--sv-error); }
+
+.pendientes { margin: 0 0 12px; padding: 0; list-style: none; }
+.pendientes li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13px; }
+.aviso { margin: 0; padding: 12px 15px; border-left: 4px solid var(--sv-azul-medio); border-radius: var(--sv-radio); background: var(--sv-seleccion); font-size: 13px; line-height: 20px; color: var(--sv-azul-oscuro); }
+
+/* En tableta (1024 px, con el menú lateral) dos columnas no caben: una sola. */
+@media (max-width: 1100px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .previa { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -20,7 +20,11 @@ import com.solventa.feature.privacidad.dominio.Permiso
 
 /** Conecta [ListaPermisosScreen] con [PrivacidadViewModel]; recarga la lista cada vez que se muestra. */
 @Composable
-fun PrivacidadListaRoute(viewModel: PrivacidadViewModel, onAbrirPermiso: (Permiso) -> Unit) {
+fun PrivacidadListaRoute(
+    viewModel: PrivacidadViewModel,
+    onAbrirPermiso: (Permiso) -> Unit,
+    onCerrarSesion: (() -> Unit)? = null,
+) {
     val estado by viewModel.uiState.collectAsState()
     LaunchedEffect(Unit) { viewModel.cargarConsentimientos() }
     ListaPermisosScreen(
@@ -28,6 +32,7 @@ fun PrivacidadListaRoute(viewModel: PrivacidadViewModel, onAbrirPermiso: (Permis
         consentimientos = estado.consentimientos,
         onAbrirPermiso = { if (estado.puedeOtorgar(it)) onAbrirPermiso(it) },
         onReintentar = viewModel::cargarConsentimientos,
+        onCerrarSesion = onCerrarSesion,
     )
 }
 
@@ -47,7 +52,11 @@ fun PrivacidadListaRoute(viewModel: PrivacidadViewModel, onAbrirPermiso: (Permis
  * comprobante carga su historial.
  */
 @Composable
-fun PermisoOpenFinanceRoute(viewModel: PrivacidadViewModel, onVolver: () -> Unit) {
+fun PermisoOpenFinanceRoute(
+    viewModel: PrivacidadViewModel,
+    onVolver: () -> Unit,
+    onCerrarSesion: (() -> Unit)? = null,
+) {
     val estado by viewModel.uiState.collectAsState()
     val idioma = idiomaTexto(LocalConfiguration.current.locales[0])
     var comprobanteId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -131,6 +140,7 @@ fun PermisoOpenFinanceRoute(viewModel: PrivacidadViewModel, onVolver: () -> Unit
         vista = vista,
         aviso = aviso,
         falloOtorgar = falloModal,
+        onCerrarSesion = onCerrarSesion,
         onVolver = {
             viewModel.descartarOtorgamiento()
             onVolver()

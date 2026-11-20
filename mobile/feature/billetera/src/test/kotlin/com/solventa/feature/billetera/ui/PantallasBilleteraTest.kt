@@ -61,15 +61,21 @@ class PantallasBilleteraTest {
         lista(BilleteraUiState.Contenido(listOf(Muestras.activa, Muestras.vencida)))
 
         compose.onNodeWithText("Mi Billetera").assertIsDisplayed()
-        compose.onNodeWithText("Seguro de Vida").assertIsDisplayed()
-        compose.onNodeWithText("Personas").assertIsDisplayed()
-        compose.onNodeWithText("Póliza POL-000123").assertIsDisplayed()
-        compose.onNodeWithText("Suma asegurada: $ 300.000.000 COP").assertIsDisplayed()
-        compose.onNodeWithText("3 coberturas").assertIsDisplayed()
-        compose.onNodeWithText("Seguro de Auto").assertIsDisplayed()
-        compose.onNodeWithText("1 cobertura").assertIsDisplayed()
+        compose.onNodeWithText("Tus pólizas").assertIsDisplayed()
+        compose.onNodeWithText("SEGURO DE VIDA").assertIsDisplayed()
+        compose.onNodeWithText("POL-000123").assertIsDisplayed()
+        compose.onNodeWithText("SEGURO DE AUTO").assertIsDisplayed()
         compose.onNodeWithText("ACTIVA", useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithText("VENCIDA", useUnmergedTree = true).assertIsDisplayed()
+        compose.onAllNodesWithText("Ver detalle completo", useUnmergedTree = true).assertCountEquals(0)
+
+        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa")).performClick()
+        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-vencida")).performClick()
+
+        compose.onNodeWithText("Personas").assertIsDisplayed()
+        compose.onNodeWithText("Suma asegurada: $ 300.000.000 COP").assertIsDisplayed()
+        compose.onNodeWithText("3 coberturas").assertIsDisplayed()
+        compose.onNodeWithText("1 cobertura").assertIsDisplayed()
         compose.onAllNodesWithText("Ver detalle completo", useUnmergedTree = true).assertCountEquals(2)
     }
 
@@ -83,28 +89,31 @@ class PantallasBilleteraTest {
     }
 
     @Test
-    fun `la tarjeta es un solo boton que anuncia el estado y abre el detalle de su poliza`() {
+    fun `la cabecera es un boton que anuncia el estado, despliega la tarjeta y el boton abre el detalle`() {
         lista(BilleteraUiState.Contenido(listOf(Muestras.activa, Muestras.vencida)))
 
         compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .assert(estado("Estado: activa"))
             .assert(SemanticsMatcher("etiqueta de la acción") {
-                it.config[SemanticsActions.OnClick].label == "Abrir detalle de la póliza"
+                it.config[SemanticsActions.OnClick].label == "Mostrar u ocultar los datos de la póliza"
             })
             .assertHeightIsAtLeast(48.dp)
             .assertHasClickAction()
         compose.onNodeWithTag(EtiquetasPrueba.poliza("id-vencida")).assert(estado("Estado: vencida")).performClick()
+        assertEquals(emptyList(), abiertas)
+
+        compose.onNodeWithTag(EtiquetasPrueba.verDetalle("id-vencida")).assertHeightIsAtLeast(48.dp).performClick()
 
         assertEquals(listOf("id-vencida"), abiertas)
     }
 
     @Test
-    fun `la tarjeta fusiona sus textos en un solo nodo y el chip no se lee dos veces`() {
+    fun `la cabecera fusiona sus textos en un solo nodo y el chip no se lee dos veces`() {
         lista(BilleteraUiState.Contenido(listOf(Muestras.activa)))
 
         compose.onAllNodesWithTag(EtiquetasPrueba.poliza("id-activa")).assertCountEquals(1)
-        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa")).assert(hasText("Seguro de Vida"))
+        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa")).assert(hasText("SEGURO DE VIDA"))
         compose.onAllNodes(hasContentDescription("Estado: activa")).assertCountEquals(0)
     }
 
@@ -226,7 +235,7 @@ class PantallasBilleteraTest {
         detalle(DetallePolizaUiState.Contenido(Muestras.detalle))
 
         val orden = listOf(
-            "Seguro asociado", "Credencial", "Coberturas vigentes", "Valores", "Vigencia",
+            "SEGURO ASOCIADO", "CREDENCIAL", "COBERTURAS VIGENTES", "VALORES", "VIGENCIA",
         ).map { compose.onNode(hasText(it).and(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))).top() }
         assertEquals(orden.sorted(), orden)
         assertEquals(5, orden.toSet().size)

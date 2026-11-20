@@ -1,9 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 
-import { ConfigService } from '../../core/config/app-config';
 import { ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 
-/** Menú de Operación. Tablero abre CloudWatch; Continuidad llega en otra historia. */
+/** Menú de Operación. Tablero es la página de HU-W08 (enlaza CloudWatch dentro); Continuidad, I04 e I05 de HU-W29. */
 @Component({
   selector: 'app-operacion-layout',
   imports: [SeccionLayoutComponent],
@@ -11,11 +10,10 @@ import { ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccio
   styles: `:host { display: flex; flex: 1; min-width: 0; min-height: 0; }`,
 })
 export class OperacionLayoutComponent {
-  private readonly dashboardUrl = inject(ConfigService).valor.dashboardUrl;
   readonly items: ItemSeccion[] = [
-    { etiqueta: 'Tablero', icono: '📈', href: this.dashboardUrl || undefined, pendiente: 'Configure dashboardUrl en config.json' },
+    { etiqueta: 'Tablero', icono: '📈', ruta: 'tablero' },
     { etiqueta: 'Trazas', icono: '🔍', ruta: 'trazas' },
     { etiqueta: 'Alertas', icono: '🔔', ruta: 'alertas' },
-    { etiqueta: 'Continuidad', icono: '🛡' },
+    { etiqueta: 'Continuidad', icono: '🛡', ruta: 'continuidad' },
   ];
 }

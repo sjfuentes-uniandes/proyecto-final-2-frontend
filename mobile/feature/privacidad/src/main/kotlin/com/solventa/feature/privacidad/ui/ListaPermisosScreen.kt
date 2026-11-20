@@ -47,9 +47,10 @@ fun ListaPermisosScreen(
     consentimientos: Carga<List<Consentimiento>>,
     onAbrirPermiso: (Permiso) -> Unit,
     onReintentar: () -> Unit,
+    onCerrarSesion: (() -> Unit)? = null,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        BarraPrivacidad(stringResource(R.string.privacidad_barra_titulo))
+        BarraPrivacidad(stringResource(R.string.privacidad_barra_titulo), onCerrarSesion = onCerrarSesion)
         Column(
             modifier = Modifier
                 .fillMaxSize()

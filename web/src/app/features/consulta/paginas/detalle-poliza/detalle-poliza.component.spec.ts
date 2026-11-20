@@ -81,6 +81,22 @@ describe('DetallePolizaComponent (W-02, HU-W18)', () => {
     expect(await violacionesA11y(html())).toEqual([]);
   });
 
+  it('muestra el titular y su documento enmascarado en el subtítulo', async () => {
+    await navegar();
+    pedido().flush(
+      estadoPoliza('VIGENTE', { titularNombre: 'Natalia González Ruiz', tipoDocumento: 'CC', documentoEnmascarado: '1.020.***.456' }),
+    );
+    harness.detectChanges();
+    expect(texto('header .sub')).toBe('Vida hipotecario · Vida · Natalia González Ruiz · C.C. 1.020.***.456');
+  });
+
+  it('sin tipo o sin documento enmascarado omite el segmento del documento', async () => {
+    await navegar();
+    pedido().flush(estadoPoliza('VIGENTE', { titularNombre: 'Natalia González Ruiz', tipoDocumento: null, documentoEnmascarado: '1.020.***.456' }));
+    harness.detectChanges();
+    expect(texto('header .sub')).toBe('Vida hipotecario · Vida · Natalia González Ruiz');
+  });
+
   it('no muestra cliente, canal, cobro ni deducibles', async () => {
     await navegar();
     pedido().flush(estadoPoliza('VIGENTE'));

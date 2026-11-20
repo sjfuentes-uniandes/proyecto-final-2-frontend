@@ -1,0 +1,15 @@
+.visor {
+  width: min(880px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 0; border-radius: var(--sv-radio-tarjeta);
+  background: var(--sv-blanco); color: var(--sv-texto); box-shadow: 0 12px 40px rgb(0 0 0 / 35%);
+}
+.visor::backdrop { background: rgb(15 23 42 / 60%); }
+.contenido { display: flex; flex-direction: column; gap: 14px; padding: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+h2 { margin: 0; font-size: 16px; color: var(--sv-azul-oscuro); overflow-wrap: anywhere; }
+h3 { margin: 0 0 6px; font-size: 15px; color: var(--sv-azul-oscuro); }
+.cuerpo { display: flex; justify-content: center; align-items: center; min-height: 180px; overflow: auto; }
+img, video { display: block; max-width: 100%; max-height: calc(100vh - 160px); object-fit: contain; }
+.estado { margin: 0; padding: 24px; text-align: center; font-size: 13.5px; color: var(--sv-texto-secundario); }
+.estado--aviso { border-left: 4px solid var(--sv-naranja); background: var(--sv-naranja-fondo); text-align: left; color: #7a4a00; width: 100%; box-sizing: border-box; }
+.estado--aviso p { margin: 0; }
+a.btn { text-decoration: none; }

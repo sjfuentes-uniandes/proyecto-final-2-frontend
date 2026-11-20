@@ -1,0 +1,13 @@
+h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.acciones a.btn { text-decoration: none; }
+a.btn { text-decoration: none; }
+.crumb a { color: var(--sv-azul); }
+
+.pestanas { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--sv-borde); }
+.pestanas a {
+  padding: 10px 16px 11px; margin-bottom: -1px; border-bottom: 3px solid transparent; font-size: 13.5px;
+  color: var(--sv-texto-secundario); text-decoration: none;
+}
+.pestanas a:hover { color: var(--sv-azul-oscuro); }
+.pestanas a.activa { border-bottom-color: var(--sv-azul-medio); font-weight: 700; color: var(--sv-azul-oscuro); }

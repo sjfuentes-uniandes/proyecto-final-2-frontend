@@ -30,7 +30,10 @@ sealed class ResultadoVerificacionRegistro {
         override val esRecuperable: Boolean get() = true
     }
 
-    /** 409 REGISTRO_CORREO_DISTINTO: la verificación quedó ligada a otro correo; usar un registroId nuevo. */
+    /** 404 CLIENTE_NO_REGISTRADO: el documento no existe; el asesor debe registrar al cliente. */
+    data class ClienteNoRegistrado(val correlationId: String?) : ResultadoVerificacionRegistro()
+
+    /** 409 REGISTRO_CORREO_DISTINTO: el correo no es el que el asesor registró; usar un registroId nuevo. */
     data class CorreoDistinto(val correlationId: String?) : ResultadoVerificacionRegistro()
 
     /** 409 REGISTRO_YA_VINCULADO: la cuenta ya existe; mandar a iniciar sesión. */

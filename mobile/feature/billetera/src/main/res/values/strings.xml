@@ -14,7 +14,10 @@
 
     <!-- Lista (Mi Billetera) -->
     <string name="billetera_titulo">Mi Billetera</string>
-    <string name="billetera_subtitulo">Tus pólizas y su cobertura</string>
+    <string name="billetera_lista_titulo">Tus pólizas</string>
+    <string name="billetera_subtitulo">Repositorio seguro de los datos de tus pólizas</string>
+    <string name="billetera_coberturas_principales">Coberturas principales</string>
+    <string name="billetera_cerrar_sesion">Cerrar sesión</string>
     <string name="billetera_privacidad_acceso">Consentimientos y privacidad</string>
     <string name="billetera_vacia">Aún no tienes pólizas. Cuando contrates un seguro, aparecerá aquí.</string>
     <string name="billetera_error_sin_conexion">No hay conexión. Revisa tu red e inténtalo de nuevo.</string>
@@ -27,7 +30,7 @@
         <item quantity="other">%1$d coberturas</item>
     </plurals>
     <string name="billetera_ver_detalle">Ver detalle completo</string>
-    <string name="billetera_abrir_poliza">Abrir detalle de la póliza</string>
+    <string name="billetera_alternar_poliza">Mostrar u ocultar los datos de la póliza</string>
 
     <!-- Detalle (Carné digital) -->
     <string name="detalle_titulo">Carné digital</string>

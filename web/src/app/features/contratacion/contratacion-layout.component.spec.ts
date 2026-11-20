@@ -34,13 +34,13 @@ describe('ContratacionLayoutComponent (E01 a E04 y F01)', () => {
   it('para un suscriptor: Contratación con la bandeja y Decisiones; lo demás próximamente', async () => {
     await iniciarSesion({ name: 'Ana Suárez', 'cognito:groups': ['suscriptores'] });
     const { html } = crear();
-    expect(Array.from(html.querySelectorAll('h5')).map((h) => h.textContent)).toEqual(['Contratación', 'Consulta']);
+    expect(Array.from(html.querySelectorAll('h5')).map((h) => h.textContent)).toEqual(['Contratación']);
     expect(Array.from(html.querySelectorAll('a.side__item')).map((a) => a.textContent?.trim())).toEqual([
       '⚖Bandeja de suscripción',
       '⚖Decisiones',
     ]);
     const pendientes = Array.from(html.querySelectorAll('.side__item--off')).map((p) => p.textContent?.trim());
-    expect(pendientes).toEqual(['$Cotizaciones', '✎Emisión', '📄Pólizas']);
+    expect(pendientes).toEqual(['$Cotizaciones', '✎Emisión']);
     expect(await violacionesA11y(html)).toEqual([]);
   });
 
@@ -59,13 +59,12 @@ describe('ContratacionLayoutComponent (E01 a E04 y F01)', () => {
     expect(html.querySelector('aside')?.getAttribute('aria-label')).toBe('Contracting');
   });
 
-  it('HU-W18: el suscriptor NO ve el enlace a Pólizas y el ítem queda desactivado', async () => {
+  it('HU-W18: el suscriptor no ve Pólizas ni la sección Consulta', async () => {
     await iniciarSesion({ name: 'Ana Suárez', 'cognito:groups': ['suscriptores'] });
     const { html } = crear();
     expect(html.querySelector('a[href="/consulta/polizas"]')).toBeNull();
-    const polizas = Array.from(html.querySelectorAll('.side__item--off')).find((p) => p.textContent?.includes('Pólizas'));
-    expect(polizas).toBeDefined();
-    expect(polizas?.getAttribute('title')).toBe('Disponible en una próxima versión');
+    expect(html.querySelector('aside')?.textContent).not.toContain('Pólizas');
+    expect(html.querySelector('aside')?.textContent).not.toContain('Consulta');
   });
 
   it('HU-W15: en la aceptación (F01) «Emisión» queda activo y enlaza a la página actual', async () => {

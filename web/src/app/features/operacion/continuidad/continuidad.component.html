@@ -1,0 +1,202 @@
+@let tx = t();
+<nav class="crumb" [attr.aria-label]="tx.migas">
+  <span class="crumb__link">{{ tx.migaInicio }}</span> › <span class="crumb__link">{{ tx.migaOperacion }}</span> ›
+  <strong>{{ tx.migaContinuidad }}</strong>
+</nav>
+
+<header class="h-row">
+  <div>
+    <div class="titulo">
+      <h2>{{ tx.tituloContinuidad }}</h2>
+      @if (estado(); as e) {
+        <span class="tag" data-testid="estado-general" [class.tag--ok]="e.estado === 'DOS_ZONAS'" [class.tag--alerta]="e.estado !== 'DOS_ZONAS'">
+          {{ tx.estadoGeneral[e.estado] }}
+        </span>
+      }
+    </div>
+    <p class="sub" data-testid="subtitulo">{{ cargando() ? tx.cargando : subtitulo() }}</p>
+  </div>
+  <div class="acciones">
+    <label class="ventana">
+      <span>{{ tx.ventana }}</span>
+      <select class="inp" [value]="horas()" (change)="cambiarVentana($event)">
+        @for (h of ventanas; track h) {
+          <option [value]="h">{{ tx.ventanaHoras(h) }}</option>
+        }
+      </select>
+    </label>
+    <button type="button" class="btn btn--secundario" (click)="consultar()" [disabled]="cargando()">{{ tx.actualizar }}</button>
+    <a class="btn btn--secundario" routerLink="conciliacion">{{ tx.verConciliacion }}</a>
+  </div>
+</header>
+
+@if (error(); as err) {
+  <p class="aviso" role="alert">
+    {{ err.mensaje }}
+    @if (err.correlationId) {
+      <span class="mono">({{ err.correlationId }})</span>
+    }
+  </p>
+}
+
+@if (estado(); as e) {
+  @if (e.estado === 'UNA_ZONA') {
+    <p class="nota nota--alerta" role="status" data-testid="aviso-zona">
+      <strong>{{ tx.avisoUnaZona }}</strong> {{ tx.avisoUnaZonaDetalle }}
+    </p>
+  }
+
+  <section class="kpis" [attr.aria-label]="tx.indicadores" data-testid="indicadores">
+    @if (e.indicadores; as ind) {
+      <div class="kpi">
+        <span class="kpi__etiqueta">{{ tx.indPerdidas }}</span>
+        <span class="kpi__valor" [class.kpi__valor--ok]="ind.transacciones_perdidas === 0" [class.kpi__valor--error]="ind.transacciones_perdidas > 0">{{
+          ind.transacciones_perdidas
+        }}</span>
+        <span class="kpi__detalle">{{ tx.indPerdidasDetalle }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__etiqueta">{{ tx.indCobros }}</span>
+        <span class="kpi__valor" [class.kpi__valor--ok]="ind.cobros_duplicados === 0" [class.kpi__valor--error]="ind.cobros_duplicados > 0">{{
+          ind.cobros_duplicados
+        }}</span>
+        <span class="kpi__detalle">{{ tx.indCobrosDetalle }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__etiqueta">{{ tx.indRedireccion }}</span>
+        @if (ind.redireccion_s !== null) {
+          <span
+            class="kpi__valor"
+            [class.kpi__valor--ok]="ind.objetivo_redireccion_s === null || ind.redireccion_s <= ind.objetivo_redireccion_s"
+            [class.kpi__valor--error]="ind.objetivo_redireccion_s !== null && ind.redireccion_s > ind.objetivo_redireccion_s"
+            >{{ duracion(ind.redireccion_s) }}</span
+          >
+          @if (ind.objetivo_redireccion_s !== null) {
+            <span class="kpi__detalle">{{ tx.indRedireccionDetalle(duracion(ind.objetivo_redireccion_s)) }}</span>
+          }
+        } @else {
+          <span class="kpi__valor kpi__valor--error">{{ tx.sinDato }}</span>
+          <span class="kpi__detalle">{{ tx.indRedireccionSinDato }}</span>
+        }
+      </div>
+      <div class="kpi">
+        <span class="kpi__etiqueta">{{ tx.indErrores }}</span>
+        <span class="kpi__valor kpi__valor--alerta">{{ pct(ind.porcentaje_error) }} %</span>
+        <span class="kpi__detalle">{{ tx.indErroresDetalle }}</span>
+      </div>
+    } @else {
+      <div class="kpi kpi--vacio">
+        <span class="kpi__etiqueta">{{ tx.sinInforme }}</span>
+        <span class="kpi__detalle">{{ tx.sinInformeDetalle }}</span>
+      </div>
+    }
+  </section>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="titulo-zonas">
+      <h3 id="titulo-zonas">{{ tx.tituloZonas }}</h3>
+      <div class="tabla-scroll" role="region" [attr.aria-label]="tx.regionZonas" tabindex="0">
+        <table class="data" data-testid="zonas">
+          <thead>
+            <tr>
+              <th scope="col">{{ tx.colZona }}</th>
+              <th scope="col">{{ tx.colTareas }}</th>
+              <th scope="col">{{ tx.colTrafico }}</th>
+              <th scope="col">{{ tx.colEstado }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (z of e.zonas; track z.zona) {
+              <tr>
+                <th scope="row">{{ z.zona }}</th>
+                <td class="mono">{{ tx.tareas(z.tareas_saludables, z.tareas_esperadas) }}</td>
+                <td>
+                  @if (z.trafico_pct === null) {
+                    <span class="tenue">{{ tx.sinTrafico }}</span>
+                  } @else {
+                    <span
+                      class="barra"
+                      role="img"
+                      [attr.aria-label]="tx.traficoBarra(z.zona, pct(z.trafico_pct))"
+                      [class.barra--vacia]="z.trafico_pct === 0"
+                      ><span class="barra__relleno" [style.width.%]="z.trafico_pct"></span
+                    ></span>
+                    <span class="tenue">{{ z.trafico_pct === 0 ? tx.retiradaBalanceo : tx.trafico(pct(z.trafico_pct)) }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="tag" [class]="claseZona[z.estado]">{{ tx.estadoZona[z.estado] }}</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="tenue">{{ tx.sinZonas }}</td>
+              </tr>
+            }
+            <tr data-testid="base">
+              <th scope="row">{{ tx.baseFila }}</th>
+              <td colspan="2">
+                {{ tx.baseEstado[e.base.estado] }}
+                @if (e.base.desde) {
+                  <span class="tenue">· {{ tx.baseDesde(hora(e.base.desde)) }}</span>
+                }
+              </td>
+              <td>
+                <span class="tag" [class]="claseBase[e.base.estado]">{{ tx.baseEtiqueta[e.base.estado] }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="titulo-recorridos">
+      <h3 id="titulo-recorridos">{{ tx.tituloRecorridos }}</h3>
+      <ul class="recorridos" data-testid="recorridos">
+        @for (r of e.recorridos; track r.id) {
+          <li>
+            <span>
+              {{ r.nombre }}
+              @if (r.alarmas_abiertas.length) {
+                <span class="tenue" [title]="r.alarmas_abiertas.join(', ')">· {{ tx.alarmasAbiertas(r.alarmas_abiertas.length) }}</span>
+              }
+            </span>
+            <span class="tag" [class.tag--ok]="r.estado === 'OPERANDO'" [class.tag--alerta]="r.estado === 'DEGRADADO'">{{
+              tx.recorridoEstado[r.estado]
+            }}</span>
+          </li>
+        } @empty {
+          <li class="tenue">{{ tx.sinRecorridos }}</li>
+        }
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="titulo-cronologia">
+      <h3 id="titulo-cronologia">{{ tx.tituloCronologia }}</h3>
+      @if (e.cronologia.length === 0) {
+        <p class="tenue">{{ tx.sinHitos }}</p>
+      } @else {
+        <ol class="cronologia" data-testid="cronologia">
+          @for (h of e.cronologia; track h.instante + h.tipo + (h.zona ?? '')) {
+            <li class="hito" [class]="claseHito(h)">
+              <strong>{{ tx.hito[h.tipo] }}</strong>
+              <span class="hito__detalle">{{ detalle(h) }}</span>
+              <span class="tenue mono">
+                <time [attr.datetime]="h.instante">{{ hora(h.instante) }}</time>
+                @if (relativo(h); as rel) {
+                  · {{ rel }}
+                }
+                · {{ tx.fuente[h.fuente] }}
+              </span>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+
+    <section class="card" aria-labelledby="titulo-protege">
+      <h3 id="titulo-protege">{{ tx.tituloProtege }}</h3>
+      <p class="texto">{{ tx.textoProtege }}</p>
+    </section>
+  </div>
+}

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -55,7 +56,8 @@ private val rojoRevocar = Color(0xFFD7261E)
 
 /** Barra superior: con [onVolver] muestra la flecha atrás (con descripción para el lector). */
 @Composable
-internal fun BarraPrivacidad(titulo: String, onVolver: (() -> Unit)? = null) {
+internal fun BarraPrivacidad(titulo: String, onVolver: (() -> Unit)? = null, onCerrarSesion: (() -> Unit)? = null) {
+    val colorTexto = if (onVolver == null) Color.White else SolventaTema.colores.textoPrimario
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -77,9 +79,23 @@ internal fun BarraPrivacidad(titulo: String, onVolver: (() -> Unit)? = null) {
             titulo,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = if (onVolver == null) Color.White else SolventaTema.colores.textoPrimario,
-            modifier = Modifier.semantics { heading() },
+            color = colorTexto,
+            modifier = Modifier
+                .weight(1f)
+                .semantics { heading() },
         )
+        if (onCerrarSesion != null) {
+            IconButton(
+                onClick = onCerrarSesion,
+                modifier = Modifier.size(AREA_TACTIL_MINIMA).testTag(EtiquetasPrueba.CERRAR_SESION),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = stringResource(R.string.privacidad_cerrar_sesion),
+                    tint = colorTexto,
+                )
+            }
+        }
     }
 }
 

@@ -93,6 +93,13 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import com.solventa.feature.billetera.R as RBilletera
 import com.solventa.feature.billetera.dominio.Resultado as ResultadoPolizas
+import com.solventa.feature.siniestros.SiniestrosViewModelFactory
+import com.solventa.feature.siniestros.dominio.AlmacenEvidencias
+import com.solventa.feature.siniestros.dominio.LimitesSiniestros
+import com.solventa.feature.siniestros.dominio.PaginaSiniestros
+import com.solventa.feature.siniestros.dominio.RepositorioSiniestros
+import com.solventa.feature.siniestros.dominio.Resultado as ResultadoSiniestros
+import com.solventa.feature.siniestros.SiniestrosViewModel
 import com.solventa.feature.login.R as RLogin
 import com.solventa.feature.onboardingidentidad.R as ROnboarding
 import com.solventa.feature.privacidad.R as RPrivacidad
@@ -141,6 +148,19 @@ class NavegacionSolventaTest {
     private val clienteRegistro = mockk<ClienteRegistro>()
     private val repositorio = RepositorioEnMemoria()
     private val polizas = RepositorioPolizasFalso()
+    private val siniestros = mockk<RepositorioSiniestros> {
+        coEvery { limites() } returns ResultadoSiniestros.Exito(
+            LimitesSiniestros(10, listOf("image/jpeg"), listOf("video/mp4"), 10_485_760, 52_428_800, 60, 300),
+        )
+        coEvery { listar() } returns ResultadoSiniestros.Exito(emptyList())
+        coEvery { historial(any()) } returns ResultadoSiniestros.Exito(PaginaSiniestros(emptyList(), null))
+    }
+    private val almacenEvidencias = object : AlmacenEvidencias {
+        override fun crearArchivo(extension: String) = java.io.File.createTempFile("test-", ".$extension", contexto.cacheDir)
+        override fun eliminar(archivo: java.io.File) {
+            archivo.delete()
+        }
+    }
     private val acciones = mutableListOf<AccionBiometrica>()
     private val verificador = VerificadorBiometrico { accion ->
         acciones += accion
@@ -172,6 +192,14 @@ class NavegacionSolventaTest {
             sesionRegistro = sesionRegistro,
             fabricaBilletera = contando(BilleteraViewModelFactory(polizas, gestorSesion)),
             fabricaDetalle = { id -> contando(DetallePolizaViewModelFactory(id, polizas, gestorSesion)) },
+            fabricaSiniestros = contando(
+                SiniestrosViewModelFactory(
+                    siniestros, polizas, almacenEvidencias, gestorSesion,
+                    almacenPendientes = mockk<com.solventa.feature.siniestros.dominio.AlmacenPendientes> {
+                        coEvery { listar() } returns ResultadoSiniestros.Exito(emptyList())
+                    },
+                ),
+            ),
             estadoSesion = gestorSesion.estado,
             destinoPendiente = destino,
             registroPermisoNotificaciones = explicacionPermiso,
@@ -186,6 +214,12 @@ class NavegacionSolventaTest {
     private fun pulsarEnLoginVisible(id: Int) {
         compose.onAllNodesWithText(texto(id)).onLast().performClick()
         compose.waitForIdle()
+    }
+
+    /** La tarjeta de la billetera es un acordeón: se despliega y luego se abre el detalle. */
+    private fun abrirPoliza() {
+        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        compose.onNodeWithTag(EtiquetasBilletera.verDetalle(ID_POLIZA)).performClick()
     }
 
     private fun ingresar() {
@@ -231,11 +265,35 @@ class NavegacionSolventaTest {
     }
 
     @Test
+    fun `cerrar sesion es visible abre confirmacion y cancelar conserva la billetera`() {
+        montar()
+        ingresar()
+
+        compose.onNodeWithTag(EtiquetasBilletera.CERRAR_SESION).assertIsDisplayed().performClick()
+        compose.onNodeWithText(texto(R.string.cerrar_sesion_mensaje)).assertIsDisplayed()
+        compose.onNodeWithText(texto(R.string.cerrar_sesion_cancelar)).performClick()
+        compose.onNodeWithTag(EtiquetasBilletera.CERRAR_SESION).assertIsDisplayed()
+        compose.onNodeWithText(texto(RBilletera.string.billetera_titulo)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `pestana siniestros abre el listado integrado`() {
+        montar()
+        ingresar()
+
+        compose.onNodeWithText(texto(R.string.nav_siniestros)).performClick()
+        compose.onNodeWithText(texto(com.solventa.feature.siniestros.R.string.siniestros_lista_titulo)).assertIsDisplayed()
+        compose.onNodeWithTag(com.solventa.feature.siniestros.EtiquetasSiniestros.LISTA_VACIA).assertIsDisplayed()
+        compose.onNodeWithTag(com.solventa.feature.siniestros.EtiquetasSiniestros.REPORTAR).assertIsDisplayed()
+        assertEquals(1, creados[SiniestrosViewModel::class.java]?.size)
+    }
+
+    @Test
     fun `tocar una poliza abre su detalle con el polizaId como argumento y atras vuelve a la lista`() {
         val actividad = montar()
         ingresar()
 
-        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        abrirPoliza()
         compose.waitForIdle()
 
         compose.onNodeWithText(texto(RBilletera.string.detalle_titulo)).assertIsDisplayed()
@@ -257,7 +315,7 @@ class NavegacionSolventaTest {
         montar()
         ingresar()
 
-        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        abrirPoliza()
         compose.waitForIdle()
 
         compose.onNodeWithTag(EtiquetasBilletera.NO_AUTORIZADA).assertIsDisplayed()
@@ -285,7 +343,7 @@ class NavegacionSolventaTest {
         montar()
         ingresar()
 
-        compose.onNodeWithTag(EtiquetasBilletera.poliza(ID_POLIZA)).performClick()
+        abrirPoliza()
         compose.waitForIdle()
 
         compose.onAllNodesWithText(texto(RLogin.string.login_boton_ingresar)).assertCountEquals(1)

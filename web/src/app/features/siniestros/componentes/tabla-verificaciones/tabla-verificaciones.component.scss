@@ -1,0 +1,7 @@
+:host { display: block; }
+.card { padding: 18px; }
+h3 { margin: 0 0 14px; font-size: 15px; color: var(--sv-azul-oscuro); }
+.etiqueta { font-weight: 400; text-align: left; text-transform: none; letter-spacing: 0; background: none; color: var(--sv-texto); font-size: 13px; }
+thead th { white-space: normal; }
+/* Pseudo-localización: textos más largos parten la palabra antes que desbordar la tarjeta. */
+table.data th, table.data td { overflow-wrap: anywhere; }

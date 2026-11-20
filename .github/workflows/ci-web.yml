@@ -26,7 +26,7 @@ jobs:
   # sintética) y Pact consumidor en Node. Los reportes y el pacto quedan como artefactos.
   e2e-pact:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       PACT_DO_NOT_TRACK: "true"
     steps:

@@ -1,0 +1,18 @@
+:host { display: block; }
+.moneda { margin: -6px 0 12px; font-size: 12px; color: var(--sv-texto-secundario); }
+.campos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 14px; }
+.fld { min-width: 0; }
+.fld--completo { grid-column: 1 / -1; }
+.inp { width: 100%; box-sizing: border-box; }
+.inp[readonly] { background: var(--sv-fondo, #f4f6fa); color: var(--sv-texto-secundario); }
+.inp--texto { height: auto; padding: 9px 11px; resize: vertical; line-height: 20px; }
+.obligatoria { color: #b3261e; }
+.resumen { display: flex; flex-direction: column; margin: 0; }
+.resumen > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13.5px; }
+.resumen > div:last-child { border-bottom: 0; }
+dt { color: var(--sv-texto-secundario); }
+dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.resumen__total { font-weight: 700; }
+@media (max-width: 760px) {
+  .campos { grid-template-columns: minmax(0, 1fr); }
+}

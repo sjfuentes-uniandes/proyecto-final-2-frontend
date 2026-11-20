@@ -13,6 +13,10 @@ class SesionRegistro(private val generarId: () -> String = { UUID.randomUUID().t
     var registroId: String = generarId()
         private set
 
+    var tipoDocumento: String = ""
+
+    var numeroDocumento: String = ""
+
     /** Correo del formulario; el backend liga la verificación a este correo. */
     var correo: String = ""
 

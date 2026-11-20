@@ -1,0 +1,45 @@
+@let t = textos.t();
+@if (estado.detalle(); as d) {
+  @if (estado.mensajeDecision(); as mensaje) {
+    <p class="alerta alerta--ok" role="status"><span aria-hidden="true">✓</span><span>{{ mensaje }}</span>@if (enlacePago(); as ruta) {<a class="enlace-pago" [routerLink]="ruta">{{ t.verPago }}</a>}</p>
+  }
+  @if (estado.errorDecision(); as e) {
+    <div class="alerta alerta--error" role="alert">
+      <span aria-hidden="true">⚠</span>
+      <span>
+        <strong>{{ t.decisionError }}.</strong> {{ e.mensaje }}
+        @if (e.correlationId) {
+          <span class="seguimiento">{{ t.codigoSeguimiento(e.correlationId) }}</span>
+        }
+      </span>
+    </div>
+  }
+  <div class="cols">
+    <div class="columna">
+      <app-tabla-verificaciones [verificaciones]="d.verificacionCobertura" [amparos]="d.poliza.amparos" />
+      @if (aviso(); as texto) {
+        <p class="aviso aviso--alerta" role="status">{{ texto }}</p>
+      } @else {
+        <p class="aviso aviso--ok" role="status">{{ t.soportesAlDia }}</p>
+      }
+      @if (avisoPlazo(); as plazo) {
+        <p class="aviso aviso--alerta" role="status">{{ plazo }}</p>
+      }
+      <app-liquidacion [detalle]="d" [formulario]="formulario" [editable]="puedeDecidir()" />
+      @if (d.evento; as evento) {
+        <app-evento-regla [evento]="evento" />
+      }
+    </div>
+    <div class="columna">
+      <app-linea-tiempo-tramite [pasos]="d.tramite" [origen]="d.origen" [enlacePago]="enlacePago()" />
+      @if (puedeDecidir()) {
+        <app-panel-decision
+          [detalle]="d"
+          [formulario]="formulario"
+          (decidida)="estado.decisionRegistrada($event)"
+          (rechazada)="estado.decisionRechazada($event)"
+        />
+      }
+    </div>
+  </div>
+}

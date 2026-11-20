@@ -1,6 +1,7 @@
 /* Paso 1 (C01 mínimo, DT-04): solo lo propio de esta pantalla; lo común está en perfilamiento.scss. */
 .inp:disabled { background: var(--sv-fondo); color: var(--sv-texto-secundario); }
 .alerta p { margin: 0; }
+.fld__ayuda { color: var(--sv-texto-secundario); }
 .alerta:focus { outline: 3px solid var(--sv-azul-medio); outline-offset: 2px; }
 .seguimiento { font-variant-numeric: tabular-nums; }
 .lateral .btn { width: 100%; }

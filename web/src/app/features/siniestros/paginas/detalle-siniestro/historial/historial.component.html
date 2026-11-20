@@ -1,0 +1,24 @@
+@let t = textos.t();
+<section class="card" aria-labelledby="titulo-historial">
+  <h3 id="titulo-historial">{{ t.tituloHistorial }}</h3>
+  <table class="data" aria-labelledby="titulo-historial">
+    <thead>
+      <tr>
+        <th scope="col">{{ t.colFecha }}</th>
+        <th scope="col">{{ t.colAccion }}</th>
+        <th scope="col">{{ t.colCambioEstado }}</th>
+        <th scope="col">{{ t.colActor }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (fila of filas(); track fila.id) {
+        <tr>
+          <td class="mono">{{ fila.fecha }}</td>
+          <th scope="row" class="accion">{{ fila.accion }}</th>
+          <td>{{ fila.cambio }}</td>
+          <td>{{ fila.actor }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>

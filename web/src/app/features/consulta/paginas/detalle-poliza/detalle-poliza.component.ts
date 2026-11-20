@@ -12,6 +12,15 @@ import { MemoriaConsultaService } from '../../consulta-memoria.service';
 import { ConsultaService } from '../../consulta.service';
 import { insigniaEstado, propagacionMs, textoPropagacion } from '../../presentacion';
 
+/** El segmento de documento solo se muestra completo: sin tipo o sin número enmascarado se omite. */
+function documentoVisible(tipo: string | null, enmascarado: string | null): string | null {
+  if (!tipo || !enmascarado) {
+    return null;
+  }
+  const etiqueta = tipo === 'CC' ? 'C.C.' : tipo === 'CE' ? 'C.E.' : tipo;
+  return `${etiqueta} ${enmascarado}`;
+}
+
 /**
  * W-02: detalle de una póliza. El 404 es uniforme (ajena, inexistente o no proyectada): nunca insinúa
  * que la póliza existe. Con 503 muestra el último estado conocido de esa póliza, si se cargó antes.
@@ -56,7 +65,9 @@ export class DetallePolizaComponent {
     const cuanto = ms === null ? null : textoPropagacion(t, ms);
     return {
       titulo: t.tituloDetalle(p.numero),
-      subtitulo: t.subtituloDetalle(p.producto, p.ramo),
+      subtitulo: [t.subtituloDetalle(p.producto, p.ramo), p.titularNombre, documentoVisible(p.tipoDocumento, p.documentoEnmascarado)]
+        .filter((parte): parte is string => !!parte)
+        .join(' · '),
       estado: insignia.texto,
       claseEstado: claseTono(insignia.tono),
       sumaAsegurada: this.textos.monto(p.sumaAsegurada, p.moneda),

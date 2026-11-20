@@ -7,6 +7,7 @@
     <string name="privacidad_cargando">Cargando…</string>
     <string name="privacidad_reintentar">Reintentar</string>
     <string name="privacidad_volver">Volver</string>
+    <string name="privacidad_cerrar_sesion">Cerrar sesión</string>
 
     <string name="privacidad_permiso_personales">Datos personales y financieros</string>
     <string name="privacidad_permiso_personales_descripcion">Consultar uso de datos personales y financieros</string>

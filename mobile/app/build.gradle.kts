@@ -72,6 +72,7 @@ dependencies {
     implementation(project(":feature:login"))
     implementation(project(":feature:privacidad"))
     implementation(project(":feature:billetera"))
+    implementation(project(":feature:siniestros"))
     implementation(project(":feature:notificaciones"))
     implementation(project(":feature:onboarding-identidad"))
 
@@ -84,6 +85,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

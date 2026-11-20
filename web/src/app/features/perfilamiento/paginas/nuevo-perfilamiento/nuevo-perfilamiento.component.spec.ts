@@ -114,6 +114,31 @@ describe('NuevoPerfilamientoComponent (paso 1, C01 mínimo)', () => {
       }
     });
 
+    it('el correo es opcional: de 3 a 254 caracteres con formato algo@dominio.ext', () => {
+      const correo = c().formulario.controls.correo;
+      for (const valido of ['', '   ', 'natalia@ejemplo.co', 'a@b.c']) {
+        correo.setValue(valido);
+        expect(correo.valid).withContext(valido).toBeTrue();
+      }
+      for (const invalido of ['natalia', 'natalia@ejemplo', 'a b@ejemplo.co', '@ejemplo.co', 'a@.co', `${'a'.repeat(250)}@b.co`]) {
+        correo.setValue(invalido);
+        expect(correo.valid).withContext(invalido).toBeFalse();
+      }
+    });
+
+    it('envía el correo en el alta solo si se escribió', () => {
+      c().formulario.patchValue({ ...C01, correo: ' natalia@ejemplo.co ' });
+      clicVerificar();
+      const alta = http.expectOne(URL_CLIENTES);
+      expect(alta.request.body).toEqual({
+        tipoDocumento: 'CC',
+        numeroDocumento: '1020456789',
+        nombreCompleto: 'Natalia González Ruiz',
+        fechaNacimiento: '1990-04-18',
+        correo: 'natalia@ejemplo.co',
+      });
+    });
+
     it('la fecha de nacimiento es obligatoria y no puede ser futura', () => {
       const fecha = c().formulario.controls.fechaNacimiento;
       const manana = new Date();

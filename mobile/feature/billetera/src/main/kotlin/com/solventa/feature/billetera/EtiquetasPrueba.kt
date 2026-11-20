@@ -10,6 +10,7 @@ object EtiquetasPrueba {
     const val VACIA = "billetera.vacia"
     const val LISTA = "billetera.lista"
     const val ACCESO_PRIVACIDAD = "billetera.acceso_privacidad"
+    const val CERRAR_SESION = "billetera.cerrar_sesion"
     const val DETALLE = "billetera.detalle"
     const val CREDENCIAL = "billetera.credencial"
     const val COBERTURAS = "billetera.coberturas"
@@ -17,4 +18,5 @@ object EtiquetasPrueba {
     const val NO_ENCONTRADA = "billetera.no_encontrada"
 
     fun poliza(polizaId: String) = "billetera.poliza.$polizaId"
+    fun verDetalle(polizaId: String) = "billetera.ver_detalle.$polizaId"
 }

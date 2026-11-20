@@ -103,6 +103,14 @@ fun OnboardingIdentidadRoute(
         enCaptura = false
     }
 
+    // La verificación va ligada al documento y al correo: si cambian, la anterior ya no sirve.
+    val invalidarVerificacion = { cambio: Boolean ->
+        if (cambio && identidadVerificada) {
+            identidadVerificada = false
+            sesionRegistro.reiniciar()
+        }
+    }
+
     LaunchedEffect(cuenta) {
         when (val actual = cuenta) {
             is EtapaCuenta.EsperandoCodigo -> espera = actual
@@ -201,12 +209,17 @@ fun OnboardingIdentidadRoute(
             uiState = registro,
             identidadVerificada = identidadVerificada,
             motivoAdvertencia = motivoAdvertencia,
+            onTipoDocumentoCambiado = { nuevo ->
+                invalidarVerificacion(nuevo != sesionRegistro.tipoDocumento)
+                registroViewModel.onTipoDocumentoCambiado(nuevo)
+            },
+            onNumeroDocumentoCambiado = { nuevo ->
+                invalidarVerificacion(nuevo != sesionRegistro.numeroDocumento)
+                registroViewModel.onNumeroDocumentoCambiado(nuevo)
+            },
             onCorreoCambiado = { nuevo ->
                 // La verificación va ligada al correo: si cambia, la anterior ya no sirve para registrarse.
-                if (identidadVerificada && nuevo.trim() != sesionRegistro.correo) {
-                    identidadVerificada = false
-                    sesionRegistro.reiniciar()
-                }
+                invalidarVerificacion(nuevo.trim() != sesionRegistro.correo)
                 registroViewModel.onCorreoCambiado(nuevo)
             },
             onContrasenaCambiada = registroViewModel::onContrasenaCambiada,
@@ -214,9 +227,11 @@ fun OnboardingIdentidadRoute(
             onCambiarVisibilidadContrasena = registroViewModel::onCambiarVisibilidadContrasena,
             onCambiarVisibilidadConfirmacion = registroViewModel::onCambiarVisibilidadConfirmacion,
             onRegistrarBiometriaClick = {
-                if (registro.correoValido) {
+                if (registro.datosVerificacionValidos) {
                     motivoAdvertencia = null
                     cuentaViewModel.reiniciar()
+                    sesionRegistro.tipoDocumento = registro.tipoDocumento
+                    sesionRegistro.numeroDocumento = registro.numeroDocumento.trim()
                     sesionRegistro.correo = registro.correo.trim()
                     verificacionViewModel.reiniciar()
                     enCaptura = true

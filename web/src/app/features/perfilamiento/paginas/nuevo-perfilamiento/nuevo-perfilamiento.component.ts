@@ -34,7 +34,7 @@ export const PRESUPUESTO_COTIZACION_MS = 250;
 
 type Campo = 'tipoDocumento' | 'numeroDocumento' | 'nombreCompleto' | 'fechaNacimiento' | 'sumaAsegurada' | 'plazoCreditoMeses';
 /** Los campos que identifican al cliente: si cambian, la verificación anterior ya no aplica. */
-const CAMPOS_IDENTIDAD = ['tipoDocumento', 'numeroDocumento', 'nombreCompleto', 'fechaNacimiento'] as const;
+const CAMPOS_IDENTIDAD = ['tipoDocumento', 'numeroDocumento', 'nombreCompleto', 'fechaNacimiento', 'correo'] as const;
 
 /** Hoy en la zona del navegador, como AAAA-MM-DD (el formato de <input type="date">). */
 export function hoyIso(hoy = new Date()): string {
@@ -54,6 +54,14 @@ export function normalizarDocumento(valor: string): string {
 
 function documentoValido(control: AbstractControl<string>): ValidationErrors | null {
   return PATRON_DOCUMENTO.test(normalizarDocumento(control.value ?? '')) ? null : { documento: true };
+}
+
+const PATRON_CORREO = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+
+/** Opcional: vacío es válido; si se escribe, de 3 a 254 caracteres con formato algo@dominio.ext. */
+function correoValido(control: AbstractControl<string>): ValidationErrors | null {
+  const valor = (control.value ?? '').trim();
+  return !valor || (valor.length >= 3 && valor.length <= 254 && PATRON_CORREO.test(valor)) ? null : { correo: true };
 }
 
 function nombreValido(control: AbstractControl<string>): ValidationErrors | null {
@@ -111,6 +119,7 @@ export class NuevoPerfilamientoComponent implements OnInit {
     numeroDocumento: ['', [Validators.required, documentoValido]],
     nombreCompleto: ['', [Validators.required, nombreValido]],
     fechaNacimiento: ['', [Validators.required, fechaNoFutura]],
+    correo: ['', correoValido],
     sumaAsegurada: ['', [Validators.required, sumaEnRango]],
     plazoCreditoMeses: [PLAZO_POR_DEFECTO, Validators.required],
   });
@@ -278,12 +287,19 @@ export class NuevoPerfilamientoComponent implements OnInit {
       this.enfocarPrimerInvalido();
       return;
     }
-    const { tipoDocumento, numeroDocumento, nombreCompleto, fechaNacimiento } = this.formulario.getRawValue();
+    const { tipoDocumento, numeroDocumento, nombreCompleto, fechaNacimiento, correo } = this.formulario.getRawValue();
+    const correoLimpio = correo.trim();
     const existente = this.clienteId();
     const solicitud: Observable<ClienteDto> = existente
       ? this.verificar(existente)
       : this.clientes
-          .crear({ tipoDocumento, numeroDocumento: normalizarDocumento(numeroDocumento), nombreCompleto: nombreCompleto.trim(), fechaNacimiento })
+          .crear({
+            tipoDocumento,
+            numeroDocumento: normalizarDocumento(numeroDocumento),
+            nombreCompleto: nombreCompleto.trim(),
+            fechaNacimiento,
+            ...(correoLimpio ? { correo: correoLimpio } : {}),
+          })
           .pipe(
             switchMap((cliente) => {
               this.clienteId.set(cliente.clienteId);

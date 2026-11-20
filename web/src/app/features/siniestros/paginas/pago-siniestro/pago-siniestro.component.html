@@ -1,0 +1,99 @@
+@let t = textos.t();
+@let v = estado.vista();
+<nav class="crumb" [attr.aria-label]="t.migas">
+  {{ t.migaInicio }} › <a routerLink="/siniestros/bandeja">{{ t.migaSiniestros }}</a>
+  @if (v) {
+    › <a [routerLink]="['/siniestros', siniestroId]">{{ v.codigo }}</a> › <strong>{{ t.migaPago }}</strong>
+  }
+</nav>
+
+@if (estado.error(); as error) {
+  <div class="alerta alerta--error" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <p>
+      {{ error.mensaje }}
+      @if (error.correlationId) {
+        <br /><span class="seguimiento">{{ t.codigoSeguimiento(error.correlationId) }}</span>
+      }
+    </p>
+  </div>
+  <div class="acciones">
+    <button class="btn btn--secundario" type="button" (click)="estado.actualizar()">{{ t.reintentar }}</button>
+    <a class="btn btn--secundario" [routerLink]="['/siniestros', siniestroId]">{{ t.pagoVolverSiniestro }}</a>
+  </div>
+} @else if (v) {
+  <div class="h-row">
+    <header>
+      <h2>
+        {{ t.pagoTitulo }}
+        @if (insignia(); as i) {
+          <app-insignia-estado [insignia]="i" />
+        }
+      </h2>
+      <p class="sub">{{ subtitulo() }}</p>
+    </header>
+    <div class="acciones">
+      @if (variante() === 'PENDIENTE') {
+        <button class="btn btn--secundario" type="button" (click)="estado.actualizar()">{{ t.pagoActualizar }}</button>
+      }
+      <a class="btn btn--secundario" [routerLink]="['/siniestros', siniestroId]">{{ t.pagoVolverSiniestro }}</a>
+    </div>
+  </div>
+
+  @if (aviso(); as a) {
+    @if (a.tipo === 'info') {
+      <p class="nota" role="status"><span aria-hidden="true">{{ a.icono }}</span> {{ a.texto }}</p>
+    } @else {
+      <p class="alerta" [class]="'alerta alerta--' + a.tipo" [attr.role]="a.tipo === 'error' ? 'alert' : 'status'">
+        <span aria-hidden="true">{{ a.icono }}</span><span>{{ a.texto }}</span>
+      </p>
+    }
+  }
+
+  <section class="indicadores" [attr.aria-label]="t.pagoIndicadores">
+    @for (indicador of indicadores(); track indicador.etiqueta) {
+      <app-tarjeta-metrica [etiqueta]="indicador.etiqueta" [valor]="indicador.valor" [detalle]="indicador.detalle" [tono]="indicador.tono" />
+    }
+  </section>
+
+  <div class="cols">
+    <section class="card" aria-labelledby="pago-trazabilidad">
+      <h3 id="pago-trazabilidad">{{ t.pagoTituloTrazabilidad }}</h3>
+      @if (trazabilidad().length === 0) {
+        <p class="sub">{{ t.pagoTrazabilidadSinHistorial }}</p>
+      } @else {
+        <ol class="pasos">
+          @for (fila of trazabilidad(); track fila.id) {
+            <li class="paso">
+              <span class="marca" aria-hidden="true"></span>
+              <div>
+                <p class="rotulo">{{ fila.rotulo }}</p>
+                <p class="detalle">{{ fila.detalle }}</p>
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+
+    <div class="columna">
+      <section class="card" aria-labelledby="pago-detalle">
+        <h3 id="pago-detalle">{{ t.pagoTituloDetalle }}</h3>
+        <dl class="filas">
+          @for (fila of detalle(); track fila.etiqueta) {
+            <div>
+              <dt>{{ fila.etiqueta }}</dt>
+              <dd>{{ fila.valor }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+      <section class="card" aria-labelledby="pago-por-que">
+        <h3 id="pago-por-que">{{ t.pagoTituloPorQue }}</h3>
+        <p class="texto">{{ t.pagoPorQueTexto }}</p>
+      </section>
+    </div>
+  </div>
+} @else if (estado.cargando()) {
+  <p class="sub" role="status">{{ t.pagoCargando }}</p>
+}

@@ -9,13 +9,6 @@ type Texto = string | ((...valores: never[]) => string);
 
 /** HU-W24: textos de la cola de descarte de los eventos paramétricos (mockups H10 y H11). */
 const ES = {
-  seccion: 'Siniestros',
-  grupoSiniestros: 'Siniestros',
-  menuBandeja: 'Mi bandeja',
-  menuSinAsignar: 'Sin asignar',
-  menuParametricos: 'Paramétricos',
-  proximamente: 'Próximamente',
-
   migas: 'Ruta de navegación',
   migaInicio: 'Inicio',
   migaParametricos: 'Paramétricos',
@@ -129,13 +122,6 @@ const ES = {
 export type TextosDescarte = typeof ES;
 
 const EN: TextosDescarte = {
-  seccion: 'Claims',
-  grupoSiniestros: 'Claims',
-  menuBandeja: 'My inbox',
-  menuSinAsignar: 'Unassigned',
-  menuParametricos: 'Parametric',
-  proximamente: 'Coming soon',
-
   migas: 'Breadcrumb',
   migaInicio: 'Home',
   migaParametricos: 'Parametric',

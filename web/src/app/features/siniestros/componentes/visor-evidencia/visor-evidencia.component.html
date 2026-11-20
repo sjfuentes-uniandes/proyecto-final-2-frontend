@@ -1,0 +1,43 @@
+@let t = textos.t();
+<dialog #dialogo class="visor" [attr.aria-labelledby]="idTitulo" (cancel)="pedirCierre($event)">
+  @if (evidencia(); as e) {
+    <div class="contenido">
+      <header>
+        <h2 [id]="idTitulo">{{ t.visorTitulo(e.nombreArchivo) }}</h2>
+        <button class="btn btn--secundario" type="button" (click)="cerrado.emit()">{{ t.visorCerrar }}</button>
+      </header>
+      <div class="cuerpo" aria-live="polite">
+        @switch (situacion()) {
+          @case ('cargando') {
+            <p class="estado" role="status">{{ t.visorCargando }}</p>
+          }
+          @case ('listo') {
+            @switch (clase()) {
+              @case ('imagen') {
+                <img [src]="url()" [alt]="t.visorImagen(e.nombreArchivo)" (error)="alFallarLaCarga()" />
+              }
+              @case ('video') {
+                <video controls [src]="url()" [attr.aria-label]="e.nombreArchivo" (error)="alFallarLaCarga()"></video>
+              }
+              @default {
+                <a class="btn btn--primario" [href]="url()" target="_blank" rel="noopener noreferrer">{{ t.visorAbrirDocumento }}</a>
+              }
+            }
+          }
+          @case ('noDisponible') {
+            <div class="estado estado--aviso" role="status">
+              <h3>{{ t.visorNoDisponible }}</h3>
+              <p>{{ t.visorNoDisponibleDetalle }}</p>
+            </div>
+          }
+          @case ('fallo') {
+            <div class="estado estado--aviso" role="alert">
+              <h3>{{ t.visorFallo }}</h3>
+              <p>{{ t.visorFalloDetalle }}</p>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+</dialog>

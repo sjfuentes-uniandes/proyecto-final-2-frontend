@@ -1,0 +1,112 @@
+<nav class="migas" [attr.aria-label]="t().migas">
+  <ol>
+    <li>{{ t().migaInicio }}</li>
+    <li>{{ t().migaOperacion }}</li>
+    <li aria-current="page">{{ t().migaTablero }}</li>
+  </ol>
+</nav>
+
+<header class="h-row">
+  <div>
+    <h2>{{ t().titulo }}</h2>
+    <p class="sub" data-testid="subtitulo">{{ subtitulo() }}</p>
+  </div>
+  @if (dashboardUrl) {
+    <a class="btn btn--secundario" data-testid="cloudwatch" [href]="dashboardUrl" target="_blank" rel="noopener">
+      {{ t().abrirCloudWatch }} <span class="oculto">{{ t().nuevaPestana }}</span>
+    </a>
+  }
+</header>
+
+<div class="grid">
+  <div class="principal">
+    @if (error(); as e) {
+      <p class="alerta alerta--error" role="alert">
+        {{ e.mensaje }}
+        @if (e.correlationId) {
+          <span>{{ t().referencia(e.correlationId) }}</span>
+        }
+      </p>
+    }
+
+    @if (capacidad(); as c) {
+      <section class="card" data-testid="panel" aria-labelledby="titulo-capacidad">
+        <h3 id="titulo-capacidad">{{ t().tituloPanel }}</h3>
+
+        @if (sinCotizaciones()) {
+          <p class="vacio" data-testid="sin-cotizaciones">{{ t().sinCotizaciones(c.ventana_min) }}</p>
+        } @else {
+          <figure class="grafico">
+            <div class="barras" data-testid="barras" aria-hidden="true">
+              @for (barra of barras(); track barra.instante) {
+                <span
+                  class="barra"
+                  [class.barra--escalado]="barra.escalado"
+                  [style.height.%]="barra.altura"
+                  [attr.data-instante]="barra.instante"
+                ></span>
+              }
+            </div>
+            <div class="eje" aria-hidden="true">
+              <span>{{ hora(barras()[0].instante) }}</span>
+              <span>{{ hora(barras()[barras().length - 1].instante) }}</span>
+            </div>
+            <figcaption class="oculto" data-testid="resumen-grafico">{{ resumen() }}</figcaption>
+          </figure>
+
+          <ul class="leyenda" data-testid="leyenda" [attr.aria-label]="t().leyenda">
+            <li><span class="muestra" aria-hidden="true"></span>{{ t().leyendaCotizaciones }}</li>
+            @if (hayEscalado()) {
+              <li data-testid="leyenda-escalado">
+                <span class="muestra muestra--escalado" aria-hidden="true"></span>{{ t().leyendaEscalado }}
+              </li>
+            }
+          </ul>
+
+          <table class="oculto" data-testid="tabla-serie">
+            <caption>{{ t().captionTabla(c.ventana_min) }}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ t().colMinuto }}</th>
+                <th scope="col">{{ t().colCotizaciones }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (barra of barras(); track barra.instante) {
+                <tr>
+                  <th scope="row">{{ barra.escalado ? t().minutoEscalado(hora(barra.instante)) : hora(barra.instante) }}</th>
+                  <td>{{ entero(barra.valor) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        <dl class="cifras">
+          @for (cifra of cifras(); track cifra.clave) {
+            <div>
+              <dt>{{ cifra.etiqueta }}</dt>
+              <dd [attr.data-testid]="cifra.clave">
+                @if (cifra.lector; as lector) {
+                  <span aria-hidden="true">{{ cifra.visible }}</span><span class="oculto">{{ lector }}</span>
+                } @else {
+                  {{ cifra.visible }}
+                }
+              </dd>
+            </div>
+          }
+        </dl>
+
+        @if (aviso(); as texto) {
+          <p class="nota" data-testid="aviso">{{ texto }}</p>
+        }
+        <p class="ayuda" data-testid="ayuda">{{ t().ayudaIdempotentes }}</p>
+      </section>
+    }
+  </div>
+
+  <nav class="accesos" [attr.aria-label]="t().accesos">
+    <a class="btn btn--secundario" data-testid="ver-alertas" routerLink="/operacion/alertas">{{ t().verAlertas }}</a>
+    <a class="btn btn--secundario" data-testid="ver-trazas" routerLink="/operacion/trazas">{{ t().inspeccionarTraza }}</a>
+  </nav>
+</div>

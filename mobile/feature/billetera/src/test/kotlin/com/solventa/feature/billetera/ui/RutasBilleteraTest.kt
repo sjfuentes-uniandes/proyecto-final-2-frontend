@@ -56,6 +56,8 @@ class RutasBilleteraTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag(EtiquetasPrueba.poliza(Muestras.activa.polizaId)).performClick()
+        assertEquals(emptyList(), abiertas)
+        compose.onNodeWithTag(EtiquetasPrueba.verDetalle(Muestras.activa.polizaId)).performClick()
         assertEquals(listOf(Muestras.activa.polizaId), abiertas)
     }
 
@@ -69,7 +71,7 @@ class RutasBilleteraTest {
         coEvery { repositorio.listar() } returns Resultado.Exito(listOf(Muestras.activa))
         compose.onNodeWithText("Reintentar").performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("Seguro de Vida").assertIsDisplayed()
+        compose.onNodeWithText("SEGURO DE VIDA").assertIsDisplayed()
 
         compose.onNodeWithTag(EtiquetasPrueba.ACCESO_PRIVACIDAD).performClick()
         assertEquals(1, privacidad)

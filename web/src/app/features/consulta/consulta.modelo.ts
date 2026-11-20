@@ -68,4 +68,7 @@ export interface EstadoPoliza {
   periodicidad: string;
   emitidaEn: string;
   coberturas: CoberturaPoliza[];
+  titularNombre: string | null;
+  tipoDocumento: string | null;
+  documentoEnmascarado: string | null;
 }

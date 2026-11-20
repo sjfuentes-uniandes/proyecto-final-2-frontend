@@ -48,14 +48,19 @@
 }
 
 @if (v) {
-  <header>
-    <h2>
-      {{ v.titulo }}
-      <span [class]="v.claseEstado">{{ v.estado }}</span>
-    </h2>
-    <p class="sub">{{ v.subtitulo }}</p>
+  <header class="encabezado">
+    <div>
+      <h2>
+        {{ v.titulo }}
+        <span [class]="v.claseEstado">{{ v.estado }}</span>
+      </h2>
+      <p class="sub">{{ v.subtitulo }}</p>
+    </div>
+    <a class="btn btn--secundario" routerLink="/consulta/polizas" queryParamsHandling="preserve">{{ t.volverListado }}</a>
   </header>
 
+  <div class="rejilla">
+  <div class="columna">
   <section class="card" aria-labelledby="titulo-datos">
     <h3 id="titulo-datos">{{ t.datosPoliza }}</h3>
     <dl class="kv">
@@ -91,7 +96,9 @@
       <p class="sub">{{ t.sinCoberturas }}</p>
     }
   </section>
+  </div>
 
+  <div class="columna">
   <section class="card" aria-labelledby="titulo-consulta">
     <h3 id="titulo-consulta">{{ t.consultaTitulo }}</h3>
     <dl class="kv">
@@ -104,8 +111,6 @@
       <p class="nota">{{ v.nota }}</p>
     }
   </section>
-
-  <div class="acciones">
-    <a class="btn btn--secundario" routerLink="/consulta/polizas" queryParamsHandling="preserve">{{ t.volverListado }}</a>
+  </div>
   </div>
 }

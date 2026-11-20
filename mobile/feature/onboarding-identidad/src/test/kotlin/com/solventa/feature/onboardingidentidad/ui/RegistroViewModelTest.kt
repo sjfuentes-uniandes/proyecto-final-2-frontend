@@ -9,9 +9,32 @@ class RegistroViewModelTest {
     private val viewModel = RegistroViewModel()
 
     private fun llenar(correo: String = "ana@solventa.com", clave: String = "Clave-segura-1", confirmacion: String = clave) {
+        viewModel.onTipoDocumentoCambiado("CC")
+        viewModel.onNumeroDocumentoCambiado("1020456789")
         viewModel.onCorreoCambiado(correo)
         viewModel.onContrasenaCambiada(clave)
         viewModel.onConfirmacionCambiada(confirmacion)
+    }
+
+    @Test
+    fun `valida tipo y numero de documento con los patrones del backend`() {
+        llenar()
+        assertTrue(viewModel.uiState.value.datosVerificacionValidos)
+
+        viewModel.onNumeroDocumentoCambiado("10")
+        assertFalse(viewModel.uiState.value.datosVerificacionValidos)
+        assertTrue(viewModel.uiState.value.mostrarErrorNumeroDocumento)
+
+        viewModel.onNumeroDocumentoCambiado("1020-456")
+        assertFalse(viewModel.uiState.value.numeroDocumentoValido)
+
+        viewModel.onNumeroDocumentoCambiado("1020456789")
+        viewModel.onTipoDocumentoCambiado("c")
+        assertFalse(viewModel.uiState.value.tipoDocumentoValido)
+
+        viewModel.onTipoDocumentoCambiado("ce")
+        assertEquals("CE", viewModel.uiState.value.tipoDocumento)
+        assertTrue(viewModel.uiState.value.datosVerificacionValidos)
     }
 
     @Test

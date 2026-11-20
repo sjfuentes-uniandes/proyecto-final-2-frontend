@@ -1,0 +1,23 @@
+@let t = textos.t();
+@if (estado.detalle(); as d) {
+  <div class="cols">
+    <app-tabla-verificaciones [verificaciones]="d.verificacionCobertura" [amparos]="d.poliza.amparos" />
+    <section class="card" aria-labelledby="titulo-poliza">
+      <h3 id="titulo-poliza">{{ t.tituloPolizaCopia }}</h3>
+      <dl class="kv">
+        @for (dato of datos(); track dato.etiqueta) {
+          <div>
+            <dt>{{ dato.etiqueta }}</dt>
+            <dd>{{ dato.valor }}</dd>
+          </div>
+        }
+        @for (amparo of amparos(); track amparo.codigo) {
+          <div>
+            <dt>{{ t.polAmparos }} · {{ amparo.nombre }}</dt>
+            <dd>{{ t.polSumaAsegurada }}: {{ amparo.suma }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+  </div>
+}

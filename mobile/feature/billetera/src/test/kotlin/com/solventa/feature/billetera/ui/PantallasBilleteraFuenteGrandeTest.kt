@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
@@ -35,9 +36,11 @@ class PantallasBilleteraFuenteGrandeTest {
             BilleteraScreen(BilleteraUiState.Contenido(listOf(Muestras.activa, Muestras.vencida)), {}, {}, {})
         }
 
+        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-activa")).performClick()
+        compose.onNodeWithTag(EtiquetasPrueba.poliza("id-vencida")).performClick()
         listOf(
-            "Seguro de Vida", "Personas", "Póliza POL-000123", "Suma asegurada: $ 300.000.000 COP", "3 coberturas",
-            "Seguro de Auto", "Vehículos", "Póliza POL-000099", "1 cobertura",
+            "SEGURO DE VIDA", "Personas", "POL-000123", "Suma asegurada: $ 300.000.000 COP", "3 coberturas",
+            "SEGURO DE AUTO", "Vehículos", "POL-000099", "1 cobertura",
         ).forEach { compose.onNodeWithText(it, useUnmergedTree = true).assertTextoCompleto() }
         compose.onAllNodesWithText("Ver detalle completo", useUnmergedTree = true)[0].assertTextoCompleto()
         compose.onNodeWithText("ACTIVA", useUnmergedTree = true).assertTextoCompleto()

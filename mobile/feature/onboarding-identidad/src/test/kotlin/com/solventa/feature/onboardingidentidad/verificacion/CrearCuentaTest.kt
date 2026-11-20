@@ -7,6 +7,8 @@ import com.solventa.core.auth.ResultadoConfirmacion
 import com.solventa.core.auth.ResultadoRegistroCuenta
 import com.solventa.core.network.RegistroCliente
 import com.solventa.core.network.ResultadoVinculacion
+import com.solventa.core.network.ResultadoVerificacionRegistro
+import com.solventa.feature.onboardingidentidad.captura.SelfieEnMemoria
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -40,6 +42,32 @@ class CrearCuentaTest {
 
         assertEquals(ResultadoCuenta.CodigoRequerido, caso.registrar("a@b.co", "Clave12345x"))
         assertEquals(ResultadoCuenta.Completada, caso.confirmar("a@b.co", "123456"))
+    }
+
+    @Test
+    fun `verifica el documento y usa el correo elegido para crear confirmar e ingresar a la cuenta`() = runTest {
+        sesion.tipoDocumento = "CC"
+        sesion.numeroDocumento = "1020456789"
+        sesion.correo = "elegido@ejemplo.co"
+        coEvery {
+            registroCliente.verificar("reg-1", "CC", "1020456789", "elegido@ejemplo.co", any(), true)
+        } returns ResultadoVerificacionRegistro.Verificada("c1", "token", null)
+        coEvery { cognito.registrar("elegido@ejemplo.co", "Clave12345x", "token") } returns ResultadoRegistroCuenta.Creada(false)
+        coEvery { cognito.confirmar("elegido@ejemplo.co", "123456") } returns ResultadoConfirmacion.Confirmada
+        coEvery { gestor.iniciarSesion("elegido@ejemplo.co", "Clave12345x") } returns ResultadoAutenticacion.Exito(mockk())
+        coEvery { registroCliente.vincular("reg-1", "token") } returns ResultadoVinculacion.Vinculada("c1")
+
+        assertEquals(
+            ResultadoVerificacionRegistro.Verificada("c1", "token", null),
+            VerificarIdentidad(registroCliente, sesion)(SelfieEnMemoria(byteArrayOf(1)), true),
+        )
+        val caso = crear()
+        assertEquals(ResultadoCuenta.CodigoRequerido, caso.registrar(" elegido@ejemplo.co ", "Clave12345x"))
+        assertEquals(ResultadoCuenta.Completada, caso.confirmar("elegido@ejemplo.co", "123456"))
+        coVerify(exactly = 1) { cognito.registrar("elegido@ejemplo.co", "Clave12345x", "token") }
+        coVerify(exactly = 1) { cognito.confirmar("elegido@ejemplo.co", "123456") }
+        coVerify(exactly = 1) { gestor.iniciarSesion("elegido@ejemplo.co", "Clave12345x") }
+        coVerify(exactly = 1) { registroCliente.vincular("reg-1", "token") }
     }
 
     @Test

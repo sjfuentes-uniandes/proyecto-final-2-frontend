@@ -1,0 +1,45 @@
+/* Estilos comunes de las páginas de decisión H05 y H07 (HU-W20). */
+:host { display: flex; flex-direction: column; gap: 12px; }
+h2 { margin: 0 0 4px; font-size: 22px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card h3 { margin: 0 0 12px; padding: 0; font-size: 15px; font-weight: 700; color: var(--sv-azul-oscuro); }
+.fld { min-width: 0; }
+.inp, select.inp { width: 100%; box-sizing: border-box; }
+.inp--texto { height: auto; padding: 9px 11px; resize: vertical; line-height: 20px; }
+.inp[readonly] { background: #f4f6fa; color: var(--sv-texto-secundario); }
+.inp--alerta { border: 2px solid var(--sv-error); padding: 0 10px; background: var(--sv-error-campo); }
+.par { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; }
+.obligatoria { color: #b3261e; }
+.efecto { display: flex; flex-direction: column; margin: 0; }
+.efecto > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13.5px; }
+.efecto > div:last-child { border-bottom: 0; }
+dt { color: var(--sv-texto-secundario); }
+dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.acciones a.btn { text-decoration: none; }
+.acciones-pagina { display: flex; flex-direction: column; gap: 10px; }
+.btn--bloque { height: 42px; margin-top: 0; }
+a.btn { text-decoration: none; }
+.btn--enviar { border: 0; background: var(--sv-azul-oscuro); color: var(--sv-blanco); }
+.btn--rechazar { border: 0; background: #b3261e; color: var(--sv-blanco); }
+.btn--texto { border: 0; background: transparent; color: var(--sv-azul-oscuro); }
+.vencida { margin: 4px 0 0; font-size: 12px; color: var(--sv-error); }
+/* Contraste WCAG AA del texto: naranja y azul más oscuros que los tokens. */
+.nota--alerta { border-color: var(--sv-naranja); background: var(--sv-naranja-fondo); color: #7a4a00; }
+.seguimiento { display: block; margin-top: 4px; font-size: 12px; }
+.alerta { margin: 0; }
+/* Interruptor accesible: un checkbox nativo con role="switch". */
+.interruptor { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--sv-borde); font-size: 13.5px; cursor: pointer; }
+.interruptor:last-of-type { border-bottom: 0; }
+.interruptor input { appearance: none; flex: none; position: relative; width: 44px; height: 24px; margin: 0; border-radius: 12px; background: #8a94a6; cursor: pointer; transition: background .15s; }
+.interruptor input::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--sv-blanco); transition: transform .15s; }
+.interruptor input:checked { background: #00663f; }
+.interruptor input:checked::after { transform: translateX(20px); }
+.interruptor input:focus-visible { outline: 3px solid var(--sv-azul-medio); outline-offset: 2px; }
+@media (max-width: 1100px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .par { grid-template-columns: minmax(0, 1fr); }
+}
