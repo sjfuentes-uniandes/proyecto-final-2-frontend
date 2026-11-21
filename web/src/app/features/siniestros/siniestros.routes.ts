@@ -31,6 +31,11 @@ export const routes: Routes = [
           import('./paginas/bandeja-siniestros/bandeja-siniestros.component').then((m) => m.BandejaSiniestrosComponent),
       },
       {
+        // H10 y H11: la cola de descarte de los eventos paramétricos (HU-W24). Va antes de `:siniestroId`.
+        path: 'parametricos/descarte',
+        loadChildren: () => import('./parametricos/descarte/descarte.routes').then((m) => m.routes),
+      },
+      {
         // H09: el seguimiento de los siniestros paramétricos (HU-W22). Va antes de `:siniestroId` para que
         // `parametricos` no se lea como un identificador de siniestro.
         path: 'parametricos',

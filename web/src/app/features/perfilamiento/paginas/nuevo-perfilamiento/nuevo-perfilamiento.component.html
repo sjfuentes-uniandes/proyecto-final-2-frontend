@@ -52,8 +52,11 @@
         <div class="fila">
           <label class="fld">
             <span>{{ t.ramo }}</span>
-            <select class="inp" disabled>
-              <option selected>{{ t.ramoVidaHipotecario }}</option>
+            <!-- HU-W24: el producto se elige; sus condiciones dicen si es paramétrico. -->
+            <select class="inp" formControlName="productoId">
+              @for (producto of productos; track producto.id) {
+                <option [value]="producto.id">{{ t[producto.nombre] }}</option>
+              }
             </select>
           </label>
           <label class="fld">
@@ -72,7 +75,24 @@
               <option selected>{{ tc.canalDirecto }}</option>
             </select>
           </label>
+          @if (parametrico()) {
+            <!-- HU-W24: la zona del riesgo fija dónde se mide el evento de la cobertura paramétrica. -->
+            <label class="fld">
+              <span>{{ tc.zona }}</span>
+              <input class="inp" formControlName="zona" autocomplete="off" spellcheck="false" maxlength="16"
+                     (blur)="normalizarZona()"
+                     [attr.aria-invalid]="invalido('zona')"
+                     [attr.aria-describedby]="invalido('zona') ? 'error-zona ayuda-zona' : 'ayuda-zona'" />
+              <small class="fld__ayuda" id="ayuda-zona">{{ tc.zonaAyuda }}</small>
+              @if (invalido('zona')) {
+                <small class="fld__error" id="error-zona">{{ tc.zonaError }}</small>
+              }
+            </label>
+          }
         </div>
+        @if (textoRegla(); as regla) {
+          <p class="sub" id="regla-parametrica">{{ regla }}</p>
+        }
       </section>
 
       <section class="card" aria-labelledby="titulo-cliente">
@@ -165,7 +185,7 @@
     <div class="lateral">
       <!-- El resumen se suma a las coberturas, no las reemplaza: siguen visibles y editables al validar. -->
       @if (validacionMostrada()) {
-        <app-resumen-validacion [revisados]="revisados" [conError]="camposConError()"
+        <app-resumen-validacion [revisados]="revisados()" [conError]="camposConError()"
                                 [versionReglas]="condiciones()?.versionReglas ?? null" />
       }
       <app-coberturas-producto [condiciones]="condiciones()" [cargando]="cargandoCondiciones()" [fallo]="falloCondiciones()"
@@ -201,9 +221,11 @@
         </button>
       </section>
       <button class="btn btn--primario" type="submit" [class.bloqueado]="conErrores()" [disabled]="enviando() || verificando() || !puedeContinuar() || conErrores()"
-              [attr.aria-describedby]="conErrores() ? 'ayuda-deshabilitado' : null">{{ t.continuar }}</button>
+              [attr.aria-describedby]="conErrores() ? 'ayuda-deshabilitado' : parametrico() ? 'ayuda-parametrico' : null">{{ t.continuar }}</button>
       @if (conErrores()) {
         <p class="ayuda" id="ayuda-deshabilitado">{{ tc.ayudaDeshabilitado }}</p>
+      } @else if (parametrico()) {
+        <p class="ayuda" id="ayuda-parametrico">{{ tc.parametricoSinPerfil }}</p>
       }
       <!-- HU-W03: la cotización sin perfil usa el factor SIN_PERFIL de las reglas (perfil 0..1). -->
       <button class="btn btn--secundario" type="button" (click)="cotizarSinPerfilar()"

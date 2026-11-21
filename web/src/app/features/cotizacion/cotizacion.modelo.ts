@@ -19,6 +19,15 @@ export interface Rango {
   maximo: TextoDecimal;
 }
 
+/** HU-W24: la regla de un producto paramétrico (HU-W21): paga `valorPago` si `tipoEvento` llega a `umbral`. */
+export interface ReglaParametrica {
+  tipoEvento: string;
+  unidad: string;
+  umbral: TextoDecimal;
+  valorPago: TextoDecimal;
+  versionRegla: string;
+}
+
 export interface CondicionesProducto {
   productoId: string;
   nombre: string;
@@ -31,6 +40,8 @@ export interface CondicionesProducto {
   vigenteHasta: string | null;
   coberturas: CoberturaProducto[];
   limites: { sumaAsegurada: Rango; plazoCreditoMeses: Rango; edad: Rango };
+  /** HU-W24: null si el producto no es paramétrico; con regla, la cotización exige `datosAsegurado.zona`. */
+  parametrico?: ReglaParametrica | null;
 }
 
 export interface DatosAsegurado {
@@ -38,6 +49,8 @@ export interface DatosAsegurado {
   fechaNacimiento: string;
   plazoCreditoMeses: number;
   sumaAsegurada: number;
+  /** HU-W24: zona del riesgo (municipio DANE); solo en un producto paramétrico. */
+  zona?: string;
 }
 
 export interface SolicitudCotizacion {

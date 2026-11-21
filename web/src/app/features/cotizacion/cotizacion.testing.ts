@@ -28,6 +28,18 @@ export const CONDICIONES: CondicionesProducto = {
   },
 };
 
+/** HU-W24: el producto paramétrico de lluvia de la semilla QA del catálogo (regla de HU-W21). */
+export const URL_CONDICIONES_CLIMA = 'https://api/web/v1/productos/clima-lluvia/condiciones';
+export const CONDICIONES_CLIMA: CondicionesProducto = {
+  ...CONDICIONES,
+  productoId: 'clima-lluvia',
+  nombre: 'Clima · lluvia acumulada',
+  ramo: '250',
+  versionProducto: '2026.11.1',
+  coberturas: [{ codigo: 'LLUVIA_ACUMULADA', nombre: 'Lluvia acumulada', obligatoria: true }],
+  parametrico: { tipoEvento: 'LLUVIA_ACUMULADA', unidad: 'mm', umbral: '120', valorPago: '1400000.00', versionRegla: '2026.11.1' },
+};
+
 /** C01 sin perfil con Enfermedades graves: 82.593 + 14.867 = 97.460 COP (prima del backend). */
 export const COTIZACION_C01: CotizacionRespuesta = {
   id: COTIZACION_ID,

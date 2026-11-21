@@ -1,7 +1,7 @@
 @let t = textos.t();
 @let v = vista();
 <nav class="crumb" [attr.aria-label]="t.migas">
-  {{ t.migaInicio }} › {{ t.migaParametricos }} ›
+  {{ t.migaInicio }} › <a routerLink="/siniestros/parametricos">{{ t.migaParametricos }}</a> ›
   <a routerLink="/siniestros/parametricos/descarte">{{ t.migaCola }}</a>
   @if (v) {
     › <strong class="mono">{{ v.id }}</strong>

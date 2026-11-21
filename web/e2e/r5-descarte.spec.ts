@@ -41,6 +41,17 @@ test.describe('H10 Cola de descarte', () => {
     expect(await violacionesGraves(page, testInfo, 'h10-es')).toEqual([]);
   });
 
+  test('vive en la sección Siniestros: menú con «Paramétricos» activo y miga hacia H09', async ({ page }) => {
+    await prepararPortal(page, ANALISTA);
+    await simular(page, API_DESCARTES, LISTADO);
+    await page.goto(RUTA);
+    const menu = page.locator('aside.side');
+    await expect(menu.getByRole('link', { name: /Paramétricos/ })).toHaveClass(/side__item--activo/);
+    await expect(menu.getByRole('link', { name: /Sin asignar/ })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Ruta de navegación' }).getByRole('link', { name: 'Paramétricos' }).click();
+    await expect(page).toHaveURL(/\/siniestros\/parametricos$/);
+  });
+
   test('reprocesa los seleccionados', async ({ page }) => {
     await prepararPortal(page, ANALISTA);
     await simular(page, API_DESCARTES, LISTADO);

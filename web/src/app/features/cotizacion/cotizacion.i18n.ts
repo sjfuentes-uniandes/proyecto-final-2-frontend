@@ -21,6 +21,13 @@ const ES = {
     'El catálogo y las reglas se resuelven por país y por versión. Añadir un ramo nuevo no obliga a tocar el núcleo del sistema.',
   cotizarSinPerfilar: 'Cotizar sin perfilar',
   cotizarSinPerfilarAyuda: 'Registra y verifica al cliente para poder cotizar.',
+  // HU-W24: producto paramétrico.
+  zona: 'Zona del riesgo',
+  zonaAyuda: 'Código DANE del municipio, por ejemplo 11001 para Bogotá.',
+  zonaError: 'Escribe la zona: de 2 a 16 letras mayúsculas o dígitos.',
+  /** `umbral` ya trae su unidad (120 mm). */
+  reglaParametrica: (umbral: string, valor: string) => `Paga ${valor} cuando el evento llega a ${umbral} en la zona, sin reclamación.`,
+  parametricoSinPerfil: 'Los productos paramétricos se cotizan sin perfil de riesgo: usa «Cotizar sin perfilar».',
   validarDatos: 'Validar los datos',
 
   // Validación (mockup 2).
@@ -213,6 +220,7 @@ const ES = {
   errorReglasNoVigentes: 'El producto no tiene reglas de prima vigentes hoy: no se puede cotizar.',
   errorDatosFueraDeRango: 'Hay datos fuera de los límites del producto. Revisa los campos marcados.',
   errorCoberturaNoDisponible: 'Una de las coberturas elegidas no está disponible en el producto.',
+  errorZonaRequerida: 'Este producto paramétrico necesita la zona del riesgo. Escribe el código DANE del municipio.',
   errorPerfilNoCorresponde: 'Los datos no coinciden con los del perfil de riesgo. Vuelve a perfilar o cotiza sin perfilar.',
   errorPerfilNoEncontrado: 'El perfil de riesgo no existe.',
   errorCotizacionNoEncontrada: 'La cotización no existe o ya no está disponible.',
@@ -236,6 +244,11 @@ const EN: TextosCotizacion = {
     'The catalog and its rules are resolved by country and version. Adding a new line of business does not require changing the core of the system.',
   cotizarSinPerfilar: 'Quote without profiling',
   cotizarSinPerfilarAyuda: 'Register and verify the customer to be able to quote.',
+  zona: 'Risk zone',
+  zonaAyuda: 'DANE code of the municipality, for example 11001 for Bogotá.',
+  zonaError: 'Enter the zone: 2 to 16 uppercase letters or digits.',
+  reglaParametrica: (umbral: string, valor: string) => `Pays ${valor} when the event reaches ${umbral} in the zone, with no claim.`,
+  parametricoSinPerfil: 'Parametric products are quoted without a risk profile: use “Quote without profiling”.',
   validarDatos: 'Validate the data',
 
   revisaDatos: 'Review the data before continuing',
@@ -416,6 +429,7 @@ const EN: TextosCotizacion = {
   errorReglasNoVigentes: 'The product has no premium rules in force today: it cannot be quoted.',
   errorDatosFueraDeRango: 'Some data is outside the product limits. Review the highlighted fields.',
   errorCoberturaNoDisponible: 'One of the selected coverages is not available for the product.',
+  errorZonaRequerida: 'This parametric product needs the risk zone. Enter the DANE code of the municipality.',
   errorPerfilNoCorresponde: 'The data does not match the risk profile. Profile again or quote without profiling.',
   errorPerfilNoEncontrado: 'The risk profile does not exist.',
   errorCotizacionNoEncontrada: 'The quote does not exist or is no longer available.',

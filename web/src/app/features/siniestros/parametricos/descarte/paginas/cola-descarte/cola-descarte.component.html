@@ -1,7 +1,7 @@
 @let t = textos.t();
 @let l = listado();
 <nav class="crumb" [attr.aria-label]="t.migas">
-  {{ t.migaInicio }} › {{ t.migaParametricos }} ›
+  {{ t.migaInicio }} › <a routerLink="/siniestros/parametricos">{{ t.migaParametricos }}</a> ›
   <strong>{{ t.migaCola }}</strong>
 </nav>
 
