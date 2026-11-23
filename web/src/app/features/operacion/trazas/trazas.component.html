@@ -1,50 +1,50 @@
-<nav class="crumb" aria-label="Ruta de navegación">
-  <span class="crumb__link">Inicio</span> › <span class="crumb__link">Operación</span> › <strong>Traza</strong>
+<nav class="crumb" [attr.aria-label]="t().migas">
+  <span class="crumb__link">{{ t().migaInicio }}</span> › <span class="crumb__link">{{ t().menuOperacion }}</span> › <strong>{{ t().migaTraza }}</strong>
 </nav>
 
 <header class="h-row">
   <div>
     <h2>{{ titulo() }}</h2>
-    @if (traza(); as t) {
+    @if (traza(); as tr) {
       <p class="sub" data-testid="resumen">
-        Identificador <span [title]="t.correlation_id ?? ''">{{ idCorto(t.correlation_id) }}</span>
-        · duración total {{ segundos(t.duracion_total_ms) }}
+        {{ t().identificador }} <span [title]="tr.correlation_id ?? ''">{{ idCorto(tr.correlation_id) }}</span>
+        · {{ t().duracionTotal(segundos(tr.duracion_total_ms)) }}
       </p>
     } @else {
-      <p class="sub">Busque un recorrido por su identificador de correlación (X-Correlation-Id).</p>
+      <p class="sub">{{ t().trazaSub }}</p>
     }
   </div>
   @if (dashboardUrl) {
-    <a class="btn btn--secundario" [href]="dashboardUrl" target="_blank" rel="noopener">Volver al tablero</a>
+    <a class="btn btn--secundario" [href]="dashboardUrl" target="_blank" rel="noopener">{{ t().volverTablero }}</a>
   }
 </header>
 
 <form class="filters card" [formGroup]="formulario" (ngSubmit)="buscar()">
   <label class="fld fld--ancho">
-    <span>Buscar por identificador</span>
+    <span>{{ t().buscarPorId }}</span>
     <input class="inp" formControlName="correlationId" placeholder="7f3a91c2e8b4471d" autocomplete="off"
            [attr.aria-invalid]="formulario.controls.correlationId.invalid" />
     @if (formulario.controls.correlationId.invalid && formulario.controls.correlationId.touched) {
-      <small class="fld__error">Hasta 128 letras, números o . _ : -</small>
+      <small class="fld__error">{{ t().idInvalido }}</small>
     }
   </label>
   <label class="fld">
-    <span>Recorrido</span>
+    <span>{{ t().recorrido }}</span>
     <select class="inp" formControlName="recorrido">
-      @for (r of recorridos; track r.valor) {
+      @for (r of recorridos(); track r.valor) {
         <option [value]="r.valor">{{ r.etiqueta }}</option>
       }
     </select>
   </label>
   <label class="fld">
-    <span>Duración mínima</span>
+    <span>{{ t().duracionMinima }}</span>
     <span class="inp inp--sufijo">
-      <input type="number" min="0" step="100" formControlName="duracionMinMs" aria-label="Duración mínima en milisegundos" />
+      <input type="number" min="0" step="100" formControlName="duracionMinMs" [attr.aria-label]="t().duracionMinimaMs" />
       ms
     </span>
   </label>
   <button class="btn btn--primario" type="submit" [disabled]="cargando()">
-    {{ cargando() ? 'Buscando…' : 'Buscar' }}
+    {{ cargando() ? t().buscando : t().buscar }}
   </button>
 </form>
 
@@ -52,33 +52,33 @@
   <p class="aviso" role="alert">{{ mensaje }}</p>
 }
 
-@if (traza(); as t) {
+@if (traza(); as tr) {
   <section class="card">
-    <h3>Desglose por servicio</h3>
+    <h3>{{ t().desglose }}</h3>
     <div class="tabla-scroll">
       <table class="data">
         <thead>
           <tr>
-            <th class="col-servicio">Servicio y operación</th>
-            <th>Inicio</th>
-            <th>Duración</th>
-            <th class="col-barra">Participación en el recorrido</th>
-            <th>Estado</th>
+            <th class="col-servicio">{{ t().colServicio }}</th>
+            <th>{{ t().colInicio }}</th>
+            <th>{{ t().colDuracion }}</th>
+            <th class="col-barra">{{ t().colParticipacion }}</th>
+            <th>{{ t().colEstado }}</th>
           </tr>
         </thead>
         <tbody>
-          @for (tramo of t.tramos; track $index) {
+          @for (tramo of tr.tramos; track $index) {
             <tr [class.externo]="tramo.externo">
               <td>{{ tramo.servicio }} · {{ tramo.operacion }}</td>
               <td class="mono">{{ ms(tramo.inicio_ms) }}</td>
               <td class="mono">{{ ms(tramo.duracion_ms) }}</td>
               <td>
                 <div class="bar" role="img"
-                     [attr.aria-label]="'Participación ' + (tramo.participacion * 100).toFixed(0) + ' %'">
+                     [attr.aria-label]="t().participacion((tramo.participacion * 100).toFixed(0))">
                   <i [style.width]="porcentaje(tramo.participacion)" [class.bar--destacada]="tramo.destacado"></i>
                 </div>
               </td>
-              <td><span class="tag" [class]="claseEstado(tramo.estado)">{{ tramo.estado }}</span></td>
+              <td><span class="tag" [class]="claseEstado(tramo.estado)">{{ estado(tramo.estado) }}</span></td>
             </tr>
           }
         </tbody>
@@ -88,21 +88,21 @@
 
   <div class="cols">
     <section class="card">
-      <h3>Interpretación</h3>
-      <p class="muted" data-testid="interpretacion">{{ t.interpretacion }}</p>
+      <h3>{{ t().interpretacion }}</h3>
+      <p class="muted" data-testid="interpretacion">{{ tr.interpretacion }}</p>
     </section>
     <section class="card">
-      <h3>Contexto de la traza</h3>
+      <h3>{{ t().contextoTraza }}</h3>
       <dl class="kv">
-        <div><dt>Identificador</dt><dd class="mono">{{ t.correlation_id ?? '—' }}</dd></div>
-        <div><dt>Canal</dt><dd>{{ t.contexto.canal }} ({{ t.contexto.servicio_entrada }})</dd></div>
-        <div><dt>Servicios implicados</dt><dd>{{ serviciosImplicados(t) }}</dd></div>
-        <div><dt>Inicio</dt><dd>{{ t.inicio | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
-        <div><dt>Ambiente</dt><dd>{{ t.contexto.ambiente }}</dd></div>
+        <div><dt>{{ t().identificador }}</dt><dd class="mono">{{ tr.correlation_id ?? '—' }}</dd></div>
+        <div><dt>{{ t().canal }}</dt><dd>{{ tr.contexto.canal }} ({{ tr.contexto.servicio_entrada }})</dd></div>
+        <div><dt>{{ t().serviciosImplicados }}</dt><dd>{{ serviciosImplicados(tr) }}</dd></div>
+        <div><dt>{{ t().inicio }}</dt><dd>{{ fechaHora(tr.inicio) }}</dd></div>
+        <div><dt>{{ t().ambiente }}</dt><dd>{{ tr.contexto.ambiente }}</dd></div>
         <div>
-          <dt>Traza en X-Ray</dt>
+          <dt>{{ t().trazaXray }}</dt>
           <dd class="mono">
-            @for (id of t.trace_ids; track id) {
+            @for (id of tr.trace_ids; track id) {
               <span class="traza-id">{{ id }}</span>
             }
           </dd>

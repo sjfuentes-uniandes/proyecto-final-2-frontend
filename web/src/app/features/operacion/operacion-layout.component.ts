@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+
+import { TextosPortalService } from '../../core/i18n/portal.i18n';
 
 import { ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 
@@ -6,14 +8,18 @@ import { ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccio
 @Component({
   selector: 'app-operacion-layout',
   imports: [SeccionLayoutComponent],
-  template: `<app-seccion-layout titulo="Operación" [items]="items" />`,
+  template: `<app-seccion-layout [titulo]="textos().menuOperacion" [items]="items()" />`,
   styles: `:host { display: flex; flex: 1; min-width: 0; min-height: 0; }`,
 })
 export class OperacionLayoutComponent {
-  readonly items: ItemSeccion[] = [
-    { etiqueta: 'Tablero', icono: '📈', ruta: 'tablero' },
-    { etiqueta: 'Trazas', icono: '🔍', ruta: 'trazas' },
-    { etiqueta: 'Alertas', icono: '🔔', ruta: 'alertas' },
-    { etiqueta: 'Continuidad', icono: '🛡', ruta: 'continuidad' },
-  ];
+  readonly textos = inject(TextosPortalService).t;
+  readonly items = computed<ItemSeccion[]>(() => {
+    const t = this.textos();
+    return [
+      { etiqueta: t.tablero, icono: '📈', ruta: 'tablero' },
+      { etiqueta: t.trazas, icono: '🔍', ruta: 'trazas' },
+      { etiqueta: t.alertas, icono: '🔔', ruta: 'alertas' },
+      { etiqueta: t.continuidad, icono: '🛡', ruta: 'continuidad' },
+    ];
+  });
 }

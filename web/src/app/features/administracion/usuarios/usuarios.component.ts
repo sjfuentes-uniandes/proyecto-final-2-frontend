@@ -1,26 +1,27 @@
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { IdiomaService } from '../../../core/i18n/idioma.service';
+import { TextosPortal, TextosPortalService } from '../../../core/i18n/portal.i18n';
 import { Grupo, UsuarioBackoffice, UsuariosService } from './usuarios.service';
 
-const ESTADOS: Record<string, { etiqueta: string; clase: string }> = {
-  CONFIRMED: { etiqueta: 'Activo', clase: 'tag--ok' },
-  FORCE_CHANGE_PASSWORD: { etiqueta: 'Pendiente de primer ingreso', clase: 'tag--alerta' },
-  RESET_REQUIRED: { etiqueta: 'Debe restablecer contraseña', clase: 'tag--alerta' },
+const ESTADOS: Record<string, { etiqueta: keyof TextosPortal; clase: string }> = {
+  CONFIRMED: { etiqueta: 'estadoActivo', clase: 'tag--ok' },
+  FORCE_CHANGE_PASSWORD: { etiqueta: 'estadoPrimerIngreso', clase: 'tag--alerta' },
+  RESET_REQUIRED: { etiqueta: 'estadoRestablecer', clase: 'tag--alerta' },
 };
 
-const ERRORES: Record<number, string> = {
-  403: 'Tu usuario no pertenece al grupo de administradores.',
-  409: 'Ya existe un usuario con ese correo.',
-  422: 'Revisa los datos: correo válido, nombre y al menos un grupo.',
+const ERRORES: Record<number, keyof TextosPortal> = {
+  403: 'errorNoAdministrador',
+  409: 'errorUsuarioExiste',
+  422: 'errorDatosUsuario',
 };
 
 /** Administración › Usuarios: alta de usuarios del back-office (sin mockup; sigue el estilo de Operación). */
 @Component({
   selector: 'app-usuarios',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule],
   templateUrl: './usuarios.component.html',
   styles: `
     :host { display: flex; flex-direction: column; gap: 10px; }
@@ -38,6 +39,8 @@ const ERRORES: Record<number, string> = {
 export class UsuariosComponent implements OnInit {
   private readonly servicio = inject(UsuariosService);
   private readonly fb = inject(FormBuilder).nonNullable;
+  private readonly idioma = inject(IdiomaService);
+  readonly t = inject(TextosPortalService).t;
 
   readonly formulario = this.fb.group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
@@ -80,7 +83,7 @@ export class UsuariosComponent implements OnInit {
     const grupos = this.seleccionados();
     if (this.formulario.invalid || grupos.length === 0) {
       this.formulario.markAllAsTouched();
-      this.error.set(grupos.length === 0 ? 'Selecciona al menos un grupo.' : null);
+      this.error.set(grupos.length === 0 ? this.t().seleccionaGrupo : null);
       return;
     }
     this.enviando.set(true);
@@ -102,12 +105,23 @@ export class UsuariosComponent implements OnInit {
 
   estado(usuario: UsuarioBackoffice): { etiqueta: string; clase: string } {
     if (!usuario.habilitado) {
-      return { etiqueta: 'Deshabilitado', clase: 'tag--error' };
+      return { etiqueta: this.t().estadoDeshabilitado, clase: 'tag--error' };
     }
-    return ESTADOS[usuario.estado] ?? { etiqueta: usuario.estado, clase: 'tag--alerta' };
+    const estado = ESTADOS[usuario.estado];
+    return estado ? { etiqueta: this.t()[estado.etiqueta] as string, clase: estado.clase } : { etiqueta: usuario.estado, clase: 'tag--alerta' };
+  }
+
+  /** Fecha corta en el formato del idioma elegido (12/10/2026 en es-CO, 10/12/2026 en en-US). */
+  fecha(iso: string | null | undefined): string {
+    if (!iso) {
+      return '';
+    }
+    const locale = this.idioma.actual() === 'en-US' ? 'en-US' : 'es-CO';
+    return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso));
   }
 
   private mensaje(error: HttpErrorResponse): string {
-    return ERRORES[error.status] ?? 'No fue posible completar la operación. Inténtalo de nuevo.';
+    const clave = ERRORES[error.status];
+    return (clave ? this.t()[clave] : this.t().errorDesconocido) as string;
   }
 }

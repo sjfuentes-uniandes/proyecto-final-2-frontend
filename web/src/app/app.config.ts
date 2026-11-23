@@ -1,6 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
+import { TitleStrategy, provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
 
 import { routes } from './app.routes';
 import { AmplifyAuth } from './core/auth/amplify-auth';
@@ -8,6 +8,7 @@ import { AuthProveedor } from './core/auth/auth-proveedor';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { SesionService } from './core/auth/sesion.service';
 import { ConfigService } from './core/config/app-config';
+import { TituloLocalizado } from './core/i18n/titulo-localizado';
 import { recargarSiModuloObsoleto } from './core/navegacion/modulo-obsoleto';
 
 export const appConfig: ApplicationConfig = {
@@ -16,6 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding(), withNavigationErrorHandler((error) => recargarSiModuloObsoleto(error))),
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: AuthProveedor, useClass: AmplifyAuth },
+    { provide: TitleStrategy, useExisting: TituloLocalizado },
     provideAppInitializer(async () => {
       const config = inject(ConfigService);
       const sesion = inject(SesionService);

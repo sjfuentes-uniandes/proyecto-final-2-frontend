@@ -1,10 +1,11 @@
-/** Formatos es-CO del mockup: "1.026 ms", "1,28 s". */
-export function ms(valor: number): string {
-  return `${String(Math.round(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')} ms`;
+/** Formatos del mockup: "1.026 ms", "1,28 s" en es-CO; "1,026 ms", "1.28 s" en en-US. */
+export function ms(valor: number, locale = 'es-CO'): string {
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(valor))} ms`;
 }
 
-export function segundos(valorMs: number): string {
-  return `${(valorMs / 1000).toFixed(2).replace('.', ',')} s`;
+export function segundos(valorMs: number, locale = 'es-CO'): string {
+  const formato = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${formato.format(valorMs / 1000)} s`;
 }
 
 export function idCorto(id: string | null, largo = 10): string {

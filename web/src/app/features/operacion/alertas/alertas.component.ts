@@ -2,14 +2,16 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { Alerta, PanelAlertas } from './alerta.model';
+import { Alerta, PanelAlertas, Severidad } from './alerta.model';
 import { AlertasService } from './alertas.service';
-import { SEVERIDADES, accion, hace, resumenAbiertas, valor } from './formato-alertas';
+import { IdiomaService } from '../../../core/i18n/idioma.service';
+import { TextosPortal, TextosPortalService } from '../../../core/i18n/portal.i18n';
+import { accion, hace, resumenAbiertas, severidad, valor } from './formato-alertas';
 
-const MENSAJES: Record<number, string> = {
-  401: 'La sesión expiró. Vuelva a iniciar sesión.',
-  403: 'Su usuario no pertenece al grupo de operación.',
-  502: 'No fue posible leer las alarmas del ambiente. Intente de nuevo en unos minutos.',
+const MENSAJES: Record<number, keyof TextosPortal> = {
+  401: 'errorSesion',
+  403: 'errorNoOperacion',
+  502: 'errorAlarmas',
 };
 
 /** HU-W28: alertas abiertas, umbrales configurados y resumen del mes (mockup "Alertas abiertas"). */
@@ -21,19 +23,22 @@ const MENSAJES: Record<number, string> = {
 })
 export class AlertasComponent implements OnInit {
   private readonly servicio = inject(AlertasService);
+  private readonly idioma = inject(IdiomaService);
+  readonly t = inject(TextosPortalService).t;
+  private readonly locale = computed(() => (this.idioma.actual() === 'en-US' ? 'en-US' : 'es-CO'));
 
   readonly panel = signal<PanelAlertas | null>(null);
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);
   readonly subtitulo = computed(() => {
     const panel = this.panel();
-    return panel ? resumenAbiertas(panel.abiertas) : '';
+    return panel ? resumenAbiertas(panel.abiertas, this.t()) : '';
   });
   readonly ahora = signal(new Date());
 
-  readonly severidades = SEVERIDADES;
-  readonly valor = valor;
-  readonly accion = accion;
+  readonly valor = (numero: number | null, unidad: string): string => valor(numero, unidad, this.locale());
+  readonly accion = (alerta: Alerta): string => accion(alerta, this.t());
+  readonly severidad = (nivel: Severidad): { etiqueta: string; clase: string } => severidad(nivel, this.t());
 
   ngOnInit(): void {
     this.servicio.panel().subscribe({
@@ -44,7 +49,8 @@ export class AlertasComponent implements OnInit {
       },
       error: (respuesta: HttpErrorResponse) => {
         this.cargando.set(false);
-        this.error.set(MENSAJES[respuesta.status] ?? 'No fue posible consultar las alertas. Intente de nuevo.');
+        const clave = MENSAJES[respuesta.status];
+        this.error.set((clave ? this.t()[clave] : this.t().errorAlertas) as string);
       },
     });
   }

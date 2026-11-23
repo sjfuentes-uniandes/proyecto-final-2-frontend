@@ -2,14 +2,14 @@
   <a class="saltar" tabindex="0" role="link" (click)="saltar($event)" (keydown.enter)="saltar($event)">{{ textoSaltar() }}</a>
 }
 <header class="topbar">
-  <a class="logo" routerLink="/" aria-label="Solventa, inicio"><span class="logo__marca">S</span>Solventa</a>
+  <a class="logo" routerLink="/" [attr.aria-label]="textos().marcaInicio"><span class="logo__marca">S</span>Solventa</a>
   @if (sesion.autenticado()) {
-    <nav class="nav" aria-label="Principal">
+    <nav class="nav" [attr.aria-label]="textos().menuPrincipal">
       @for (item of menu(); track item.etiqueta) {
         @if (item.ruta) {
           <a [routerLink]="item.ruta" routerLinkActive="nav__item--activo" class="nav__item">{{ item.etiqueta }}</a>
         } @else {
-          <span class="nav__item nav__item--off" title="Próximamente">{{ item.etiqueta }}</span>
+          <span class="nav__item nav__item--off" [title]="textos().proximamente">{{ item.etiqueta }}</span>
         }
       }
     </nav>
@@ -23,9 +23,9 @@
     @if (sesion.autenticado()) {
       <span class="usuario">{{ sesion.nombre() }}{{ rol() }}</span>
       <span class="avatar" aria-hidden="true">{{ sesion.iniciales() }}</span>
-      <button class="salir" type="button" (click)="salir()">Salir</button>
+      <button class="salir" type="button" (click)="salir()">{{ textos().salir }}</button>
     } @else {
-      <span>Portal de gestión</span>
+      <span>{{ textos().portalGestion }}</span>
     }
   </div>
 </header>

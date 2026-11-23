@@ -1,17 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Routes } from '@angular/router';
 
 import { requiereGrupo } from '../../core/auth/grupo.guard';
+import { TextosPortalService } from '../../core/i18n/portal.i18n';
 import { ItemSeccion, SeccionLayoutComponent } from '../../shared/seccion/seccion-layout.component';
 
 @Component({
   selector: 'app-administracion-layout',
   imports: [SeccionLayoutComponent],
-  template: `<app-seccion-layout titulo="Administración" [items]="items" />`,
+  template: `<app-seccion-layout [titulo]="textos().menuAdministracion" [items]="items()" />`,
   styles: `:host { display: flex; flex: 1; min-width: 0; min-height: 0; }`,
 })
 export class AdministracionLayoutComponent {
-  readonly items: ItemSeccion[] = [{ etiqueta: 'Usuarios', icono: '👤', ruta: 'usuarios' }];
+  readonly textos = inject(TextosPortalService).t;
+  readonly items = computed<ItemSeccion[]>(() => [{ etiqueta: this.textos().usuarios, icono: '👤', ruta: 'usuarios' }]);
 }
 
 export const routes: Routes = [
