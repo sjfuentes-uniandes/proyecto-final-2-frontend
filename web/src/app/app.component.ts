@@ -3,21 +3,20 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 
 import { SesionService } from './core/auth/sesion.service';
 import { IDIOMAS, Idioma, IdiomaService } from './core/i18n/idioma.service';
+import { TextosPortal, TextosPortalService } from './core/i18n/portal.i18n';
 
 interface ItemMenu {
   etiqueta: string;
   ruta?: string;
 }
 
-const TEXTO_SALTAR = { 'es-CO': 'Saltar al contenido principal', 'en-US': 'Skip to main content' };
-
-const ROLES: Record<string, string> = {
-  operacion: 'Operación',
-  administradores: 'Administración',
-  'administradores-socios': 'Administración de socios',
-  asesores: 'Asesor',
-  suscriptores: 'Suscriptor',
-  'analistas-siniestros': 'Analista de siniestros',
+const ROLES: Record<string, keyof TextosPortal> = {
+  operacion: 'rolOperacion',
+  administradores: 'rolAdministradores',
+  'administradores-socios': 'rolAdministradoresSocios',
+  asesores: 'rolAsesores',
+  suscriptores: 'rolSuscriptores',
+  'analistas-siniestros': 'rolAnalistasSiniestros',
 };
 
 @Component({
@@ -30,26 +29,28 @@ export class AppComponent {
   readonly sesion = inject(SesionService);
   readonly idioma = inject(IdiomaService);
   readonly idiomas = IDIOMAS;
+  readonly textos = inject(TextosPortalService).t;
   private readonly router = inject(Router);
 
   // Cotización abre el perfilamiento (HU-W11). Pólizas (HU-W18) es exclusiva de asesores; el suscriptor conserva
   // Contratación (HU-W13). Siniestros abre la bandeja del analista (HU-W19).
   readonly menu = computed<ItemMenu[]>(() => {
     this.sesion.claims();
+    const t = this.textos();
     return [
-      this.sesion.tieneGrupo('asesores') ? { etiqueta: 'Cotización', ruta: '/perfilamiento' } : { etiqueta: 'Cotización' },
-      ...(this.sesion.tieneGrupo('asesores') ? [{ etiqueta: 'Pólizas', ruta: '/consulta/polizas' }] : []),
-      ...(this.sesion.tieneGrupo('suscriptores') ? [{ etiqueta: 'Contratación', ruta: '/contratacion' }] : []),
-      this.sesion.tieneGrupo('analistas-siniestros') ? { etiqueta: 'Siniestros', ruta: '/siniestros' } : { etiqueta: 'Siniestros' },
-      this.sesion.tieneGrupo('administradores-socios') ? { etiqueta: 'Socios', ruta: '/socios' } : { etiqueta: 'Socios' },
-      ...(this.sesion.tieneGrupo('operacion') ? [{ etiqueta: 'Operación', ruta: '/operacion' }] : []),
-      ...(this.sesion.tieneGrupo('administradores') ? [{ etiqueta: 'Administración', ruta: '/administracion' }] : []),
+      this.sesion.tieneGrupo('asesores') ? { etiqueta: t.menuCotizacion, ruta: '/perfilamiento' } : { etiqueta: t.menuCotizacion },
+      ...(this.sesion.tieneGrupo('asesores') ? [{ etiqueta: t.menuPolizas, ruta: '/consulta/polizas' }] : []),
+      ...(this.sesion.tieneGrupo('suscriptores') ? [{ etiqueta: t.menuContratacion, ruta: '/contratacion' }] : []),
+      this.sesion.tieneGrupo('analistas-siniestros') ? { etiqueta: t.menuSiniestros, ruta: '/siniestros' } : { etiqueta: t.menuSiniestros },
+      this.sesion.tieneGrupo('administradores-socios') ? { etiqueta: t.menuSocios, ruta: '/socios' } : { etiqueta: t.menuSocios },
+      ...(this.sesion.tieneGrupo('operacion') ? [{ etiqueta: t.menuOperacion, ruta: '/operacion' }] : []),
+      ...(this.sesion.tieneGrupo('administradores') ? [{ etiqueta: t.menuAdministracion, ruta: '/administracion' }] : []),
     ];
   });
 
   /** El destino existe solo en las rutas que usan seccion-layout (`<main id="contenido">`). */
   readonly hayDestino = signal(false);
-  readonly textoSaltar = computed(() => TEXTO_SALTAR[this.idioma.actual() === 'en-US' ? 'en-US' : 'es-CO']);
+  readonly textoSaltar = computed(() => this.textos().saltar);
 
   constructor() {
     afterRender(() => this.hayDestino.set(document.getElementById('contenido') !== null));
@@ -63,8 +64,8 @@ export class AppComponent {
 
   readonly rol = computed(() => {
     const grupos = this.sesion.claims()?.['cognito:groups'] ?? [];
-    const rol = grupos.map((g) => ROLES[g]).find(Boolean);
-    return rol ? ` · ${rol}` : '';
+    const clave = grupos.map((g) => ROLES[g]).find(Boolean);
+    return clave ? ` · ${this.textos()[clave] as string}` : '';
   });
 
   cambiarIdioma(evento: Event): void {

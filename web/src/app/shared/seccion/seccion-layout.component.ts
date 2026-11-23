@@ -1,5 +1,7 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+
+import { TextosPortalService } from '../../core/i18n/portal.i18n';
 
 export interface ItemSeccion {
   etiqueta: string;
@@ -37,7 +39,7 @@ export interface GrupoSeccion {
             <a class="side__item" [href]="item.href" target="_blank" rel="noopener">
               <span aria-hidden="true">{{ item.icono }}</span>{{ item.etiqueta }}</a>
           } @else {
-            <span class="side__item side__item--off" [title]="item.pendiente ?? 'Próximamente'">
+            <span class="side__item side__item--off" [title]="item.pendiente ?? textos().proximamente">
               <span aria-hidden="true">{{ item.icono }}</span>{{ item.etiqueta }}</span>
           }
         }
@@ -76,6 +78,7 @@ export interface GrupoSeccion {
   `,
 })
 export class SeccionLayoutComponent {
+  readonly textos = inject(TextosPortalService).t;
   readonly titulo = input<string>();
   readonly items = input<ItemSeccion[]>([]);
   readonly grupos = input<GrupoSeccion[]>();

@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 
 import { MotivoError } from '../../../core/auth/auth-proveedor';
 import { SesionService } from '../../../core/auth/sesion.service';
+import { TextosPortalService } from '../../../core/i18n/portal.i18n';
 import { MENSAJES, PATRON_CODIGO, POLITICA_CLAVE, motivo } from '../mensajes';
 
 /** Recuperar el acceso por correo: Cognito envía un código al correo verificado. */
@@ -13,42 +14,42 @@ import { MENSAJES, PATRON_CODIGO, POLITICA_CLAVE, motivo } from '../mensajes';
   template: `
     <div class="auth">
       <section class="card auth__card">
-        <h2>Recuperar el acceso</h2>
+        <h2>{{ t().recuperarTitulo }}</h2>
         @if (error(); as causa) {
-          <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ mensajes[causa] }}</span></p>
+          <p class="alerta alerta--error" role="alert"><span aria-hidden="true">⚠</span><span>{{ t()[mensajes[causa]] }}</span></p>
         }
         @switch (paso()) {
           @case ('solicitar') {
-            <p class="auth__sub">Te enviaremos un código al correo corporativo registrado.</p>
+            <p class="auth__sub">{{ t().recuperarSub }}</p>
             <form [formGroup]="solicitud" (ngSubmit)="solicitar()" novalidate>
               <label class="fld">
-                <span>Correo corporativo</span>
+                <span>{{ t().correoCorporativo }}</span>
                 <input class="inp" formControlName="usuario" type="email" autocomplete="username" />
               </label>
-              <button class="btn btn--primario btn--bloque" type="submit" [disabled]="enviando()">Enviar código</button>
+              <button class="btn btn--primario btn--bloque" type="submit" [disabled]="enviando()">{{ t().enviarCodigo }}</button>
             </form>
           }
           @case ('confirmar') {
             <!-- Mismo texto exista o no la cuenta (prevent_user_existence_errors). -->
-            <p class="auth__sub" data-testid="enviado">Si la cuenta existe, enviamos un código a {{ solicitud.getRawValue().usuario }}.</p>
+            <p class="auth__sub" data-testid="enviado">{{ t().codigoEnviado(solicitud.getRawValue().usuario) }}</p>
             <form [formGroup]="confirmacion" (ngSubmit)="confirmar()" novalidate>
               <label class="fld">
-                <span>Código recibido</span>
+                <span>{{ t().codigoRecibido }}</span>
                 <input class="inp" formControlName="codigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code" />
               </label>
               <label class="fld">
-                <span>Nueva contraseña</span>
+                <span>{{ t().nuevaClave }}</span>
                 <input class="inp" formControlName="clave" type="password" autocomplete="new-password" />
-                <small class="fld__ayuda">Mínimo 12 caracteres con mayúsculas, minúsculas, números y símbolos.</small>
+                <small class="fld__ayuda">{{ t().politicaClave }}</small>
               </label>
-              <button class="btn btn--primario btn--bloque" type="submit" [disabled]="enviando()">Cambiar contraseña</button>
+              <button class="btn btn--primario btn--bloque" type="submit" [disabled]="enviando()">{{ t().cambiarClave }}</button>
             </form>
           }
           @case ('listo') {
-            <p class="alerta alerta--ok" role="status">La contraseña se cambió. Ya puedes ingresar con ella y tu código de verificación.</p>
+            <p class="alerta alerta--ok" role="status">{{ t().claveCambiada }}</p>
           }
         }
-        <a class="auth__enlace" routerLink="/ingresar">Volver al ingreso</a>
+        <a class="auth__enlace" routerLink="/ingresar">{{ t().volverIngreso }}</a>
       </section>
     </div>
   `,
@@ -66,6 +67,7 @@ export class RecuperarComponent {
   readonly enviando = signal(false);
   readonly error = signal<MotivoError | null>(null);
   readonly mensajes = MENSAJES;
+  readonly t = inject(TextosPortalService).t;
 
   async solicitar(): Promise<void> {
     if (this.solicitud.invalid) {

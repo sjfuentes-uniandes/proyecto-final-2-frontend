@@ -31,7 +31,7 @@ describe('formato de alertas', () => {
   });
 
   it('nombra la acción de cada enlace', () => {
-    expect(PANEL.abiertas.map(accion)).toEqual(['Ver traza', 'Ver socio', 'Ver cola']);
+    expect(PANEL.abiertas.map((alerta) => accion(alerta))).toEqual(['Ver traza', 'Ver socio', 'Ver cola']);
     expect(accion({ ...PANEL.abiertas[0], enlace: { tipo: 'tablero', url: 'https://x', socio_id: null, min_ms: null } })).toBe('Ver tablero');
   });
 });

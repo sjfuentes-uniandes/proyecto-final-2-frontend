@@ -5,6 +5,7 @@ import { toDataURL } from 'qrcode';
 
 import { MotivoError, PasoIngreso } from '../../../core/auth/auth-proveedor';
 import { SesionService } from '../../../core/auth/sesion.service';
+import { TextosPortalService } from '../../../core/i18n/portal.i18n';
 import { MENSAJES, PATRON_CODIGO, POLITICA_CLAVE, motivo } from '../mensajes';
 
 type Paso = 'credenciales' | 'nueva-clave' | 'registrar-totp' | 'codigo-totp';
@@ -46,6 +47,7 @@ export class IngresarComponent {
   readonly credencialesValidadas = signal(false);
   readonly totp = signal<{ qr: string; secreto: string } | null>(null);
   readonly mensajes = MENSAJES;
+  readonly t = inject(TextosPortalService).t;
   /** Estado del mockup "Error de acceso" (A02): sin campo de código y con panel de protección. */
   readonly errorDeAcceso = computed(() => this.paso() === 'credenciales' && (this.error() === 'credenciales' || this.error() === 'bloqueada'));
 

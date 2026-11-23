@@ -3,24 +3,39 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DatePipe } from '@angular/common';
 
 import { ConfigService } from '../../../core/config/app-config';
+import { IdiomaService } from '../../../core/i18n/idioma.service';
+import { TextosPortal, TextosPortalService } from '../../../core/i18n/portal.i18n';
 import { idCorto, ms, porcentaje, segundos } from './formato';
-import { FiltroTrazas, PATRON_CORRELATION_ID, RECORRIDOS, Recorrido, Traza } from './traza.model';
+import { EstadoTramo, FiltroTrazas, PATRON_CORRELATION_ID, RECORRIDOS, Recorrido, Traza } from './traza.model';
 import { TrazasService } from './trazas.service';
 
-const MENSAJES: Record<number, string> = {
-  400: 'El identificador no es válido: use hasta 128 letras, números o . _ : -',
-  401: 'La sesión expiró. Vuelva a iniciar sesión.',
-  403: 'Su usuario no pertenece al grupo de operación.',
-  404: 'No hay trazas para ese filtro en las últimas 6 horas.',
+const MENSAJES: Record<number, keyof TextosPortal> = {
+  400: 'errorIdTraza',
+  401: 'errorSesion',
+  403: 'errorNoOperacion',
+  404: 'errorSinTrazas',
+};
+
+/** El backend entrega el estado del tramo en español; aquí se traduce para mostrarlo. */
+const ESTADOS: Record<EstadoTramo, keyof TextosPortal> = {
+  Correcto: 'estadoCorrecto',
+  Error: 'estadoError',
+  Limitado: 'estadoLimitado',
+};
+
+const RECORRIDO_TEXTO: Record<Recorrido | '', keyof TextosPortal> = {
+  '': 'recorridoTodos',
+  'api-socios': 'recorridoSocios',
+  'bff-web': 'recorridoPortal',
+  'bff-movil': 'recorridoMovil',
 };
 
 /** HU-W27: traza de un recorrido de punta a punta (mockup "I02 Traza extremo a extremo"). */
 @Component({
   selector: 'app-trazas',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule],
   templateUrl: './trazas.component.html',
   styleUrl: './trazas.component.scss',
 })
@@ -31,7 +46,12 @@ export class TrazasComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   readonly dashboardUrl = inject(ConfigService).valor.dashboardUrl;
 
-  readonly recorridos = RECORRIDOS;
+  private readonly idioma = inject(IdiomaService);
+  readonly t = inject(TextosPortalService).t;
+  private readonly locale = computed(() => (this.idioma.actual() === 'en-US' ? 'en-US' : 'es-CO'));
+  readonly recorridos = computed(() =>
+    RECORRIDOS.map((r) => ({ valor: r.valor, etiqueta: this.t()[RECORRIDO_TEXTO[r.valor]] as string })),
+  );
   readonly formulario = inject(FormBuilder).nonNullable.group({
     correlationId: ['', Validators.pattern(PATRON_CORRELATION_ID)],
     recorrido: ['' as Recorrido | ''],
@@ -43,11 +63,11 @@ export class TrazasComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly titulo = computed(() => {
     const traza = this.traza();
-    return traza ? `Traza del recorrido · ${traza.contexto.canal}` : 'Traza del recorrido';
+    return traza ? this.t().trazaTituloCanal(traza.contexto.canal) : this.t().trazaTitulo;
   });
 
-  readonly ms = ms;
-  readonly segundos = segundos;
+  readonly ms = (valor: number): string => ms(valor, this.locale());
+  readonly segundos = (valorMs: number): string => segundos(valorMs, this.locale());
   readonly idCorto = idCorto;
   readonly porcentaje = porcentaje;
 
@@ -107,7 +127,8 @@ export class TrazasComponent implements OnInit {
       error: (respuesta: HttpErrorResponse) => {
         this.traza.set(null);
         this.cargando.set(false);
-        this.error.set(MENSAJES[respuesta.status] ?? 'No fue posible consultar la traza. Intente de nuevo.');
+        const clave = MENSAJES[respuesta.status];
+        this.error.set((clave ? this.t()[clave] : this.t().errorTraza) as string);
       },
     });
   }
@@ -118,6 +139,18 @@ export class TrazasComponent implements OnInit {
 
   serviciosImplicados(traza: Traza): string {
     const { servicios_internos: internos, servicios_externos: externos } = traza.contexto;
-    return `${internos} ${internos === 1 ? 'interno' : 'internos'}, ${externos} ${externos === 1 ? 'externo' : 'externos'}`;
+    return this.t().serviciosInternosExternos(internos, externos);
+  }
+
+  estado(estado: string): string {
+    const clave = ESTADOS[estado as EstadoTramo];
+    return clave ? (this.t()[clave] as string) : estado;
+  }
+
+  /** Fecha y hora del inicio en el formato del idioma elegido, con segundos y reloj de 24 h. */
+  fechaHora(iso: string): string {
+    return new Intl.DateTimeFormat(this.locale(), {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }).format(new Date(iso));
   }
 }
