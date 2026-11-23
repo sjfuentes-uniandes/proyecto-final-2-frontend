@@ -528,14 +528,14 @@ describe('EmisionPolizaComponent (W17-2 y W17-4, HU-W17)', () => {
     expect(kv('#datos-poliza')).toEqual([
       'Number: 100-2026-000001',
       `Policyholder: ${TITULAR_NOMBRE}`,
-      'Line of business: Vida hipotecario',
+      'Line of business: Mortgage life',
       'Product: Mortgage life · version 2026.09.1',
       'Sum insured: COP 180,000,000',
       'Monthly premium: COP 64,638',
       'Currency: COP',
       'Coverage period: 10/25/2026 – 10/24/2027',
     ]);
-    expect(texto('.coberturas li')).toBe('Muerte por cualquier causa Required');
+    expect(texto('.coberturas li')).toBe('Death from any cause Required');
     expect(kv('#firma-poliza')[1]).toMatch(/^Timestamp: Oct 24, 2026/);
     expect(botones().map((b) => limpio(b))).toEqual(['Download the policy']);
     expect(await violacionesA11y(html())).toEqual([]);

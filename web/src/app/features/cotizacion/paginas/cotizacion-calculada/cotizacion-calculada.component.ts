@@ -9,6 +9,7 @@ import { ErrorCotizacion, errorCotizacion } from '../../cotizacion.errores';
 import { TextosCotizacionService } from '../../cotizacion.i18n';
 import { CoberturaOferta, CotizacionRespuesta, DatoFaltante, PasoCotizacion } from '../../cotizacion.modelo';
 import { CotizacionService } from '../../cotizacion.service';
+import { TextosNegocioService } from '../../../../core/i18n/negocio.i18n';
 
 type Carga =
   | { estado: 'cargando' }
@@ -47,6 +48,7 @@ export class CotizacionCalculadaComponent {
 
   private readonly servicio = inject(CotizacionService);
   readonly textos = inject(TextosCotizacionService);
+  readonly negocio = inject(TextosNegocioService);
   readonly textosPerfilamiento = inject(TextosPerfilamientoService);
 
   readonly carga = signal<Carga>({ estado: 'cargando' });

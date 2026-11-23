@@ -4,6 +4,7 @@ import { TablaVerificacionesComponent } from '../../../componentes/tabla-verific
 import { fechaDia, formatearMonto } from '../../../presentacion';
 import { TextosSiniestrosService } from '../../../siniestros.i18n';
 import { DetalleSiniestroEstado } from '../detalle-siniestro.estado';
+import { TextosNegocioService } from '../../../../../core/i18n/negocio.i18n';
 
 interface Dato {
   etiqueta: string;
@@ -22,6 +23,7 @@ interface Dato {
 })
 export class CoberturaComponent {
   readonly estado = inject(DetalleSiniestroEstado);
+  readonly negocio = inject(TextosNegocioService);
   readonly textos = inject(TextosSiniestrosService);
 
   readonly datos = computed<Dato[]>(() => {
@@ -45,6 +47,6 @@ export class CoberturaComponent {
   readonly amparos = computed(() => {
     const p = this.estado.detalle()?.poliza;
     const locale = this.textos.locale();
-    return (p?.amparos ?? []).map((a) => ({ codigo: a.codigo, nombre: a.nombre, suma: formatearMonto(locale, a.sumaAsegurada, p?.moneda ?? 'COP') }));
+    return (p?.amparos ?? []).map((a) => ({ codigo: a.codigo, nombre: this.negocio.cobertura(a.codigo, a.nombre), suma: formatearMonto(locale, a.sumaAsegurada, p?.moneda ?? 'COP') }));
   });
 }

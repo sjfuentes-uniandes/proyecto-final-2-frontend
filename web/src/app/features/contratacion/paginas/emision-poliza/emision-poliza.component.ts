@@ -23,6 +23,7 @@ import { Poliza } from '../../contratacion.modelo';
 import { ContratacionService } from '../../contratacion.service';
 import { ABRIR_DOCUMENTO } from './abrir-documento';
 import { ESPERAS_SONDEO_EMISION_MS } from './sondeo-emision';
+import { TextosNegocioService } from '../../../../core/i18n/negocio.i18n';
 
 type Carga =
   | { estado: 'cargando' }
@@ -89,6 +90,7 @@ export class EmisionPolizaComponent implements OnInit {
   private readonly abrirDocumento = inject(ABRIR_DOCUMENTO);
   private readonly injector = inject(Injector);
   readonly textos = inject(TextosContratacionService);
+  readonly negocio = inject(TextosNegocioService);
   /** El título de la vista o el error: cambia de elemento al pasar de EMITIENDO a ACTIVA. */
   private readonly foco = viewChild<ElementRef<HTMLElement>>('foco');
   private readonly botonDescarga = viewChild<ElementRef<HTMLButtonElement>>('botonDescarga');

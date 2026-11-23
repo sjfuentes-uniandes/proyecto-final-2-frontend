@@ -2,6 +2,7 @@ import { Component, computed, inject, input, model } from '@angular/core';
 
 import { TextosCotizacionService } from '../../cotizacion.i18n';
 import { CondicionesProducto } from '../../cotizacion.modelo';
+import { TextosNegocioService } from '../../../../core/i18n/negocio.i18n';
 
 /**
  * Mockup "Nueva cotización": coberturas del producto vigente. Las obligatorias van siempre; las
@@ -20,6 +21,7 @@ export class CoberturasProductoComponent {
   readonly seleccionadas = model<string[]>([]);
 
   readonly textos = inject(TextosCotizacionService);
+  readonly negocio = inject(TextosNegocioService);
   readonly coberturas = computed(() => this.condiciones()?.coberturas ?? []);
 
   elegida(codigo: string): boolean {

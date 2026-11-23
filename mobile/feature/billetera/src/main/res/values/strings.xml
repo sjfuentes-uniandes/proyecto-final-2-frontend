@@ -54,4 +54,16 @@
     <string name="detalle_prima_periodicidad">%1$s · %2$s</string>
     <string name="detalle_vigencia_inicio">Inicio: %1$s</string>
     <string name="detalle_vigencia_fin">Fin: %1$s</string>
+    <!-- Coberturas del catálogo, por código (NombresCatalogo.kt). -->
+    <string name="cobertura_muerte">Muerte por cualquier causa</string>
+    <string name="cobertura_incapacidad_total_permanente">Incapacidad total y permanente</string>
+    <string name="cobertura_enfermedades_graves">Enfermedades graves</string>
+    <string name="cobertura_auxilio_funerario">Auxilio funerario</string>
+    <string name="cobertura_lluvia_acumulada">Lluvia acumulada</string>
+    <string name="cobertura_incendio">Incendio y rayo</string>
+    <string name="cobertura_hurto">Hurto calificado</string>
+    <string name="ramo_vida">Vida</string>
+    <string name="ramo_vida_hipotecario">Vida hipotecario</string>
+    <string name="ramo_hogar">Hogar</string>
+    <string name="ramo_parametrico">Paramétrico</string>
 </resources>

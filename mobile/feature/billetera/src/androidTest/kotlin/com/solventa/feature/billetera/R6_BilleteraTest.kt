@@ -140,7 +140,8 @@ class R6_BilleteraTest(private val etiquetaIdioma: String) {
 
         compose.onNodeWithText(textos.getString(R.string.detalle_vigencia_inicio, "1/1/2026".fechaLarga())).assertExists()
         compose.onNodeWithText(textos.getString(R.string.detalle_vigencia_fin, "31/12/2026".fechaLarga())).assertExists()
-        compose.onNodeWithText("Muerte por cualquier causa").assertExists()
+        // MUERTE se traduce por código; INCAP no está en el catálogo y se muestra como llega.
+        compose.onNodeWithText(texto(R.string.cobertura_muerte)).assertExists()
         compose.onNodeWithText("Incapacidad total y permanente").assertExists()
         compose.onNodeWithText(textos.getString(R.string.detalle_credencial_numero, "CRED-0001-2026")).assertExists()
         compose.onNodeWithText(textos.getString(R.string.detalle_credencial_huella, "a1b2c3d4")).assertExists()

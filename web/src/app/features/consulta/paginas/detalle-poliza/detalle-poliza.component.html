@@ -86,7 +86,7 @@
         <tbody>
           @for (c of v.coberturas; track c.codigo) {
             <tr>
-              <th scope="row">{{ c.nombre }}</th>
+              <th scope="row">{{ negocio.cobertura(c.codigo, c.nombre) }}</th>
               <td>{{ c.tipo }}</td>
             </tr>
           }
