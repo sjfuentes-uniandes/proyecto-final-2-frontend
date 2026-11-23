@@ -11,6 +11,7 @@ import { EstadoPoliza } from '../../consulta.modelo';
 import { MemoriaConsultaService } from '../../consulta-memoria.service';
 import { ConsultaService } from '../../consulta.service';
 import { insigniaEstado, propagacionMs, textoPropagacion } from '../../presentacion';
+import { TextosNegocioService } from '../../../../core/i18n/negocio.i18n';
 
 /** El segmento de documento solo se muestra completo: sin tipo o sin número enmascarado se omite. */
 function documentoVisible(tipo: string | null, enmascarado: string | null): string | null {
@@ -36,6 +37,7 @@ export class DetallePolizaComponent {
   private readonly memoria = inject(MemoriaConsultaService);
   private readonly ruta = inject(ActivatedRoute);
   readonly textos = inject(TextosConsultaService);
+  readonly negocio = inject(TextosNegocioService);
   private readonly reintento = new BehaviorSubject<void>(undefined);
 
   readonly cargando = signal(true);
@@ -65,7 +67,7 @@ export class DetallePolizaComponent {
     const cuanto = ms === null ? null : textoPropagacion(t, ms);
     return {
       titulo: t.tituloDetalle(p.numero),
-      subtitulo: [t.subtituloDetalle(p.producto, p.ramo), p.titularNombre, documentoVisible(p.tipoDocumento, p.documentoEnmascarado)]
+      subtitulo: [t.subtituloDetalle(this.negocio.nombre(p.producto), this.negocio.ramo(p.ramo)), p.titularNombre, documentoVisible(p.tipoDocumento, p.documentoEnmascarado)]
         .filter((parte): parte is string => !!parte)
         .join(' · '),
       estado: insignia.texto,

@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.solventa.core.designsystem.SolventaTema
 import com.solventa.feature.billetera.dominio.Cobertura
+import com.solventa.feature.billetera.ui.nombreCobertura
 import com.solventa.feature.billetera.dominio.PolizaResumen
 import com.solventa.feature.siniestros.EtiquetasSiniestros
 import com.solventa.feature.siniestros.R
@@ -544,7 +545,7 @@ private fun SeleccionCausa(coberturas: List<Cobertura>, causa: String?, habilita
     val seleccionada = coberturas.firstOrNull { it.codigo == causa }
     CampoSelectorSiniestro(
         etiqueta = stringResource(R.string.siniestros_causa_etiqueta),
-        valor = seleccionada?.nombre,
+        valor = seleccionada?.let { nombreCobertura(it) },
         detalle = seleccionada?.codigo,
         placeholder = stringResource(R.string.siniestros_seleccionar_causa),
         habilitado = habilitada && coberturas.isNotEmpty(),
@@ -554,7 +555,7 @@ private fun SeleccionCausa(coberturas: List<Cobertura>, causa: String?, habilita
         DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
             coberturas.forEach { cobertura ->
                 DropdownMenuItem(
-                    text = { Text("${cobertura.nombre} (${cobertura.codigo})") },
+                    text = { Text("${nombreCobertura(cobertura)} (${cobertura.codigo})") },
                     onClick = { abierto = false; alSeleccionar(cobertura.codigo) },
                 )
             }

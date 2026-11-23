@@ -153,7 +153,7 @@ private fun TarjetaPoliza(poliza: PolizaResumen, onAbrir: () -> Unit) {
                     color = SolventaTema.colores.textoSecundario,
                 )
                 Text(
-                    poliza.ramo,
+                    nombreRamo(poliza.ramo),
                     style = MaterialTheme.typography.bodyMedium,
                     color = SolventaTema.colores.textoPrimario,
                 )

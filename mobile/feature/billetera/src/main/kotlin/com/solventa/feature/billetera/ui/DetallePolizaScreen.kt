@@ -79,7 +79,7 @@ private fun ContenidoDetalle(poliza: PolizaDetalle) {
 
     SeccionBilletera(stringResource(R.string.detalle_seccion_seguro), Modifier.testTag(EtiquetasPrueba.DETALLE)) {
         Text(
-            stringResource(R.string.detalle_producto_ramo, poliza.producto, poliza.ramo),
+            stringResource(R.string.detalle_producto_ramo, poliza.producto, nombreRamo(poliza.ramo)),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = SolventaTema.colores.textoPrimario,
@@ -119,7 +119,7 @@ private fun ContenidoDetalle(poliza: PolizaDetalle) {
             ) {
                 Text("•", style = MaterialTheme.typography.bodyMedium, color = SolventaTema.colores.textoSecundario)
                 Text(
-                    cobertura.nombre,
+                    nombreCobertura(cobertura),
                     style = MaterialTheme.typography.bodyMedium,
                     color = SolventaTema.colores.textoPrimario,
                     modifier = Modifier.weight(1f),

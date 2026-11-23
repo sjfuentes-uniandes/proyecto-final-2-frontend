@@ -53,4 +53,16 @@
     <string name="detalle_prima_periodicidad">%1$s · %2$s</string>
     <string name="detalle_vigencia_inicio">Start: %1$s</string>
     <string name="detalle_vigencia_fin">End: %1$s</string>
+    <!-- Catalog coverages, by code (NombresCatalogo.kt). -->
+    <string name="cobertura_muerte">Death from any cause</string>
+    <string name="cobertura_incapacidad_total_permanente">Total and permanent disability</string>
+    <string name="cobertura_enfermedades_graves">Critical illness</string>
+    <string name="cobertura_auxilio_funerario">Funeral benefit</string>
+    <string name="cobertura_lluvia_acumulada">Accumulated rainfall</string>
+    <string name="cobertura_incendio">Fire and lightning</string>
+    <string name="cobertura_hurto">Aggravated theft</string>
+    <string name="ramo_vida">Life</string>
+    <string name="ramo_vida_hipotecario">Mortgage life</string>
+    <string name="ramo_hogar">Home</string>
+    <string name="ramo_parametrico">Parametric</string>
 </resources>

@@ -10,10 +10,10 @@
       @for (cobertura of coberturas(); track cobertura.codigo) {
         <li>
           @if (cobertura.obligatoria) {
-            <span>{{ cobertura.nombre }}</span>
+            <span>{{ negocio.cobertura(cobertura.codigo, cobertura.nombre) }}</span>
             <strong>{{ t.obligatoria }}</strong>
           } @else {
-            <label [for]="'cobertura-' + cobertura.codigo">{{ cobertura.nombre }}</label>
+            <label [for]="'cobertura-' + cobertura.codigo">{{ negocio.cobertura(cobertura.codigo, cobertura.nombre) }}</label>
             <input
               class="interruptor"
               type="checkbox"

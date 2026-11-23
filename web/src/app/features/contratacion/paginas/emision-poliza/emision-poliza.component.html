@@ -151,7 +151,7 @@
                 @if (p.titularNombre; as titular) {
                   <div><dt>{{ t.kvTitular }}</dt><dd>{{ titular }}</dd></div>
                 }
-                <div><dt>{{ t.kvRamo }}</dt><dd>{{ p.ramo.nombre }}</dd></div>
+                <div><dt>{{ t.kvRamo }}</dt><dd>{{ negocio.nombre(p.ramo.nombre) }}</dd></div>
                 <div><dt>{{ t.kvProducto }}</dt><dd>{{ t.productoVersion(textos.producto(p.producto.id), p.producto.version) }}</dd></div>
                 <div><dt>{{ t.kvSumaAsegurada }}</dt><dd>{{ textos.monto(p.sumaAsegurada, p.moneda) }}</dd></div>
                 <div><dt>{{ t.kvPrima(p.periodicidad) }}</dt><dd>{{ textos.monto(p.prima, p.moneda) }}</dd></div>
@@ -163,7 +163,7 @@
               <h3 id="titulo-coberturas">{{ t.coberturasPoliza }}</h3>
               <ul class="coberturas">
                 @for (c of p.coberturas; track c.codigo) {
-                  <li>{{ c.nombre }} <span class="marca">{{ c.obligatoria ? t.obligatoria : t.coberturaOpcional }}</span></li>
+                  <li>{{ negocio.cobertura(c.codigo, c.nombre) }} <span class="marca">{{ c.obligatoria ? t.obligatoria : t.coberturaOpcional }}</span></li>
                 }
               </ul>
             </section>

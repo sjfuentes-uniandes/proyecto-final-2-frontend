@@ -108,7 +108,7 @@
             <table class="coberturas-oferta" [attr.aria-label]="t.coberturasOferta">
               <tbody>
                 @for (cobertura of o.coberturas; track cobertura.codigo) {
-                  <tr><th scope="row">{{ cobertura.nombre }}</th><td class="mono">{{ porcentajeSuma(cobertura) }}</td></tr>
+                  <tr><th scope="row">{{ negocio.cobertura(cobertura.codigo, cobertura.nombre) }}</th><td class="mono">{{ porcentajeSuma(cobertura) }}</td></tr>
                 }
               </tbody>
             </table>
@@ -116,7 +116,7 @@
             @if (o.exclusionesResumidas.length) {
               <ul class="exclusiones">
                 @for (exclusion of o.exclusionesResumidas; track exclusion.codigo) {
-                  <li>{{ exclusion.descripcion }}</li>
+                  <li>{{ negocio.exclusion(exclusion.codigo, exclusion.descripcion) }}</li>
                 }
               </ul>
             } @else {
@@ -240,7 +240,7 @@
             <h3 id="titulo-coberturas-incluidas">{{ t.coberturasIncluidas }}</h3>
             <ul class="incluidas">
               @for (cobertura of c.coberturas; track cobertura.codigo) {
-                <li>{{ cobertura.nombre }}</li>
+                <li>{{ negocio.cobertura(cobertura.codigo, cobertura.nombre) }}</li>
               }
             </ul>
           </section>

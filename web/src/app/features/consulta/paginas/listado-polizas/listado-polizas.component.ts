@@ -11,6 +11,7 @@ import { ESTADOS_VIGENCIA, EstadoVigencia, FiltroPolizas, PaginaPolizas } from '
 import { MemoriaConsultaService } from '../../consulta-memoria.service';
 import { ConsultaService } from '../../consulta.service';
 import { digitosDeNumeroInvalido, etiquetaEstado, haceCuanto, insigniaEstado } from '../../presentacion';
+import { TextosNegocioService } from '../../../../core/i18n/negocio.i18n';
 
 const TAMANO = 20;
 const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -64,6 +65,7 @@ export class ListadoPolizasComponent {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly textos = inject(TextosConsultaService);
+  readonly negocio = inject(TextosNegocioService);
   private readonly reintento = new BehaviorSubject<void>(undefined);
 
   readonly estados = ESTADOS_VIGENCIA;
@@ -112,8 +114,8 @@ export class ListadoPolizasComponent {
       return {
         polizaId: p.polizaId,
         numero: p.numero,
-        ramo: p.ramo,
-        producto: p.producto,
+        ramo: this.negocio.ramo(p.ramo),
+        producto: this.negocio.nombre(p.producto),
         prima: this.textos.monto(p.prima, p.moneda),
         vigenciaHasta: this.textos.fechaSinHora(p.vigenciaHasta),
         estado: insignia.texto,

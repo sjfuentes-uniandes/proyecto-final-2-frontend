@@ -131,7 +131,7 @@
               </thead>
               <tbody>
                 @for (c of coberturas(); track c.codigo) {
-                  <tr><td>{{ c.nombre }}</td><td>{{ c.monto }}</td></tr>
+                  <tr><td>{{ negocio.cobertura(c.codigo, c.nombre) }}</td><td>{{ c.monto }}</td></tr>
                 }
               </tbody>
             </table>
@@ -140,7 +140,7 @@
                 <h4>{{ t.exclusionesPrincipales }}</h4>
                 <ul class="exclusiones">
                   @for (e of o.exclusionesResumidas; track e.codigo) {
-                    <li>{{ e.descripcion }}</li>
+                    <li>{{ negocio.exclusion(e.codigo, e.descripcion) }}</li>
                   }
                 </ul>
               }

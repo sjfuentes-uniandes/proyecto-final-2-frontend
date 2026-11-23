@@ -95,6 +95,9 @@ class PantallasBilleteraEnUsTest {
         compose.onNodeWithText("Fingerprint: a1b2c3d4").assertExists()
         compose.onNodeWithText("Verifiable signature: FIRMA-7788").assertExists()
         compose.onAllNodesWithText("Mandatory").assertCountEquals(1)
+        // Cobertura traducida por código; un código fuera del catálogo (INCAP) se muestra como llega.
+        compose.onNodeWithText("Death from any cause").assertExists()
+        compose.onNodeWithText("Incapacidad total y permanente").assertExists()
         compose.onNodeWithText("$ 300,000,000 COP").assertExists()
         compose.onNodeWithText("$ 1,250,000.50 COP · MENSUAL").assertExists()
         compose.onNodeWithText("Start: January 1, 2026").assertExists()

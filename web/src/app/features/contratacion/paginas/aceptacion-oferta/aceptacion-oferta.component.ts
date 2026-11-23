@@ -13,6 +13,7 @@ import { Aceptacion, Declaraciones } from '../../contratacion.modelo';
 import { ContratacionService } from '../../contratacion.service';
 import { codigoCotizacion } from '../../presentacion';
 import { CargaAceptacion, cargarAceptacion } from '../carga-aceptacion';
+import { TextosNegocioService } from '../../../../core/i18n/negocio.i18n';
 
 export const PREFIJO_CLAVE_ACEPTACION = 'solventa.idem.aceptacion.';
 
@@ -61,6 +62,7 @@ export class AceptacionOfertaComponent {
   private readonly cotizaciones = inject(CotizacionService);
   private readonly router = inject(Router);
   readonly textos = inject(TextosContratacionService);
+  readonly negocio = inject(TextosNegocioService);
   private readonly foco = viewChild<ElementRef<HTMLElement>>('foco');
   private readonly alertaEnvio = viewChild<ElementRef<HTMLElement>>('alertaEnvio');
 
